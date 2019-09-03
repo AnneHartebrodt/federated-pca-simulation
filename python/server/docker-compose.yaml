@@ -1,0 +1,15 @@
+version: '3.2'
+services:
+    web:
+        build: .
+        ports:
+            - "5000:4999"
+        volumes:
+          - "/home/anne/Documents/featurecloud/featurecloud-test/PCA:/home/anne/Documents/featurecloud/featurecloud-test/PCA"
+        depends_on:
+            - redis
+    redis:
+        image: redis
+volumes:
+  data:
+
