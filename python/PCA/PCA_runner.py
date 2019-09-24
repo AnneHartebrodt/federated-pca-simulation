@@ -182,22 +182,22 @@ if __name__=="__main__":
     parser.add_argument('-d', metavar='dimensions', type=int, help='number of principal components to return')
     parser.add_argument('-p', metavar='output directory', type=str, help='output directory for simulation study.')
     parser.add_argument('-k', metavar='number_hospitals', type=int, help='Number of simulated hospitals', default=5)
-    parser.add_argument('-s', metavar='save_eigenvalues', type=bool, action='store_true',
+    parser.add_argument('-s', action='store_true',
                         help='If true the generated eigenspaces are saved (!a lot of large files!)', default=False)
     parser.add_argument('-r', metavar='Repeats', type=int, help='Number of repetitions of the sampling process',
                         default=5)
-    parser.add_argument('-c', metavar='colnames', type=bool, help='True of data has column headers',
+    parser.add_argument('-c', help='True of data has column headers',
                         default=False, action='store_true')
     parser.add_argument('-i', metavar='sampleids', type=int,
                         help='Dataframe column which contains the sample ids, 0 index,', default=-1)
 
-    parser.add_argument('-v', metavar='variance', type=bool,action='store_true',
+    parser.add_argument('-v',action='store_true',
                         help='Scale variables to unit variance', default=True)
-    parser.add_argument('-u', metavar='unitnorm', type=bool,action='store_true',
+    parser.add_argument('-u',action='store_true',
                         help='Scale samples to unit norm', default=True)
-    parser.add_argument('-z', metavar='scale01', type=bool, action='store_true',
+    parser.add_argument('-z', action='store_true',
                         help='Scale variables between 0 and 1', default=False)
-    parser.add_argument('-t', metavar='center', type=bool, action='store_true',
+    parser.add_argument('-t', action='store_true',
                         help='Center variables by substracting the mean', default=True)
     args = parser.parse_args()
 
