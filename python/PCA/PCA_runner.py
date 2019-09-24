@@ -191,6 +191,10 @@ if __name__=="__main__":
     parser.add_argument('-i', metavar='sampleids', type=int,
                         help='Dataframe column which contains the sample ids, 0 index,', default=-1)
 
+    parser.add_argument('-e', metavar='epsilons', type=str, help='epsilons to simulate separated by a comma')
+    parser.add_argument('-g', metavar='deltas', type=str, help='deltas to simulate separated by a comma')
+    parser.add_argument('-n', action='store_false',
+                        help='run distributed setting without noise', default=True)
     parser.add_argument('-v',action='store_true',
                         help='Scale variables to unit variance', default=True)
     parser.add_argument('-u',action='store_true',
@@ -202,7 +206,13 @@ if __name__=="__main__":
     args = parser.parse_args()
 
 
-    
+    def parse_array(value_str):
+        values_str = value_str.split(',')
+        values_int = []
+        for v in values_str:
+            values_int.append(float(v))
+        return values_int
+
    
     if args.c:
         header = 0
@@ -213,6 +223,15 @@ if __name__=="__main__":
         rownames = None
     else:
         rownames = args.i
+
+    try:
+        epsilons = parse_array(args.e)
+        deltas = parse_array(args.g)
+    except:
+        print('Incompatible epsilon or delta parameters')
+        print('default to epsilon=0.1, delta = 0.001')
+        epsilons = [0.1]
+        deltas = [0.001]
 
     print('file: ' + str(args.f))
     print('dimensions: ' + str(args.d))
@@ -233,9 +252,9 @@ if __name__=="__main__":
                               center=args.t, scale_var=args.v, scale01=args.z, scale_unit=args.u,
                               transpose=False)
     simulation.run_multiple_simulations(datafile=args.f, dims=args.d, repeat=args.r, header=header, rownames=rownames,
-                                        epsilons=[0.01], deltas=[0.01], dirname=args.p, save_eigen=args.s,
-                                        transpose=True, center=args.t, scale_var=args.v, scale01=args.z,
-                                        scale_unit=args.u)
+                                        epsilons=epsilons, deltas=deltas, dirname=args.p, save_eigen=args.s,
+                                        transpose=False, center=args.t, scale_var=args.v, scale01=args.z,
+                                        scale_unit=args.u, noise=args.n, splits=args.k)
 
 
 

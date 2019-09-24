@@ -148,23 +148,7 @@ class Distributed_DP_PCA():
                     print('norm')
         return svd_list
 
-    def drop0Columns(self, data, variable_names):
-        '''
-        Remove columns that have a 0 mean or a zero variance.
-        :param data: Data table
-        :return: data without 0 columns
-        '''
 
-        indices = []
-        for column in range(data.shape[1]):
-            mean_val = sc.mean(data[:, column])
-            var_val = sc.std(data[:, column])
-            if (math.isclose(mean_val, 0, rel_tol=1E-15) | math.isclose(var_val, 0, rel_tol=1E-15)):
-                indices.append(column)
-        data = sc.delete(data, indices, 1)
-        variable_names = sc.array(variable_names)
-        variable_names = sc.delete(variable_names, indices)
-        return (data, variable_names)
 
     def projection(self, scaled, sim, filename):
         projection = sc.dot(scaled, sim[:, 0:2])
