@@ -1,8 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="48a1bf68-8b5c-45be-8c72-3838e2f953eb" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/simulation/real_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulation/real_data.py" afterDir="false" />
+    <list default="true" id="48a1bf68-8b5c-45be-8c72-3838e2f953eb" name="Default Changelist" comment="added documentation">
+      <change afterPath="$PROJECT_DIR$/../../import_export/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../import_export/import_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/federated_DP_PCA.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/federated_DP_PCA.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PCA/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/PCA/PCA_runner.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PCA/master.py" beforeDir="false" afterPath="$PROJECT_DIR$/PCA/master.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/projections.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/random/plotting.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/swagger_server/logic/exectutor.py" beforeDir="false" afterPath="$PROJECT_DIR$/server/swagger_server/logic/exectutor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulation/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/PCA/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulation/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulation/iris.py" beforeDir="false" afterPath="$PROJECT_DIR$/PCA/iris.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulation/real_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/PCA/real_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulation/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/PCA/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test.trunc" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -21,32 +39,32 @@
     </option>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
   <component name="ProjectId" id="1OgdEIkXCOnELvV6XC7542kjQeQ" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../import_export" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="settings.editor.selected.configurable" value="pyconsole" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PythonContentEntriesConfigurable" />
   </component>
   <component name="PyConsoleOptionsProvider">
     <option name="myIpythonEnabled" value="false" />
   </component>
   <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/server/testout" />
-      <recent name="$PROJECT_DIR$/simulation" />
-    </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/PCA" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/docker" />
       <recent name="$PROJECT_DIR$/server/swagger_server/logic" />
       <recent name="$PROJECT_DIR$/federated_DP_PCA" />
-      <recent name="$PROJECT_DIR$/server/swagger_server" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/server/testout" />
+      <recent name="$PROJECT_DIR$/simulation" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -61,8 +79,8 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.__main__ (1)">
-    <configuration name="__init__" type="PythonConfigurationType" factoryName="Python" temporary="true">
+  <component name="RunManager" selected="Python.PCA_runner">
+    <configuration name="PCA_runner" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="federated_DP_PCA" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -70,12 +88,12 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/server" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/PCA" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/server/__init__.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/PCA/PCA_runner.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -196,11 +214,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.PCA_runner" />
+        <item itemvalue="Python.master" />
         <item itemvalue="Python.__main__ (1)" />
         <item itemvalue="Python.real_data" />
-        <item itemvalue="Python.master" />
         <item itemvalue="Python.__main__" />
-        <item itemvalue="Python.__init__" />
       </list>
     </recent_temporary>
   </component>
@@ -258,6 +276,15 @@
       <workItem from="1567424346999" duration="3434000" />
       <workItem from="1567434077166" duration="233000" />
       <workItem from="1567500057475" duration="6772000" />
+      <workItem from="1567516187731" duration="6591000" />
+      <workItem from="1567760753373" duration="17000" />
+      <workItem from="1568012784214" duration="3476000" />
+      <workItem from="1568045966791" duration="17084000" />
+      <workItem from="1568125277189" duration="3126000" />
+      <workItem from="1568280440580" duration="3750000" />
+      <workItem from="1568286519712" duration="11490000" />
+      <workItem from="1568617119359" duration="6000" />
+      <workItem from="1569326774972" duration="4626000" />
     </task>
     <task id="LOCAL-00001" summary="multisite PCA ready and consitent with R implementation and standalone PCA">
       <created>1560262275118</created>
@@ -396,18 +423,88 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/PCA/master.py</url>
-          <line>94</line>
+          <line>101</line>
           <option name="timeStamp" value="10" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/PCA/master.py</url>
-          <line>178</line>
-          <option name="timeStamp" value="11" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/simulation/real_data.py</url>
+          <url>file://$PROJECT_DIR$/PCA/real_data.py</url>
           <line>9</line>
           <option name="timeStamp" value="12" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/real_data.py</url>
+          <line>67</line>
+          <option name="timeStamp" value="13" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/simulation_runner.py</url>
+          <line>69</line>
+          <option name="timeStamp" value="14" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/simulation_runner.py</url>
+          <line>62</line>
+          <option name="timeStamp" value="15" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/master.py</url>
+          <line>211</line>
+          <option name="timeStamp" value="31" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/master.py</url>
+          <line>216</line>
+          <option name="timeStamp" value="32" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/PCA_runner.py</url>
+          <line>164</line>
+          <option name="timeStamp" value="38" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/PCA_runner.py</url>
+          <line>166</line>
+          <option name="timeStamp" value="39" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/PCA_runner.py</url>
+          <line>167</line>
+          <option name="timeStamp" value="40" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/PCA_runner.py</url>
+          <line>118</line>
+          <option name="timeStamp" value="41" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/PCA_runner.py</url>
+          <line>65</line>
+          <option name="timeStamp" value="42" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/PCA_runner.py</url>
+          <line>43</line>
+          <option name="timeStamp" value="43" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/PCA_runner.py</url>
+          <line>47</line>
+          <option name="timeStamp" value="44" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/PCA_runner.py</url>
+          <line>52</line>
+          <option name="timeStamp" value="45" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/PCA_runner.py</url>
+          <line>120</line>
+          <option name="timeStamp" value="52" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PCA/PCA_runner.py</url>
+          <line>68</line>
+          <option name="timeStamp" value="53" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -418,19 +515,12 @@
         </breakpoint>
       </default-breakpoints>
     </breakpoint-manager>
-    <watches-manager>
-      <configuration name="PythonConfigurationType">
-        <watch expression="np.dot(vec[:,3], v1[:,3])" language="Python" />
-        <watch expression="np.dot(vec[:,2], v1[:,2])" language="Python" />
-        <watch expression="np.dot(vec[:,1], v1[:,1])" language="Python" />
-        <watch expression="np.dot(vec[:,0], v1[:,0])" language="Python" />
-      </configuration>
-    </watches-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/federated_DP_PCA$simulation_runner.coverage" NAME="simulation_runner Coverage Results" MODIFIED="1560877044900" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/federated_DP_PCA$pytest_for_test_action_result_TestActionResult.coverage" NAME="pytest for test_action_result.TestActionResult Coverage Results" MODIFIED="1560869691165" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/server/test" />
     <SUITE FILE_PATH="coverage/federated_DP_PCA$__main____1_.coverage" NAME="__main__ (1) Coverage Results" MODIFIED="1562234705779" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/server/swagger_server" />
     <SUITE FILE_PATH="coverage/federated_DP_PCA$real_data.coverage" NAME="real_data Coverage Results" MODIFIED="1564755425310" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/simulation" />
+    <SUITE FILE_PATH="coverage/python$PCA_runner.coverage" NAME="PCA_runner Coverage Results" MODIFIED="1568299876387" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/PCA" />
   </component>
 </project>

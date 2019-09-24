@@ -30,7 +30,7 @@ def  setup(ismaster, params):
 
 def init():
     '''
-    This method does further setup steps, that
+    Read local data and perform local PCA
     :return:
     '''
 
@@ -42,7 +42,6 @@ def init():
     current_app.logger.info(params)
     try:
         current_app.logger.info('Reading data ...')
-        current_app.PCA.test_dummy()
         current_app.logger.info(params['datafile'])
         current_app.logger.info(params['header'])
         current_app.logger.info(params['sample_ids'])
@@ -71,7 +70,6 @@ def step2():
     try:
         current_app.logger.info(current_app.inbox)
         incoming = current_app.inbox
-        print(incoming)
         # the object is still double json encoded.
         # first level generic json encoding of Flask app
         # second level numpy encoded data object
