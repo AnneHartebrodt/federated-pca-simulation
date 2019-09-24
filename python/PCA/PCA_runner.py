@@ -11,7 +11,7 @@ import importlib.util
 
 class SimulationRunner():
     def __init__(self):
-        spec = importlib.util.spec_from_file_location("module.name","/../../import_export/import_data.py")
+        spec = importlib.util.spec_from_file_location("module.name","../../import_export/import_data.py")
         foo = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(foo)
         self.ddppca = Distributed_DP_PCA()
