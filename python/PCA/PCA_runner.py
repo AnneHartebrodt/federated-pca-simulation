@@ -202,7 +202,6 @@ if __name__=="__main__":
     args = parser.parse_args()
 
     print('file: ' + str(args.f))
-    print('output file: ' + str(args.o))
     print('dimensions: ' + str(args.d))
     print('output directory: ' + str(args.p))
     #print('random seed: ' + str(args.s))
