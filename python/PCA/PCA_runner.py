@@ -28,7 +28,7 @@ class SimulationRunner():
 
     def run_multiple_simulations(self, datafile, dims, noise, splits, repeat, epsilons=[], deltas=[],
                                  dirname='', save_eigen=False, center = True, scale_var = True, scale01=False,
-                                 scale_unit=True, transpose=False):
+                                 scale_unit=True, transpose=False, header=None, rownames=None):
 
         # import data
         data, sample_ids, variable_names = self.importer.data_import(datafile, header, rownames,outfile=dirname, transpose=transpose)
@@ -201,15 +201,7 @@ if __name__=="__main__":
                         help='Center variables by substracting the mean', default=True)
     args = parser.parse_args()
 
-    print('file: ' + str(args.f))
-    print('dimensions: ' + str(args.d))
-    print('output directory: ' + str(args.p))
 
-    print('number of hospitals: ' + str(args.k))
-    print('save eigenvalues: ' + str(args.s))
-    print('repeats: ' + str(args.r))
-    print('column headers: ' + str(args.c))
-    print('sample ids: ' + str(args.i))
     
    
     if args.c:
@@ -222,15 +214,25 @@ if __name__=="__main__":
     else:
         rownames = args.i
 
+    print('file: ' + str(args.f))
+    print('dimensions: ' + str(args.d))
+    print('output directory: ' + str(args.p))
+
+    print('number of hospitals: ' + str(args.k))
+    print('save eigenvalues: ' + str(args.s))
+    print('repeats: ' + str(args.r))
+    print('column headers: ' + str(args.c))
+    print('sample ids: ' + str(args.i))
+
     #simulation.run_standalone(datafile, outfile=outfile, dims=dimensions, header=header,rownames=rownames,center = center, scale_var = scale_var, scale01 = scale01, scale_unit=scale_unit, transpose = True)
     #simulation.run_multiple_simulations(datafile=datafile, dims=dimensions, noise=noise, splits=splits, repeat = repeats, epsilons=[0.01], deltas=[0.01],dirname=outfile, save_eigen=False, transpose = True, center = center, scale_var = scale_var, scale01 = scale01, scale_unit=scale_unit)
 
     simulation = SimulationRunner()
 
-    simulation.run_standalone(args.f, outfile=args.p, dims=args.d, header=args.c, rownames=args.i,
+    simulation.run_standalone(args.f, outfile=args.p, dims=args.d, header=header, rownames=rownames,
                               center=args.t, scale_var=args.v, scale01=args.z, scale_unit=args.u,
                               transpose=False)
-    simulation.run_multiple_simulations(datafile=args.f, dims=args.d, repeat=args.r,
+    simulation.run_multiple_simulations(datafile=args.f, dims=args.d, repeat=args.r, header=header, rownames=rownames,
                                         epsilons=[0.01], deltas=[0.01], dirname=args.p, save_eigen=args.s,
                                         transpose=True, center=args.t, scale_var=args.v, scale01=args.z,
                                         scale_unit=args.u)
