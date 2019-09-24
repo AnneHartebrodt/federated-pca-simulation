@@ -179,15 +179,11 @@ if __name__=="__main__":
 
     parser = ap.ArgumentParser(description='Run distributed PCA simulation')
     parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
-    parser.add_argument('-o', metavar='output file', type=str, help='filename of standalone PCA output')
     parser.add_argument('-d', metavar='dimensions', type=int, help='number of principal components to return')
     parser.add_argument('-p', metavar='output directory', type=str, help='output directory for simulation study.')
-    #parser.add_argument('-s', metavar='random seed', type=int, help='Seed for random processes')
-    parser.add_argument('-n', metavar='number_samples', type=int,
-                        help='Number of variables to sample in the case of high dimensional datasets', default=None)
     parser.add_argument('-k', metavar='number_hospitals', type=int, help='Number of simulated hospitals', default=5)
-    parser.add_argument('-e', metavar='save_eigenvalues', type=bool,
-                        help='If true the generated eigenspaces are saved (!a lot of large files)', default=False)
+    parser.add_argument('-s', metavar='save_eigenvalues', type=bool,
+                        help='If true the generated eigenspaces are saved (!a lot of large files!)', default=False)
     parser.add_argument('-r', metavar='Repeats', type=int, help='Number of repetitions of the sampling process',
                         default=5)
     parser.add_argument('-c', metavar='colnames', type=bool, help='True of data has column headers',
@@ -212,7 +208,7 @@ if __name__=="__main__":
     #print('random seed: ' + str(args.s))
     print('number of sampled variables: ' + str(args.n))
     print('number of hospitals: ' + str(args.k))
-    print('save eigenvalues: ' + str(args.e))
+    print('save eigenvalues: ' + str(args.s))
     print('repeats: ' + str(args.r))
     print('column headers: ' + str(args.c))
     print('sample ids: ' + str(args.i))
@@ -233,11 +229,11 @@ if __name__=="__main__":
 
     simulation = SimulationRunner()
 
-    simulation.run_standalone(args.f, outfile=args.o, dims=args.d, header=args.c, rownames=args.i,
+    simulation.run_standalone(args.f, outfile=args.p, dims=args.d, header=args.c, rownames=args.i,
                               center=args.t, scale_var=args.v, scale01=args.z, scale_unit=args.u,
-                              transpose=True)
+                              transpose=False)
     simulation.run_multiple_simulations(datafile=args.f, dims=args.d, repeat=args.r,
-                                        epsilons=[0.01], deltas=[0.01], dirname=args.o, save_eigen=False,
+                                        epsilons=[0.01], deltas=[0.01], dirname=args.p, save_eigen=args.s,
                                         transpose=True, center=args.t, scale_var=args.v, scale01=args.z,
                                         scale_unit=args.u)
 

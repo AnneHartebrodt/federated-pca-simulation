@@ -1,26 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="48a1bf68-8b5c-45be-8c72-3838e2f953eb" name="Default Changelist" comment="added documentation">
-      <change afterPath="$PROJECT_DIR$/../../import_export/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../import_export/import_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/federated_DP_PCA.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/federated_DP_PCA.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+    <list default="true" id="48a1bf68-8b5c-45be-8c72-3838e2f953eb" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PCA/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/PCA/PCA_runner.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PCA/master.py" beforeDir="false" afterPath="$PROJECT_DIR$/PCA/master.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker/Dockerfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/projections.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/random/plotting.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/swagger_server/logic/exectutor.py" beforeDir="false" afterPath="$PROJECT_DIR$/server/swagger_server/logic/exectutor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulation/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/PCA/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulation/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulation/iris.py" beforeDir="false" afterPath="$PROJECT_DIR$/PCA/iris.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulation/real_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/PCA/real_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulation/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/PCA/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.trunc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PCA/PCA_runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/PCA/PCA_runner.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -284,7 +267,7 @@
       <workItem from="1568280440580" duration="3750000" />
       <workItem from="1568286519712" duration="11490000" />
       <workItem from="1568617119359" duration="6000" />
-      <workItem from="1569326774972" duration="4626000" />
+      <workItem from="1569326774972" duration="5968000" />
     </task>
     <task id="LOCAL-00001" summary="multisite PCA ready and consitent with R implementation and standalone PCA">
       <created>1560262275118</created>
@@ -342,7 +325,14 @@
       <option name="project" value="LOCAL" />
       <updated>1567503828632</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="python simulation module">
+      <created>1569332255435</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1569332255435</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TodoView">
@@ -396,7 +386,8 @@
     <MESSAGE value="PCA federated app, implementing API" />
     <MESSAGE value="prototype version of federated PCA" />
     <MESSAGE value="added documentation" />
-    <option name="LAST_COMMIT_MESSAGE" value="added documentation" />
+    <MESSAGE value="python simulation module" />
+    <option name="LAST_COMMIT_MESSAGE" value="python simulation module" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
