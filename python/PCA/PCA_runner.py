@@ -204,8 +204,7 @@ if __name__=="__main__":
     print('file: ' + str(args.f))
     print('dimensions: ' + str(args.d))
     print('output directory: ' + str(args.p))
-    #print('random seed: ' + str(args.s))
-    print('number of sampled variables: ' + str(args.n))
+
     print('number of hospitals: ' + str(args.k))
     print('save eigenvalues: ' + str(args.s))
     print('repeats: ' + str(args.r))
