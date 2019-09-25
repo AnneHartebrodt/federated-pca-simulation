@@ -190,11 +190,8 @@ if __name__=="__main__":
                         default=False, action='store_true')
     parser.add_argument('-i', metavar='sampleids', type=int,
                         help='Dataframe column which contains the sample ids, 0 index,', default=-1)
-
     parser.add_argument('-e', metavar='epsilons', type=str, help='epsilons to simulate separated by a comma')
     parser.add_argument('-g', metavar='deltas', type=str, help='deltas to simulate separated by a comma')
-    parser.add_argument('-n', action='store_false',
-                        help='run distributed setting without noise', default=True)
     parser.add_argument('-v',action='store_true',
                         help='Scale variables to unit variance', default=True)
     parser.add_argument('-u',action='store_true',
@@ -203,6 +200,12 @@ if __name__=="__main__":
                         help='Scale variables between 0 and 1', default=False)
     parser.add_argument('-t', action='store_true',
                         help='Center variables by substracting the mean', default=True)
+    parser.add_argument('-A', action='store_true',
+                        help='Run standalone simulation', default=False)
+    parser.add_argument('-B', action='store_true',
+                        help='Run distributed simulation without noise', default=False)
+    parser.add_argument('-C', action='store_true',
+                        help='Run distributed simulation with noise', default=True)
     args = parser.parse_args()
 
 
@@ -236,7 +239,6 @@ if __name__=="__main__":
     print('file: ' + str(args.f))
     print('dimensions: ' + str(args.d))
     print('output directory: ' + str(args.p))
-
     print('number of hospitals: ' + str(args.k))
     print('save eigenvalues: ' + str(args.s))
     print('repeats: ' + str(args.r))
@@ -248,13 +250,21 @@ if __name__=="__main__":
 
     simulation = SimulationRunner()
 
-    simulation.run_standalone(args.f, outfile=args.p, dims=args.d, header=header, rownames=rownames,
+    if(args.A):
+        simulation.run_standalone(args.f, outfile=args.p, dims=args.d, header=header, rownames=rownames,
                               center=args.t, scale_var=args.v, scale01=args.z, scale_unit=args.u,
                               transpose=False)
-    simulation.run_multiple_simulations(datafile=args.f, dims=args.d, repeat=args.r, header=header, rownames=rownames,
+    if(args.B):
+        simulation.run_multiple_simulations(datafile=args.f, dims=args.d, repeat=args.r, header=header, rownames=rownames,
                                         epsilons=epsilons, deltas=deltas, dirname=args.p, save_eigen=args.s,
                                         transpose=False, center=args.t, scale_var=args.v, scale01=args.z,
-                                        scale_unit=args.u, noise=args.n, splits=args.k)
+                                        scale_unit=args.u, noise=False, splits=args.k)
+
+    if(args.C):
+        simulation.run_multiple_simulations(datafile=args.f, dims=args.d, repeat=args.r, header=header, rownames=rownames,
+                                        epsilons=epsilons, deltas=deltas, dirname=args.p, save_eigen=args.s,
+                                        transpose=False, center=args.t, scale_var=args.v, scale01=args.z,
+                                        scale_unit=args.u, noise=True, splits=args.k)
 
 
 
