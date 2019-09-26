@@ -206,7 +206,7 @@ if __name__=="__main__":
     parser.add_argument('-B', action='store_true',
                         help='Run distributed simulation without noise', default=False)
     parser.add_argument('-C', action='store_true',
-                        help='Run distributed simulation with noise', default=True)
+                        help='Run distributed simulation with noise', default=False)
     args = parser.parse_args()
 
 
@@ -251,17 +251,17 @@ if __name__=="__main__":
 
     simulation = SimulationRunner()
 
-    if(args.A):
+    if args.A:
         simulation.run_standalone(args.f, outfile=args.p, dims=args.d, header=header, rownames=rownames,
                               center=args.t, scale_var=args.v, scale01=args.z, scale_unit=args.u,
                               transpose=False)
-    if(args.B):
+    if args.B:
         simulation.run_multiple_simulations(datafile=args.f, dims=args.d, repeat=args.r, header=header, rownames=rownames,
                                         epsilons=epsilons, deltas=deltas, dirname=args.p, save_eigen=args.s,
                                         transpose=False, center=args.t, scale_var=args.v, scale01=args.z,
                                         scale_unit=args.u, noise=False, splits=args.k)
 
-    if(args.C):
+    if args.C:
         simulation.run_multiple_simulations(datafile=args.f, dims=args.d, repeat=args.r, header=header, rownames=rownames,
                                         epsilons=epsilons, deltas=deltas, dirname=args.p, save_eigen=args.s,
                                         transpose=False, center=args.t, scale_var=args.v, scale01=args.z,
