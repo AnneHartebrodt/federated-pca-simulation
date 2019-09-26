@@ -44,6 +44,7 @@ class SimulationRunner():
         if not noise:
             epsilons = [2]
             deltas = [2]
+            repeat = 1
         # for a noisy simulation generate some example epsilons
         if noise and len(epsilons)==0:
             epsilons = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 100]
