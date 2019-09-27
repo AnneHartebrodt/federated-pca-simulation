@@ -111,9 +111,16 @@ class Distributed_DP_PCA():
         # Average covariance matrices
         self.logger.info('Aggregating partial SVDs...')
         s = len(svd_list)
-        Ac = np.dot(svd_list[0].transpose(), svd_list[0])
+
+
+        min= svd_list[0].shape[1]
         for svd in range(1, len(svd_list)):
-            Ac = Ac +np.dot(svd_list[svd].transpose(), svd_list[svd])
+            if svd_list[svd].shape[1]<min:
+                min = svd_list[svd].shape[1]
+
+        Ac = np.dot(svd_list[0][:, 1:min].transpose(), svd_list[0][:, 1:min])
+        for svd in range(1, len(svd_list)):
+            Ac = Ac +np.dot(svd_list[svd][:, 1:min].transpose(), svd_list[svd][:, 1:min])
        # Ac = np.concatenate(svd_list)
         Ac = 1/s* Ac
         V,X,W = sc.linalg.svd(Ac)

@@ -6,16 +6,17 @@ import copy as copy
 import os as os
 import pandas as pd
 import importlib.util
+from import_data import CustomDataImporter
 
 
 
 class SimulationRunner():
     def __init__(self):
-        spec = importlib.util.spec_from_file_location("module.name","../../import_export/import_data.py")
-        foo = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(foo)
+        #spec = importlib.util.spec_from_file_location("module.name","../../import_export/import_data.py")
+        #foo = importlib.util.module_from_spec(spec)
+        #spec.loader.exec_module(foo)
         self.ddppca = Distributed_DP_PCA()
-        self.importer = foo.CustomDataImporter()
+        self.importer = CustomDataImporter()
 
 
     def create_annotation(self, n, split, i, epsilon, delta):
@@ -62,7 +63,6 @@ class SimulationRunner():
                 v1 = None
                 for i in range(repeat):
                     for split in range(1, splits + 1):
-
                         data = copy.deepcopy(backup)
                         vec, val = self.simulate_multisite_PCA(data, split, epsilon, delta, noise=noise, ndims=dims,
                                                                 scale_variance=scale_var, center=center, scale01=scale01,
@@ -70,10 +70,12 @@ class SimulationRunner():
                         if v1 is None:
                             v1 = copy.deepcopy(vec)
                         else:
-                            vec = self.ddppca.normalize_eigenspaces([v1, vec])[1]
+                            vec = vec
+                            #vec = self.ddppca.normalize_eigenspaces([v1, vec])[1]
 
                         # projection matrix for sanity check.
-                        proj = sc.dot(scaled_data, vec[:, 0:dm])
+                        #TODO check
+                        proj = sc.dot( vec[:, 0:dm],np.diag(val[0:dm]))
                         proj = np.concatenate((proj, self.create_annotation(proj.shape[0], split, i, epsilon, delta)),
                                               axis=1)
                         results = np.concatenate((results, proj), axis=0)
@@ -117,8 +119,8 @@ class SimulationRunner():
             s = s + 1
             end = min(start + interval, data.shape[0])
             # slice matrix
-            data_sub = self.importer.scale_data(data[start:end, :], center=center, scale_var=scale_variance, scale01=scale01, scale_unit=scale_unit)
-            so = data_sub.shape[0]
+            data_sub, var_names =self.importer.drop0Columns(data[start:end, :], None)
+            data_sub = self.importer.scale_data(data_sub, center=center, scale_var=scale_variance, scale01=scale01, scale_unit=scale_unit)
             noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=epsilon, delta0=delta, nrSamples=data.shape[0],
                                                nrSites=sites, noise=noise)  # add noise
             start = start + interval
@@ -139,8 +141,9 @@ class SimulationRunner():
         Ac = []
         for data_sub in datasets:
             data_sub = self.importer.scale_data(data_sub, center=center, scale_variance=scale)
-            noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=epsilon, delta0=delta, nrSamples=data.shape[0],
+            noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=epsilon, delta0=delta, nrSamples=data_sub.shape[0],
                                                nrSites=sites, noise=noise)  # add noise
+
             Ac.append(self.ddppca.perform_SVD(noisy_cov, ndims))
         # print(Ac)
         W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndims=ndims)
@@ -177,7 +180,7 @@ class SimulationRunner():
 
 if __name__=="__main__":
     print('run')
-
+    '''
     parser = ap.ArgumentParser(description='Run distributed PCA simulation')
     parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
     parser.add_argument('-d', metavar='dimensions', type=int, help='number of principal components to return')
@@ -247,10 +250,12 @@ if __name__=="__main__":
     print('sample ids: ' + str(args.i))
 
     #simulation.run_standalone(datafile, outfile=outfile, dims=dimensions, header=header,rownames=rownames,center = center, scale_var = scale_var, scale01 = scale01, scale_unit=scale_unit, transpose = True)
-    #simulation.run_multiple_simulations(datafile=datafile, dims=dimensions, noise=noise, splits=splits, repeat = repeats, epsilons=[0.01], deltas=[0.01],dirname=outfile, save_eigen=False, transpose = True, center = center, scale_var = scale_var, scale01 = scale01, scale_unit=scale_unit)
 
+    '''
     simulation = SimulationRunner()
 
+    simulation.run_multiple_simulations(datafile='/home/anne/Documents/featurecloud/results/simulation_breast/data_real.tsv', dims=10, noise=False, splits=3, repeat = 1, epsilons=[0.01], deltas=[0.01],dirname='/home/anne/Documents/featurecloud/results/tesy/', save_eigen=False, transpose = False, center = True, scale_var = True, scale01 = False, scale_unit=True)
+    '''
     if args.A:
         simulation.run_standalone(args.f, outfile=args.p, dims=args.d, header=header, rownames=rownames,
                               center=args.t, scale_var=args.v, scale01=args.z, scale_unit=args.u,
@@ -266,6 +271,7 @@ if __name__=="__main__":
                                         epsilons=epsilons, deltas=deltas, dirname=args.p, save_eigen=args.s,
                                         transpose=False, center=args.t, scale_var=args.v, scale01=args.z,
                                         scale_unit=args.u, noise=True, splits=args.k)
-
+    
+    '''
 
 
