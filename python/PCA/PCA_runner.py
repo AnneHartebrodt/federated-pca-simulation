@@ -128,7 +128,7 @@ class SimulationRunner():
         # print(Ac)
         W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndims=ndims)
         W = self.ddppca.normalize_eigenvectors(W)
-        self.save_PCA(None,W,s, directory+'/pca')
+        self.save_PCA(None,W,X, directory+'/pca')
         return (W, X)
 
 
