@@ -133,14 +133,15 @@ class SimulationRunner():
 
 
     def run_distributed_PCA_locally(self, datasets, epsilon=0.01, delta=0.01, noise=True, ndims=4, scale_var=True,
-                                    center=True, scale01 = False, scale_unit = True):
+                                    center=True, scale01 = False, scale_unit = True, header=None, rownames=None, transpose=False, dirname=''):
         '''
         This function takes a list of datasets and runs a distributed PCA
         :return:
         '''
         Ac = []
         for data_sub in datasets:
-            data_sub = self.importer.scale_data(data_sub, center=center, scale_variance=scale_var, scale01=scale01,
+            data_sub, varnames, sampleids = self.importer.data_import(data_sub, header, rownames, outfile=dirname, transpose = transpose)
+            data_sub = self.importer.scale_data(data_sub, center=center, scale_var=scale_var, scale01=scale01,
                                                 scale_unit=scale_unit)
             noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=epsilon, delta0=delta, nrSamples=data_sub.shape[0], noise=noise)  # add noise
 
@@ -289,11 +290,11 @@ if __name__=="__main__":
     if args.D:
         myfiles = str.split(args.f, ',')
         simulation.run_distributed_PCA_locally(myfiles,epsilon=0.01, delta=0.01, noise=False, ndims=args.d,
-                                               scale_var=args.v,center=args.t, scale01 = args.z, scale_unit = args.u)
+                                               scale_var=args.v,center=args.t, scale01 = args.z, scale_unit = args.u, header=header, rownames=rownames, transpose=False, dirname=args.p)
     if args.E:
         myfiles = str.split(args.f, ',')
         simulation.run_distributed_PCA_locally(myfiles,epsilon=0.01, delta=0.01, noise=True, ndims=args.d,
-                                               scale_var=args.v, center=args.t, scale01 = args.z, scale_unit = args.u)
+                                               scale_var=args.v, center=args.t, scale01 = args.z, scale_unit = args.u, header=header, rownames=rownames, transpose=F, dirname=args.p)
 
 
 
