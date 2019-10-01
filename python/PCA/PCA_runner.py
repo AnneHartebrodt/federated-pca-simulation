@@ -241,11 +241,16 @@ if __name__=="__main__":
 
     try:
         epsilons = parse_array(args.e)
+    except:
+        print('Incompatible epsilon parameters')
+        print('default to epsilon=0.1')
+        epsilons = [0.1]
+
+    try:
         deltas = parse_array(args.g)
     except:
-        print('Incompatible epsilon or delta parameters')
-        print('default to epsilon=0.1, delta = 0.001')
-        epsilons = [0.1]
+        print('Incompatible delta parameters')
+        print('default to delta=0.001')
         deltas = [0.001]
 
     print('file: ' + str(args.f))
