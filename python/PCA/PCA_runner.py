@@ -101,7 +101,7 @@ class SimulationRunner():
 
 
     def simulate_multisite_PCA(self, data, sites, epsilon=0.01, delta=0.01, noise=True, ndims=4, scale_variance=True,
-                               center=True, scale01 = False, scale_unit=True):
+                               center=True, scale01 = False, scale_unit=True, directory = ''):
         """
         This function simulates a multisite PCA with each site having
         (almost) the same number of samples.
@@ -119,7 +119,7 @@ class SimulationRunner():
             s = s + 1
             end = min(start + interval, data.shape[0])
             # slice matrix
-            data_sub, var_names =self.importer.drop0Columns(data[start:end, :], None)
+            data_sub, var_names =self.importer.drop0Columns(data[start:end, :], None, drop=False, noise=True)
             data_sub = self.importer.scale_data(data_sub, center=center, scale_var=scale_variance, scale01=scale01, scale_unit=scale_unit)
             noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=epsilon, delta0=delta, nrSamples=data.shape[0],
                                                nrSites=sites, noise=noise)  # add noise
@@ -128,21 +128,21 @@ class SimulationRunner():
         # print(Ac)
         W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndims=ndims)
         W = self.ddppca.normalize_eigenvectors(W)
-
+        self.save_PCA(None,W,s, directory+'/pca')
         return (W, X)
 
 
-    def run_distributed_PCA_locally(self, datasets, epsilon=0.01, delta=0.01, noise=True, ndims=4, scale=True,
-                                    center=True, sites=1):
+    def run_distributed_PCA_locally(self, datasets, epsilon=0.01, delta=0.01, noise=True, ndims=4, scale_var=True,
+                                    center=True, scale01 = False, scale_unit = True):
         '''
         This function takes a list of datasets and runs a distributed PCA
         :return:
         '''
         Ac = []
         for data_sub in datasets:
-            data_sub = self.importer.scale_data(data_sub, center=center, scale_variance=scale)
-            noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=epsilon, delta0=delta, nrSamples=data_sub.shape[0],
-                                               nrSites=sites, noise=noise)  # add noise
+            data_sub = self.importer.scale_data(data_sub, center=center, scale_variance=scale_var, scale01=scale01,
+                                                scale_unit=scale_unit)
+            noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=epsilon, delta0=delta, nrSamples=data_sub.shape[0], noise=noise)  # add noise
 
             Ac.append(self.ddppca.perform_SVD(noisy_cov, ndims))
         # print(Ac)
@@ -173,9 +173,12 @@ class SimulationRunner():
             return pca, W, s
 
     def save_PCA(self, pca, W, s, outfile):
-        pd.DataFrame(pca).to_csv(outfile+'.projection', sep='\t', header=None, index=False)
-        pd.DataFrame(W).to_csv(outfile + '.eigenvectors', sep='\t', header=None, index=False)
-        pd.DataFrame(s).to_csv(outfile + '.eigenvalues', sep='\t', header=None, index=False)
+        if pca is not None:
+            pd.DataFrame(pca).to_csv(outfile+'.projection', sep='\t', header=None, index=False)
+        if W is not None:
+            pd.DataFrame(W).to_csv(outfile + '.eigenvectors', sep='\t', header=None, index=False)
+        if s is not None:
+            pd.DataFrame(s).to_csv(outfile + '.eigenvalues', sep='\t', header=None, index=False)
 
 
 if __name__=="__main__":
@@ -204,12 +207,17 @@ if __name__=="__main__":
                         help='Scale variables between 0 and 1', default=False)
     parser.add_argument('-t', action='store_true',
                         help='Center variables by substracting the mean', default=True)
+
     parser.add_argument('-A', action='store_true',
                         help='Run standalone simulation', default=False)
     parser.add_argument('-B', action='store_true',
                         help='Run distributed simulation without noise', default=False)
     parser.add_argument('-C', action='store_true',
                         help='Run distributed simulation with noise', default=False)
+    parser.add_argument('-D', action='store_true',
+                        help='Run distributed, submit a list of files (comma sep), noise = F', default=False)
+    parser.add_argument('-E', action='store_true',
+                        help='Run distributed, submit a list of files (comma sep), noise = T', default=False)
     args = parser.parse_args()
 
 
@@ -271,6 +279,15 @@ if __name__=="__main__":
                                         epsilons=epsilons, deltas=deltas, dirname=args.p, save_eigen=args.s,
                                         transpose=False, center=args.t, scale_var=args.v, scale01=args.z,
                                         scale_unit=args.u, noise=True, splits=args.k)
+
+    if args.D:
+        myfiles = str.split(args.f, ',')
+        simulation.run_distributed_PCA_locally(myfiles,epsilon=0.01, delta=0.01, noise=False, ndims=args.d,
+                                               scale_var=args.v,center=args.t, scale01 = args.z, scale_unit = args.u)
+    if args.E:
+        myfiles = str.split(args.f, ',')
+        simulation.run_distributed_PCA_locally(myfiles,epsilon=0.01, delta=0.01, noise=True, ndims=args.d,
+                                               scale_var=args.v, center=args.t, scale01 = args.z, scale_unit = args.u)
 
 
 
