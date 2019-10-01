@@ -65,8 +65,8 @@ class SimulationRunner():
                     for split in range(1, splits + 1):
                         data = copy.deepcopy(backup)
                         vec, val = self.simulate_multisite_PCA(data, split, epsilon, delta, noise=noise, ndims=dims,
-                                                                scale_variance=scale_var, center=center, scale01=scale01,
-                                                               scale_unit=scale_unit)
+                                                                scale_variance=scale_var, center=center,scale01=scale01,
+                                                               scale_unit=scale_unit, directory= dirname)
                         if v1 is None:
                             v1 = copy.deepcopy(vec)
                         else:
@@ -275,10 +275,11 @@ if __name__=="__main__":
                                         scale_unit=args.u, noise=False, splits=args.k)
 
     if args.C:
-        simulation.run_multiple_simulations(datafile=args.f, dims=args.d, repeat=args.r, header=header, rownames=rownames,
-                                        epsilons=epsilons, deltas=deltas, dirname=args.p, save_eigen=args.s,
-                                        transpose=False, center=args.t, scale_var=args.v, scale01=args.z,
-                                        scale_unit=args.u, noise=True, splits=args.k)
+        simulation.run_multiple_simulations(datafile=args.f, dims=args.d, repeat=args.r, header=header,
+                                            rownames=rownames,
+                                            epsilons=epsilons, deltas=deltas, dirname=args.p, save_eigen=args.s,
+                                            transpose=False, center=args.t, scale_var=args.v, scale01=args.z,
+                                            scale_unit=args.u, noise=True, splits=args.k)
 
     if args.D:
         myfiles = str.split(args.f, ',')
