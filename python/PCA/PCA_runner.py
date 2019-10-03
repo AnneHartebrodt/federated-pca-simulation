@@ -56,6 +56,7 @@ class SimulationRunner():
         backup = copy.deepcopy(data)
         dm = min(dims, data.shape[1])
         results = np.empty(shape=(1, dm + 4))
+        results_indiv = np.empty(shape=(1, dm + 4))
         eigenvalues = np.empty(shape=(1, dm + 4))
         eigenvectors = np.empty(shape=(1, dm + 4))
         for epsilon in epsilons:
@@ -64,7 +65,7 @@ class SimulationRunner():
                 for i in range(repeat):
                     for split in range(1, splits + 1):
                         data = copy.deepcopy(backup)
-                        vec, val = self.simulate_multisite_PCA(data, split, epsilon, delta, noise=noise, ndims=dims,
+                        vec, val, indiv_scaled = self.simulate_multisite_PCA(data, split, epsilon, delta, noise=noise, ndims=dims,
                                                                 scale_variance=scale_var, center=center,scale01=scale01,
                                                                scale_unit=scale_unit, directory= dirname)
                         if v1 is None:
@@ -74,11 +75,18 @@ class SimulationRunner():
                             #vec = self.ddppca.normalize_eigenspaces([v1, vec])[1]
 
                         # projection matrix for sanity check.
-                        #TODO check probably wrong
-                        proj = sc.dot( vec[:, 0:dm],np.diag(val[0:dm]))
+                        # We scale the entiere data matrix separately
+                        proj = sc.dot(scaled_data,vec[:, 0:dm])
                         proj = np.concatenate((proj, self.create_annotation(proj.shape[0], split, i, epsilon, delta)),
                                               axis=1)
                         results = np.concatenate((results, proj), axis=0)
+
+                        #inidvidual projection matrix for comparison
+                        proj_indiv = sc.dot(indiv_scaled, vec[:, 0:dm])
+                        proj_indiv = np.concatenate((proj_indiv, self.create_annotation(proj_indiv.shape[0], split, i,
+                                                                                        epsilon,delta)),axis=1)
+                        results_indiv = np.concatenate((results_indiv, proj_indiv), axis=0)
+
                         # eigenvalues
                         ar = np.array(np.concatenate((val, np.array([split, i, epsilon, delta])))).reshape((1, dm + 4))
                         eigenvalues = np.concatenate((eigenvalues, ar), axis=0)
@@ -87,6 +95,7 @@ class SimulationRunner():
                         eigenvectors = np.concatenate((eigenvectors, vec), axis=0)
 
         # remove first, random row
+        results_indiv = np.delete(results_indiv, 0, 0)
         results = np.delete(results, 0, 0)
         eigenvectors = np.delete(eigenvectors, 0, 0)
         eigenvalues = np.delete(eigenvalues, 0, 0)
@@ -97,7 +106,8 @@ class SimulationRunner():
             filename = dirname +'no_noise_pca'
 
         self.save_PCA(results, eigenvectors, eigenvalues, filename)
-        return results, eigenvalues, eigenvectors
+        self.save_PCA(results_indiv, None, None , filename+'_indiv')
+        return results, eigenvalues, eigenvectors, results_indiv
 
 
     def simulate_multisite_PCA(self, data, sites, epsilon=0.01, delta=0.01, noise=True, ndims=4, scale_variance=True,
@@ -109,6 +119,8 @@ class SimulationRunner():
         :param sites: number of sites to split the data into
         :return:
         """
+        # Here scaled data will be the concatenation of the individually scaled datasets
+        scaled_data = np.empty(data.shape)
         print('Running simulation with noise> ' + str(noise))
         Ac = []
         s = 0
@@ -121,6 +133,7 @@ class SimulationRunner():
             # slice matrix
             data_sub, var_names =self.importer.drop0Columns(data[start:end, :], None, drop=False, noise=True)
             data_sub = self.importer.scale_data(data_sub, center=center, scale_var=scale_variance, scale01=scale01, scale_unit=scale_unit)
+            scaled_data[start:end, :] = copy.deepcopy(data_sub)
             noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=epsilon, delta0=delta, nrSamples=data.shape[0],
                                                nrSites=sites, noise=noise)  # add noise
             start = start + interval
@@ -129,7 +142,7 @@ class SimulationRunner():
         W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndims=ndims)
         W = self.ddppca.normalize_eigenvectors(W)
         self.save_PCA(None,W,X, directory+'/pca')
-        return (W, X)
+        return (W, X, scaled_data)
 
 
     def run_distributed_PCA_locally(self, datasets, epsilon=0.01, delta=0.01, noise=True, ndims=4, scale_var=True,
