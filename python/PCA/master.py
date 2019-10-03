@@ -128,17 +128,17 @@ class Distributed_DP_PCA():
         PC = self.perform_SVD(noisy_cov, ndims)
         return PC
 
-    # def normalize_eigenvectors(self, V):
-    #     """
-    #     This function makes eigenvectors comparable, by assuring that the first element is
-    #     positive and multipliing the vector by -1 otherwise.
-    #     :param V: Eigenvector matrix with eigenvectors as column vectors
-    #     :return: 'normalised' eigenvectors
-    #     """
-    #     for v in range(V.shape[1]):
-    #         if V[0, v] <0:
-    #             V[:, v]= V[:, v]*-1
-    #     return V
+    def normalize_eigenvectors(self, V):
+        """
+        This function makes eigenvectors comparable, by assuring that the first element is
+        positive and multipliing the vector by -1 otherwise.
+        :param V: Eigenvector matrix with eigenvectors as column vectors
+        :return: 'normalised' eigenvectors
+        """
+        for v in range(V.shape[1]):
+            if V[0, v] <0:
+                V[:, v]= V[:, v]*-1
+        return V
 
     def normalize_eigenspaces(self, svd_list):
         for i in range(1, len(svd_list)):
