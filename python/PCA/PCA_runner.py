@@ -307,7 +307,7 @@ if __name__=="__main__":
     if args.E:
         myfiles = str.split(args.f, ',')
         simulation.run_distributed_PCA_locally(myfiles,epsilon=0.01, delta=0.01, noise=True, ndims=args.d,
-                                               scale_var=args.v, center=args.t, scale01 = args.z, scale_unit = args.u, header=header, rownames=rownames, transpose=F, dirname=args.p)
+                                               scale_var=args.v, center=args.t, scale01 = args.z, scale_unit = args.u, header=header, rownames=rownames, transpose=False, dirname=args.p)
 
 
 
