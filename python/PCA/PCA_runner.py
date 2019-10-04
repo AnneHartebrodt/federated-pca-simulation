@@ -107,7 +107,7 @@ class SimulationRunner():
 
         self.save_PCA(results, eigenvectors, eigenvalues, filename)
         # save the data which has been scaled at the different sites
-        pd.DataFrame(results_indiv).to_csv(filename+'individual.scaled', sep='\t', header=None, index=False)
+        pd.DataFrame(results_indiv).to_csv(dirname+'/individual.scaled', sep='\t', header=None, index=False)
         return results, eigenvalues, eigenvectors, results_indiv
 
 
