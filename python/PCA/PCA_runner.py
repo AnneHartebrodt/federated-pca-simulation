@@ -82,10 +82,10 @@ class SimulationRunner():
                         results = np.concatenate((results, proj), axis=0)
 
                         #inidvidual projection matrix for comparison
-                        proj_indiv = sc.dot(indiv_scaled, vec[:, 0:dm])
-                        proj_indiv = np.concatenate((proj_indiv, self.create_annotation(proj_indiv.shape[0], split, i,
-                                                                                        epsilon,delta)),axis=1)
-                        results_indiv = np.concatenate((results_indiv, proj_indiv), axis=0)
+                        indiv_scaled = np.concatenate((indiv_scaled, self.create_annotation(indiv_scaled.shape[0],
+                                                                                            split, i,epsilon,delta)),
+                                                        axis=1)
+                        results_indiv = np.concatenate((results_indiv, indiv_scaled), axis=0)
 
                         # eigenvalues
                         ar = np.array(np.concatenate((val, np.array([split, i, epsilon, delta])))).reshape((1, dm + 4))
@@ -106,7 +106,8 @@ class SimulationRunner():
             filename = dirname +'no_noise_pca'
 
         self.save_PCA(results, eigenvectors, eigenvalues, filename)
-        self.save_PCA(results_indiv, None, None , filename+'_indiv')
+        # save the data which has been scaled at the different sites
+        pd.DataFrame(results_indiv).to_csv(filename+'individual.scaled', sep='\t', header=None, index=False)
         return results, eigenvalues, eigenvectors, results_indiv
 
 
