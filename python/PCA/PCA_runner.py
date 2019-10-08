@@ -56,7 +56,7 @@ class SimulationRunner():
         backup = copy.deepcopy(data)
         dm = min(dims, data.shape[1])
         results = np.empty(shape=(1, dm + 4))
-        results_indiv = np.empty(shape=(1, dm + 4))
+        results_indiv = np.empty(shape=(1, data.shape[1] + 4))
         eigenvalues = np.empty(shape=(1, dm + 4))
         eigenvectors = np.empty(shape=(1, dm + 4))
         for epsilon in epsilons:
