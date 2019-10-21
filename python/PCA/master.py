@@ -16,11 +16,12 @@ import argparse as ap
 
 class Distributed_DP_PCA():
 
-    def __init__(self, logger = None):
+    def __init__(self, logger = None, file='/tmp/'):
         if logger is None:
             self.logger = logging.getLogger('default')
         else:
             self.logger = logger
+        self.file = file
 
     def compute_noisy_cov(self,original, epsilon0, delta0, nrSamples=0, nrSites=0, noise=True):
         """
@@ -43,6 +44,7 @@ class Distributed_DP_PCA():
         n = original.shape[0]
         # np.dot is matrix product for 2 dimensional arrays
         cov = (1 / (n-1)) * sc.dot(original.transpose(),original)
+        pd.DataFrame(cov).to_csv(path_or_buf= self.file+'cov.tsv' , sep='\t', header=None, index=False)
         #print(cov)
         if noise: # else return covariance matrix as is
             #print(psutil.virtual_memory())
@@ -70,6 +72,7 @@ class Distributed_DP_PCA():
             noise = sc.tril(noise, -1)
             # add noise matrix and original matrix element-wise
             cov = cov + noise
+        pd.DataFrame(cov).to_csv(path_or_buf=self.file+'noisy.tsv', sep='\t', header=None, index=False)
         return cov
 
     def perform_SVD(self,noisy_cov, ndims):

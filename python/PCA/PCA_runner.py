@@ -11,11 +11,11 @@ import importlib.util
 
 
 class SimulationRunner():
-    def __init__(self):
+    def __init__(self, file = '/tmp/'):
         spec = importlib.util.spec_from_file_location("module.name","../../import_export/import_data.py")
         foo = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(foo)
-        self.ddppca = Distributed_DP_PCA()
+        self.ddppca = Distributed_DP_PCA(file = file)
         self.importer = foo.CustomDataImporter()
 
 
@@ -56,7 +56,7 @@ class SimulationRunner():
         backup = copy.deepcopy(data)
         dm = min(dims, data.shape[1])
         results = np.empty(shape=(1, dm + 4))
-        results_indiv = np.empty(shape=(1, data.shape[1] + 4))
+        #results_indiv = np.empty(shape=(1, data.shape[1] + 4))
         eigenvalues = np.empty(shape=(1, dm + 4))
         eigenvectors = np.empty(shape=(1, dm + 4))
         for epsilon in epsilons:
@@ -82,10 +82,10 @@ class SimulationRunner():
                         results = np.concatenate((results, proj), axis=0)
 
                         #inidvidual projection matrix for comparison
-                        indiv_scaled = np.concatenate((indiv_scaled, self.create_annotation(indiv_scaled.shape[0],
-                                                                                            split, i,epsilon,delta)),
-                                                        axis=1)
-                        results_indiv = np.concatenate((results_indiv, indiv_scaled), axis=0)
+                        #indiv_scaled = np.concatenate((indiv_scaled, self.create_annotation(indiv_scaled.shape[0],
+                        #                                                                    split, i,epsilon,delta)),
+                         #                               axis=1)
+                        #results_indiv = np.concatenate((results_indiv, indiv_scaled), axis=0)
 
                         # eigenvalues
                         ar = np.array(np.concatenate((val, np.array([split, i, epsilon, delta])))).reshape((1, dm + 4))
@@ -95,7 +95,7 @@ class SimulationRunner():
                         eigenvectors = np.concatenate((eigenvectors, vec), axis=0)
 
         # remove first, random row
-        results_indiv = np.delete(results_indiv, 0, 0)
+        #results_indiv = np.delete(results_indiv, 0, 0)
         results = np.delete(results, 0, 0)
         eigenvectors = np.delete(eigenvectors, 0, 0)
         eigenvalues = np.delete(eigenvalues, 0, 0)
@@ -107,8 +107,8 @@ class SimulationRunner():
 
         self.save_PCA(results, eigenvectors, eigenvalues, filename)
         # save the data which has been scaled at the different sites
-        pd.DataFrame(results_indiv).to_csv(dirname+'/individual.scaled', sep='\t', header=None, index=False)
-        return results, eigenvalues, eigenvectors, results_indiv
+        #pd.DataFrame(results_indiv).to_csv(dirname+'/individual.scaled', sep='\t', header=None, index=False)
+        return results, eigenvalues, eigenvectors#, results_indiv
 
 
     def simulate_multisite_PCA(self, data, sites, epsilon=0.01, delta=0.01, noise=True, ndims=4, scale_variance=True,
@@ -233,6 +233,8 @@ if __name__=="__main__":
                         help='Run distributed, submit a list of files (comma sep), noise = F', default=False)
     parser.add_argument('-E', action='store_true',
                         help='Run distributed, submit a list of files (comma sep), noise = T', default=False)
+    parser.add_argument('-V', action='store_true',
+                        help='Save Covariance matrix before and after noise', default=False)
     args = parser.parse_args()
 
 
@@ -277,11 +279,13 @@ if __name__=="__main__":
     print('column headers: ' + str(args.c))
     print('sample ids: ' + str(args.i))
 
+
     #simulation.run_standalone(datafile, outfile=outfile, dims=dimensions, header=header,rownames=rownames,center = center, scale_var = scale_var, scale01 = scale01, scale_unit=scale_unit, transpose = True)
 
-
-    simulation = SimulationRunner()
-
+    if args.V:
+        simulation = SimulationRunner(file = args.p)
+    else:
+        simulation = SimulationRunner()
     #simulation.run_multiple_simulations(datafile='/home/anne/Documents/featurecloud/results/simulation_breast/data_real.tsv', dims=10, noise=False, splits=3, repeat = 1, epsilons=[0.01], deltas=[0.01],dirname='/home/anne/Documents/featurecloud/results/tesy/', save_eigen=False, transpose = False, center = True, scale_var = True, scale01 = False, scale_unit=True)
 
     if args.A:
