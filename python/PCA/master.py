@@ -44,7 +44,8 @@ class Distributed_DP_PCA():
         n = original.shape[0]
         # np.dot is matrix product for 2 dimensional arrays
         cov = (1 / (n-1)) * sc.dot(original.transpose(),original)
-        pd.DataFrame(cov).to_csv(path_or_buf= self.file+'cov.tsv' , sep='\t', header=None, index=False)
+        print(cov.shape)
+        pd.DataFrame(cov).to_csv(path_or_buf= self.file+'cov.tsv', sep='\t', header=None, index=False)
         #print(cov)
         if noise: # else return covariance matrix as is
             #print(psutil.virtual_memory())
@@ -72,7 +73,9 @@ class Distributed_DP_PCA():
             noise = sc.tril(noise, -1)
             # add noise matrix and original matrix element-wise
             cov = cov + noise
+            print(cov.shape)
         pd.DataFrame(cov).to_csv(path_or_buf=self.file+'noisy.tsv', sep='\t', header=None, index=False)
+
         return cov
 
     def perform_SVD(self,noisy_cov, ndims):
