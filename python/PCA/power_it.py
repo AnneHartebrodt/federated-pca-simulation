@@ -57,7 +57,7 @@ class DistributedPowerIteration():
         Returns: The required numbers of iteration to reach convergence
 
         '''
-        L = np.ceil((eig_k * np.log(d)) / (eig_k - eig_q1))
+        L = np.ceil( (eig_k * np.log(d)) / (eig_k - eig_q1))
         return L
 
     def communication_overhead_M(self,eig_k, eig_q1, d, p, s):
@@ -80,10 +80,10 @@ class DistributedPowerIteration():
         '''
 
         m = np.max(eigenvectors)
-        coher = n * m * m
+        coher = n * m
         return coher
 
-    def epsilon_bound(self,coherence, d, L, eig_k, eig_q1, epsilon, delta, p):
+    def epsilon_bound(self,coher, d, L, eig_k, eig_q1, epsilon, delta, p):
         '''
 
         Args:
@@ -102,7 +102,7 @@ class DistributedPowerIteration():
         '''
         v = self.noise_variance_pow_it(epsilon, p, L, delta)
         print(v)
-        bound = v * np.sqrt(coherence * np.log(d) * np.log(L)) / (eig_k - eig_q1)
+        bound = v * np.sqrt(coher * np.log(d) * np.log(L)) / (eig_k - eig_q1)
         return bound
 
     def generate_random_gaussian(self,n, m, sigma):
@@ -188,7 +188,7 @@ class DistributedPowerIteration():
 
     def generate_result_str(self, inputfile, epsilon, delta, n, d, q, p, r, coherence, L, noise_variance, e, noise_vals):
         res = path.basename(path.dirname(inputfile)) + '\t' + str(epsilon)+ '\t' + str(delta) + '\t' + str(n)+'\t' + str(d)+'\t' + str(q)+'\t' + str(p)\
-              +'\t'+str(r)+'\t'+ str(coherence)+ str(L)+'\t' + str(noise_variance)+ '\t'+ str(e)+'\t'
+              +'\t'+str(r)+'\t'+ str(coherence)+ '\t'+ str(L)+'\t' + str(noise_variance)+ '\t'+ str(e)+'\t'
         header = 'study.id\tepsilon\tdelta\tnr.samples\tnr.dimension\tnr.itermediate\tit.rank\tr\tcoherence\tnr.iterations\tnoise.variance\terror.bound\t'
         i = 1
         for v in noise_vals:
