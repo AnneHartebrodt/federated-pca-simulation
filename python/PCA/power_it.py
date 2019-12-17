@@ -193,7 +193,7 @@ class DistributedPowerIteration():
         i = 1
         for v in noise_vals:
             res = res +str(v) + '\t'
-            header = 'n1.'+str(i)+'\t'
+            header = header+'n1.'+str(i)+'\t'
             i= i+1
         return (res, header)
 
@@ -231,7 +231,7 @@ if __name__ == '__main__':
 
     # Scale data an calculate eigengap
     data, sample_id, var_names = cd.data_import(inputfile, header=0, rownames=0)
-    data_scaled = cd.scale_data(data, center=True, scale_var=True, scale_unit=True)
+    data_scaled = cd.scale_data(data, center=True, scale_var=True, scale_unit=False)
     n = data.shape[0]
 
     cov = np.cov(data_scaled.T)
