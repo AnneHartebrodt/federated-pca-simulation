@@ -114,7 +114,7 @@ class DistributedPowerIteration():
         # transform matrix into s
         return noise
 
-    def power_method(self,data, sigma, L, q):
+    def power_method(self,data, sigma, L, q, noise=False):
         noise_norms = []
         # U,T,UT = lsa.svds(data, 1000)
         X_0 = self.generate_random_gaussian(data.shape[0], q, sigma)
@@ -126,9 +126,12 @@ class DistributedPowerIteration():
 
         for i in range(L):
             # U1, E, UT1 = lsa.svds(X_0,1000)
-            G = self.generate_random_gaussian(data.shape[0], q , np.max(X_0) * sigma)
-            noise_norms.append(la.norm(G.flatten()))
-            X_0, R = la.qr(np.dot(data, X_0[:,0:q]) + G)
+            if noise:
+                G = self.generate_random_gaussian(data.shape[0], q , np.max(X_0) * sigma)
+                noise_norms.append(la.norm(G.flatten()))
+                X_0, R = la.qr(np.dot(data, X_0[:,0:q]) + G)
+            else:
+                X_0, R =  la.qr(np.dot(data, X_0[:, 0:q]))
         return (X_0[:, 0:q], noise_norms)
 
     # dimension n samples d dimensions
@@ -189,8 +192,8 @@ class DistributedPowerIteration():
         header = 'study.id\tepsilon\tdelta\tnr.samples\tnr.dimension\tnr.itermediate\tit.rank\tr\tcoherence\tnr.iterations\tnoise.variance\terror.bound\t'
         i = 1
         for v in noise_vals:
-            res = res +v + '\t'
-            header = 'n1.'+i+'\t'
+            res = res +str(v) + '\t'
+            header = 'n1.'+str(i)+'\t'
             i= i+1
         return (res, header)
 
@@ -216,23 +219,27 @@ if __name__ == '__main__':
     parser.add_argument('-o', metavar='outfile', type=str, help='output file')
     args = parser.parse_args()
 
-    #inputfile = args.f
-    #outfile = args.o
+    inputfile = args.f
+    outfile = args.o
 
-    inputfile = '~/Documents/featurecloud/data/tcga/data_clean/MMRF-COMMPASS/output_transposed.txt'
-    outfile = '~/Documents/featurecloud/results/gexp_stats/summary.txt'
+    #inputfile = '/home/anne/Documents/featurecloud/data/tcga/data_clean/MMRF-COMMPASS/output_transposed.txt'
+    #outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/summary.txt'
 
 
     cd = CustomDataImporter()
+    DPIT = DistributedPowerIteration()
 
     # Scale data an calculate eigengap
     data, sample_id, var_names = cd.data_import(inputfile, header=0, rownames=0)
-    data = data[:,0:2000]
     data_scaled = cd.scale_data(data, center=True, scale_var=True, scale_unit=True)
     n = data.shape[0]
 
     cov = np.cov(data_scaled.T)
     U, E, UT = lsa.svds(cov, n)
+    E = DPIT.extract_eigenvals(E)
+
+    pd.DataFrame(E[0:15]).to_csv(path.dirname(inputfile)+'/eigenvalues.tsv', sep='\t')
+    pd.DataFrame(np.flip(UT, axis=1)[0:15]).to_csv(path.dirname(inputfile)+'/eigenvectors.tsv', sep='\t')
 
     d = cov.shape[1]
     k = 5
@@ -241,11 +248,6 @@ if __name__ == '__main__':
     epsilon = 1
     delta = 0.1
     r = 0.001
-
-    DPIT = DistributedPowerIteration()
-
-    E= DPIT.extract_eigenvals(E)
-
 
     coher = DPIT.coherence(UT, d)
     L = DPIT.L_nr_it(E[k], E[q1], n)
@@ -256,7 +258,7 @@ if __name__ == '__main__':
 
     bound = DPIT.epsilon_bound(coher, d, L, E[k], E[q1], epsilon, delta, p)
 
-    eigenvectors, noise = DPIT.power_method(cov, noise_variance, int(L), q1)
+    eigenvectors, noise = DPIT.power_method(cov, noise_variance, int(L), q1, True)
 
     res, header = DPIT.generate_result_str(inputfile, epsilon, delta, n, d, q1, p, r, coher, L, noise_variance, bound, noise)
     DPIT.write_summary(res, header, outfile)
@@ -265,4 +267,15 @@ if __name__ == '__main__':
     for v in range(eigenvectors.shape[1]) :
         eigenvals.append(DPIT.eigenvalue(cov, eigenvectors[:, v]))
 
-    ord = np.argsort(eigenvals)
+    pd.DataFrame(eigenvals).to_csv(path.dirname(inputfile) + '/eigenvalues_noisy_pit.tsv', sep='\t')
+    pd.DataFrame(eigenvectors).to_csv(path.dirname(inputfile) + '/eigenvectors_noisy_pit.tsv', sep='\t')
+
+
+    #
+    eigenvectors, noise = DPIT.power_method(cov, noise_variance, int(L), q1, False)
+    eigenvals = []
+    for v in range(eigenvectors.shape[1]) :
+        eigenvals.append(DPIT.eigenvalue(cov, eigenvectors[:, v]))
+
+    pd.DataFrame(eigenvals).to_csv(path.dirname(inputfile) + '/eigenvalues_pit.tsv', sep='\t')
+    pd.DataFrame(eigenvectors).to_csv(path.dirname(inputfile) + '/eigenvectors_pit.tsv', sep='\t')

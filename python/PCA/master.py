@@ -58,6 +58,7 @@ class Distributed_DP_PCA():
             # noise drawn from a 0 mean sigma variance normal distribution
             draws = cov.shape[1] * cov.shape[0]
             noise = sc.random.normal(0, sigma, draws)
+            print('finished sampling')
             # make a matrix out of the noise
             noise.shape = cov.shape
             # transform matrix into symetric matrix
