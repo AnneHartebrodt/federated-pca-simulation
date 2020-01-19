@@ -2,9 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../../cancer_classification/.idea/cancer_classification.iml" filepath="$PROJECT_DIR$/../../cancer_classification/.idea/cancer_classification.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../../third-party-code/capePCA/.idea/capePCA.iml" filepath="$PROJECT_DIR$/../../../third-party-code/capePCA/.idea/capePCA.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/federated_DP_PCA.iml" filepath="$PROJECT_DIR$/.idea/federated_DP_PCA.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../import_export/.idea/import_export.iml" filepath="$PROJECT_DIR$/../../import_export/.idea/import_export.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../mnist-test/.idea/mnist-test.iml" filepath="$PROJECT_DIR$/../../mnist-test/.idea/mnist-test.iml" />
     </modules>
   </component>
 </project>

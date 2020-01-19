@@ -6,6 +6,8 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="capePCA" />
     <orderEntry type="module" module-name="import_export" />
+    <orderEntry type="module" module-name="cancer_classification" />
+    <orderEntry type="module" module-name="mnist-test" />
   </component>
   <component name="PyDocumentationSettings">
     <option name="renderExternalDocumentation" value="true" />

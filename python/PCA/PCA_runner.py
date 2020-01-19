@@ -1,4 +1,4 @@
-from PCA.master import Distributed_DP_PCA
+from master import Distributed_DP_PCA
 import argparse as ap
 import numpy as np
 import scipy as sc
@@ -6,17 +6,16 @@ import copy as copy
 import os as os
 import pandas as pd
 import importlib.util
-#from import_data import CustomDataImporter
+import scipy.linalg as la
+import math as math
+from import_export.import_data import CustomDataImporter
 
 
 
 class SimulationRunner():
     def __init__(self, file = '/tmp/'):
-        spec = importlib.util.spec_from_file_location("module.name","../../import_export/import_data.py")
-        foo = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(foo)
         self.ddppca = Distributed_DP_PCA(file = file)
-        self.importer = foo.CustomDataImporter()
+        self.importer = CustomDataImporter()
 
 
     def create_annotation(self, n, split, i, epsilon, delta):
@@ -146,6 +145,7 @@ class SimulationRunner():
         return (W, X, scaled_data)
 
 
+
     def run_distributed_PCA_locally(self, datasets, epsilon=0.01, delta=0.01, noise=True, ndims=4, scale_var=True,
                                     center=True, scale01 = False, scale_unit = True, header=None, rownames=None, transpose=False, dirname=''):
         '''
@@ -165,8 +165,8 @@ class SimulationRunner():
         W = self.ddppca.normalize_eigenvectors(W)
         return (W, X)
 
-    def run_standalone(self, datafile, outfile=None, dims=5, header=None, rownames=4, center=True, scale_var=True, scale01=False, scale_unit=True,
-                       transpose = False):
+    def run_standalone(self, data, outfile=None, dims=5, header=None, rownames=4, center=True, scale_var=True, scale01=False, scale_unit=True,
+                       transpose = False, sep='\t', filename = '/pca', drop_samples =[]):
             '''
             This function performs a regular principal component analysis and saves the result to files containing
             the projection the
@@ -180,11 +180,13 @@ class SimulationRunner():
             :param rownames: column number which contains the rownames/sample ids
             :return: projection, eigenvectors and eigenvalues
             '''
-            data, sample_ids, variable_names = self.importer.data_import(datafile, header=header, rownames=rownames, outfile=outfile, sep='\t', transpose=transpose)
+            if isinstance(data, str):
+                data, sample_ids, variable_names = self.importer.data_import(data, header=header, rownames=rownames, outfile=outfile, sep=sep, transpose=transpose)
+            data = np.delete(data, drop_samples, 0)
             data = self.importer.scale_data(data, center, scale_var, scale01, scale_unit)
             # standalone PCA
             pca, W, s = self.ddppca.standalone_pca(data, ndims=dims)
-            self.save_PCA(pca,W,s, outfile+'/pca')
+            self.save_PCA(pca,W,s, outfile+filename)
             return pca, W, s
 
     def save_PCA(self, pca, W, s, outfile):

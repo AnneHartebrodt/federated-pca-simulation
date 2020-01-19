@@ -57,7 +57,7 @@ class DistributedPowerIteration():
         Returns: The required numbers of iteration to reach convergence
 
         '''
-        L = np.ceil( (eig_k * np.log(d)) / (eig_k - eig_q1))
+        L = np.ceil((eig_k / (eig_k - eig_q1))*np.log(d))
         return L
 
     def communication_overhead_M(self,eig_k, eig_q1, d, p, s):
@@ -68,8 +68,8 @@ class DistributedPowerIteration():
         '''
         the matrix coherence is defined as follows:
         A=UEU_t (Eigenvalue decomposition)
-        A elem mxn
-        coh(V) = max {m ||U||inf^2, n ||V||inf^2}
+        A elem mxm
+        coh(V) m * ||U||inf
         Args:
             eigenvectors: Eigenvectors from the singular value decomposition as
                             np array
@@ -114,10 +114,10 @@ class DistributedPowerIteration():
         # transform matrix into s
         return noise
 
-    def power_method(self,data, sigma, L, q, noise=False):
+    def power_method(self,data, sigma, L, p, noise=False):
         noise_norms = []
         # U,T,UT = lsa.svds(data, 1000)
-        X_0 = self.generate_random_gaussian(data.shape[0], q, sigma)
+        X_0 = self.generate_random_gaussian(data.shape[0], p, sigma)
         X_0, R = la.qr(X_0)
         # order eigenvectors from largest to smallest, to achive
         # ordered eigenvectors
@@ -127,12 +127,12 @@ class DistributedPowerIteration():
         for i in range(L):
             # U1, E, UT1 = lsa.svds(X_0,1000)
             if noise:
-                G = self.generate_random_gaussian(data.shape[0], q , np.max(X_0) * sigma)
+                G = self.generate_random_gaussian(data.shape[0], p , np.max(X_0) * sigma)
                 noise_norms.append(la.norm(G.flatten()))
-                X_0, R = la.qr(np.dot(data, X_0[:,0:q]) + G)
+                X_0, R = la.qr(np.dot(data, X_0[:,0:p]) + G)
             else:
-                X_0, R =  la.qr(np.dot(data, X_0[:, 0:q]))
-        return (X_0[:, 0:q], noise_norms)
+                X_0, R =  la.qr(np.dot(data, X_0[:, 0:p]))
+        return (X_0[:, 0:p], noise_norms)
 
     # dimension n samples d dimensions
     # fix target rank k, intermediate rank 1 and iteration rank q
@@ -170,6 +170,9 @@ class DistributedPowerIteration():
         o2 = o*((np.sqrt(p)-np.sqrt(q- 1))/(r*np.sqrt(d)))
         return(5*noise_norm<=o and UqG_norm <=o2, noise_norm, UqG_norm)
 
+    def assumed_noise(self, eig_k, eig_q1, e):
+        return e*(eig_k-eig_q1)
+
     def extract_eigenvals(self, E):
         '''
         Eigendecomposition from scipy.linalg.sparse returns eigenvalues ordered in
@@ -181,15 +184,16 @@ class DistributedPowerIteration():
         Returns: Eigenvalue vector in decreasing order, without 0s.
 
         '''
+        indz = np.where(E == 0)
         E = np.flip(E)
         E = E[E != 0]
-        return E
+        return E, indz
 
 
-    def generate_result_str(self, inputfile, epsilon, delta, n, d, q, p, r, coherence, L, noise_variance, e, noise_vals):
+    def generate_result_str(self, inputfile, epsilon, delta, n, d, q, p, r, coherence, L, noise_variance, e, noise_vals, assumed_noise):
         res = path.basename(path.dirname(inputfile)) + '\t' + str(epsilon)+ '\t' + str(delta) + '\t' + str(n)+'\t' + str(d)+'\t' + str(q)+'\t' + str(p)\
-              +'\t'+str(r)+'\t'+ str(coherence)+ '\t'+ str(L)+'\t' + str(noise_variance)+ '\t'+ str(e)+'\t'
-        header = 'study.id\tepsilon\tdelta\tnr.samples\tnr.dimension\tnr.itermediate\tit.rank\tr\tcoherence\tnr.iterations\tnoise.variance\terror.bound\t'
+              +'\t'+str(r)+'\t'+ str(coherence)+ '\t'+ str(L)+'\t' + str(noise_variance)+ '\t'+ str(e)+'\t'+str(assumed_noise)+'\t'
+        header = 'study.id\tepsilon\tdelta\tnr.samples\tnr.dimension\tnr.itermediate\tit.rank\tr\tcoherence\tnr.iterations\tnoise.variance\terror.bound\tassumed.noise\t'
         i = 1
         for v in noise_vals:
             res = res +str(v) + '\t'
@@ -222,8 +226,8 @@ if __name__ == '__main__':
     inputfile = args.f
     outfile = args.o
 
-    #inputfile = '/home/anne/Documents/featurecloud/data/tcga/data_clean/MMRF-COMMPASS/output_transposed.txt'
-    #outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/summary.txt'
+    inputfile = '/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_only.tsv'
+    outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/summary.txt'
 
 
     cd = CustomDataImporter()
@@ -231,36 +235,45 @@ if __name__ == '__main__':
 
     # Scale data an calculate eigengap
     data, sample_id, var_names = cd.data_import(inputfile, header=0, rownames=0)
-    data_scaled = cd.scale_data(data, center=True, scale_var=True, scale_unit=False)
+    data= data[:,0:2000]
+    data_scaled = cd.scale_data(data, center=True, scale_var=True, scale_unit=False, scale01=False)
     n = data.shape[0]
 
     cov = np.cov(data_scaled.T)
     U, E, UT = lsa.svds(cov, n)
-    E = DPIT.extract_eigenvals(E)
+    E, indz = DPIT.extract_eigenvals(E)
+    U = np.flip(np.delete(U, indz, axis=1), axis=1)
 
-    pd.DataFrame(E[0:15]).to_csv(path.dirname(inputfile)+'/eigenvalues.tsv', sep='\t')
-    pd.DataFrame(np.flip(UT, axis=1)[0:15]).to_csv(path.dirname(inputfile)+'/eigenvectors.tsv', sep='\t')
+    pd.DataFrame(E[0:20]).to_csv(path.dirname(inputfile)+'/eigenvalues.tsv', sep='\t')
+    pd.DataFrame(U[0:20]).to_csv(path.dirname(inputfile)+'/eigenvectors.tsv', sep='\t')
 
     d = cov.shape[1]
     k = 5
-    q1 = 15
-    p = 30
+    q1 = 100
+    p = 200
     epsilon = 1
     delta = 0.1
-    r = 0.001
+    r = 1
 
-    coher = DPIT.coherence(UT, d)
+    coher = DPIT.coherence(U, d)
     L = DPIT.L_nr_it(E[k], E[q1], n)
     noise_variance = DPIT.noise_variance_pow_it(epsilon, p, L, delta)
 
-    eu = DPIT.e_upper(E[k], E[q1], r, d)
 
+    # The question is: are those two epsilons supposed to be the same
+    # I don't think so. They just have the same name.
+    # this is the epsilon for the noise
+    eu = DPIT.e_upper(E[k], E[q1-1], r, d)
+    assumed_noise = DPIT.assumed_noise(E[k], E[q1], eu)
 
+    # this is the utility parameter
     bound = DPIT.epsilon_bound(coher, d, L, E[k], E[q1], epsilon, delta, p)
 
-    eigenvectors, noise = DPIT.power_method(cov, noise_variance, int(L), q1, True)
 
-    res, header = DPIT.generate_result_str(inputfile, epsilon, delta, n, d, q1, p, r, coher, L, noise_variance, bound, noise)
+
+    eigenvectors, noise = DPIT.power_method(cov, noise_variance, int(L), p, True)
+
+    res, header = DPIT.generate_result_str(inputfile, epsilon, delta, n, d, q1, p, r, coher, L, noise_variance, bound, noise, assumed_noise)
     DPIT.write_summary(res, header, outfile)
 
     eigenvals = []
