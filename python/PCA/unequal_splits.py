@@ -113,6 +113,7 @@ class AngleRunner():
 
         ore = OutlierRemoval()
         outliers = ore.outlier_removal_mad(pca, 6, 3)
+        print(outliers)
 
         pca, W1, E1 = PCA.run_standalone(datafile, outfile, dims=dims, header=header, rownames=rownames, center=center,
                                          scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,
@@ -216,7 +217,7 @@ class AngleRunner():
             os.makedirs(pn)
         else:
             print('Path exists')
-            pn = path.dirname(inputfile)+'/'+foldername+str(time.clock())
+            pn = path.dirname(inputfile)+'/'+foldername+str(time.process_time())
             os.makedirs(pn)
         return pn
 
