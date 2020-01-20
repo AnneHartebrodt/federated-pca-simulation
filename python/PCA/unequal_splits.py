@@ -187,8 +187,6 @@ class AngleRunner():
         Returns: Eigenvalue vector in decreasing order, without 0s.
 
         '''
-        indz = np.where(E == 0)
-        E = np.flip(E)
         E = E[E != 0]
         return E, indz
 
@@ -224,19 +222,19 @@ class AngleRunner():
 if __name__=="__main__":
     print('run split script')
 
-    #parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
-    #parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
-    #parser.add_argument('-o', metavar='outfile', type=str, help='output file')
-    #args = parser.parse_args()
+    parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
+    parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
+    parser.add_argument('-o', metavar='outfile', type=str, help='output file')
+    args = parser.parse_args()
 
-    #inputfile = args.f
-    #outfile = args.o
+    inputfile = args.f
+    outfile = args.o
 
-    inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
-    outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/testttt/'
+    #inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
+    #outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/testttt/'
 
     cd = CustomDataImporter()
     sim = AngleRunner()
     summaryfile = sim.make_eigenvector_path(outfile, path.basename(path.dirname(inputfile)))
-    sim.run_and_compare_unequal(inputfile, summaryfile, dims = 20, scale_unit=False, sep = ',')
+    sim.run_and_compare_unequal(inputfile, summaryfile, dims = 20, scale_unit=False, sep = '\t')
 
