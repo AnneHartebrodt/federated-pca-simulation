@@ -124,11 +124,21 @@ class Distributed_DP_PCA():
             Ac = Ac +np.dot(svd_list[svd].transpose(), svd_list[svd])
        # Ac = np.concatenate(svd_list)
         Ac = 1/s* Ac
-        V,X,W = sc.linalg.svd(Ac)
-        W = np.transpose(W)
-        W = self.normalize_eigenvectors(W)
+
+        if (Ac.shape[1] > 10):
+            print('Large covariance matrix: Using sparse PCA for performance')
+            nd = min(Ac.shape[1] - 1, ndims)
+            U, S, UT = lsa.svds(Ac, nd)
+            # For some stupid reason sparse svd is returned in increasing order
+            S = np.flip(S)
+            UT = np.flip(UT, axis=0)
+        else:
+            U, S, UT = la.svd(Ac, lapack_driver='gesvd')
+
+        UT = np.transpose(UT)
+        UT = self.normalize_eigenvectors(UT)
         self.logger.info('...done')
-        return W[:, 0:ndims],X[0:ndims]
+        return UT[:, 0:ndims],S[0:ndims]
 
     def local_PCA(self, original, epsilon0, delta0, noise=True, ndims = 10):
         noisy_cov = self.compute_noisy_cov(original, epsilon0, delta0, noise=noise)
