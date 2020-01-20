@@ -65,7 +65,7 @@ class AngleRunner():
         :param sites: number of sites to split the data into
         :return:
         """
-
+        print('unequal splits')
         PCA = SimulationRunner()
         OR = OutlierRemoval()
 
@@ -79,12 +79,18 @@ class AngleRunner():
             end = int(interval_end[i])
             # slice matrix
             data_sub, var_names = self.importer.drop0Columns(data[start:end, :], None, drop=False, noise=True)
+            
+            print('regular pca')
             pca, W1, E1 = PCA.run_standalone(data_sub, outfile, dims=ndims, header=header, rownames=rownames,
                                              center=center,
                                              scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,
                                              transpose=transpose, sep=sep, filename='/pca.loc',
                                              drop_samples=[])
+            
+	    
             outliers = OR.outlier_removal_mad(pca, 6, 3)
+            print('outliers')
+            print(outliers)
             data_sub = np.delete(data_sub, outliers, 0)
 
             data_sub = self.importer.drop0Columns(data_sub,None, drop = False, noise=True)
@@ -107,14 +113,15 @@ class AngleRunner():
     def run_and_compare_unequal(self, datafile, outfile=None, dims=5, header=0, rownames=0, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t'):
 
         study_id = path.basename(path.dirname(datafile))
-
+        print('standalone before outlier removal')
         PCA = SimulationRunner()
         pca, W1, E1 = PCA.run_standalone(datafile, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01,scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.before_outlier_removal')
 
         ore = OutlierRemoval()
         outliers = ore.outlier_removal_mad(pca, 6, 3)
         print(outliers)
-
+        print('standalone after outlier removal')
+        print(datafile)
         pca, W1, E1 = PCA.run_standalone(datafile, outfile, dims=dims, header=header, rownames=rownames, center=center,
                                          scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,
                                          transpose=transpose, sep=sep, filename='/pca.after_outlier_removal',
@@ -223,19 +230,19 @@ class AngleRunner():
 if __name__=="__main__":
     print('run split script')
 
-    #parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
-    #parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
-    #parser.add_argument('-o', metavar='outfile', type=str, help='output file')
-    #args = parser.parse_args()
+    parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
+    parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
+    parser.add_argument('-o', metavar='outfile', type=str, help='output file')
+    args = parser.parse_args()
 
-    #inputfile = args.f
-    #outfile = args.o
+    inputfile = args.f
+    outfile = args.o
 
-    inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
-    outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/testttt/'
+    #inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
+    #outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/testttt/'
 
     cd = CustomDataImporter()
     sim = AngleRunner()
     summaryfile = sim.make_eigenvector_path(outfile, path.basename(path.dirname(inputfile)))
-    sim.run_and_compare_unequal(inputfile, summaryfile, dims = 20, scale_unit=False, sep = ',')
+    sim.run_and_compare_unequal(inputfile, summaryfile, dims = 20, scale_unit=False, sep = '\t')
 
