@@ -93,7 +93,7 @@ class AngleRunner():
             print(outliers)
             data_sub = np.delete(data_sub, outliers, 0)
 
-            data_sub = self.importer.drop0Columns(data_sub,None, drop = False, noise=True)
+            data_sub, vn = self.importer.drop0Columns(data_sub,None, drop = False, noise=True)
             data_sub = self.importer.scale_data(data_sub, center=center, scale_var=scale_variance, scale01=scale01,
                                                 scale_unit=scale_unit)
             noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=1, delta0=1, nrSamples=data.shape[0],
