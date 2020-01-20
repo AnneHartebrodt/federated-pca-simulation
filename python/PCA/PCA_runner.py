@@ -183,6 +183,7 @@ class SimulationRunner():
             if isinstance(data, str):
                 data, sample_ids, variable_names = self.importer.data_import(data, header=header, rownames=rownames, outfile=outfile, sep=sep, transpose=transpose)
             data = np.delete(data, drop_samples, 0)
+            data = self.importer.drop0Columns(data,None, noise= True, drop=False)
             data = self.importer.scale_data(data, center, scale_var, scale01, scale_unit)
             # standalone PCA
             pca, W, s = self.ddppca.standalone_pca(data, ndims=dims)
