@@ -96,16 +96,19 @@ class AngleRunner():
             data_sub, vn = self.importer.drop0Columns(data_sub,None, drop = False, noise=True)
             data_sub = self.importer.scale_data(data_sub, center=center, scale_var=scale_variance, scale01=scale01,
                                                 scale_unit=scale_unit)
+            print('calculating cov')
             noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=1, delta0=1, nrSamples=data.shape[0],
                                                       nrSites=len(interval_end), noise=False)  # add noise
             start = int(interval_end[i])
-
+            print('finished')
 
 
             Ac.append(self.ddppca.perform_SVD(noisy_cov, ndims))
             # print(Ac)
+        print('aggregating')
         W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndims=ndims)
         W = self.ddppca.normalize_eigenvectors(W)
+        print('....finished')
         #self.save_PCA(None, W, X, directory + '/pca')
         return (W, X)
 
