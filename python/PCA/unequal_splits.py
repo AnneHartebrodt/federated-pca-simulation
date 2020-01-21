@@ -69,7 +69,9 @@ class AngleRunner():
         PCA = SimulationRunner()
         OR = OutlierRemoval()
 
-        np.random.shuffle(data)
+        perm = np.random.permutation(data.shape[0])
+        data = data[perm]
+        order = np.argsort(perm)
         Ac = []
         s = 0
         start = 0
@@ -106,6 +108,10 @@ class AngleRunner():
             # print(Ac)
         W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndims=ndims)
         W = self.ddppca.normalize_eigenvectors(W)
+
+        # eigenvectors need to be sorted again
+        W = W[order]
+
         #self.save_PCA(None, W, X, directory + '/pca')
         return (W, X)
 
