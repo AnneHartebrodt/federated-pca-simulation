@@ -110,14 +110,14 @@ class AngleRunner():
         print('aggregating')
         W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndims=ndims)
         W = self.ddppca.normalize_eigenvectors(W)
-
+<<<<<<< HEAD
         print('....finished')
-
+=======
 
         # eigenvectors need to be sorted again
         W = W[order]
 
-
+>>>>>>> 3b01d6181770d3398a5f8b4b1f05d25655697f50
         #self.save_PCA(None, W, X, directory + '/pca')
         return (W, X)
 
