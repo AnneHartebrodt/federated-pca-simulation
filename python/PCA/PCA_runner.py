@@ -165,8 +165,8 @@ class SimulationRunner():
         W = self.ddppca.normalize_eigenvectors(W)
         return (W, X)
 
-    def run_standalone(self, data, outfile=None, dims=5, header=None, rownames=4, center=True, scale_var=True, scale01=False, scale_unit=True,
-                       transpose = False, sep='\t', filename = '/pca', drop_samples =[]):
+    def run_standalone(self, data, outfile=None, dims=100, header=None, rownames=4, center=True, scale_var=True, scale01=False, scale_unit=True,
+                       transpose = False, sep='\t', filename = '/pca', drop_samples =[], log = True):
             '''
             This function performs a regular principal component analysis and saves the result to files containing
             the projection the
@@ -184,12 +184,12 @@ class SimulationRunner():
                 data, sample_ids, variable_names = self.importer.data_import(data, header=header, rownames=rownames, outfile=outfile, sep=sep, transpose=transpose)
             data = np.delete(data, drop_samples, 0)
             data, varn = self.importer.drop0Columns(data,None, noise= True, drop=False)
-            data = self.importer.scale_data(data, center, scale_var, scale01, scale_unit)
             # standalone PCA
+            if log:
+                data = self.importer.log_transform(data)
+            data = self.importer.scale_data(data, center, scale_var, scale01, scale_unit)
+
             pca, W, s = self.ddppca.standalone_pca(data, ndims=dims)
-          
-           
-            
             self.save_PCA(pca,W,s, outfile+filename)
             return pca, W, s
 

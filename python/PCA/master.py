@@ -80,7 +80,7 @@ class Distributed_DP_PCA():
 
         return cov
 
-    def perform_SVD(self,noisy_cov, ndims):
+    def perform_SVD(self,noisy_cov, var_exp = 0.5, ndims = 1000):
         """
         Performs a singular value decomposition of noisy_cov of the form
         A=USV.
@@ -89,25 +89,26 @@ class Distributed_DP_PCA():
         :param r: The number of top principal components to be considered
         :return: U_r*S_r (The product of the matrices taking the top r colums/rows)
         """
-        nd = min(noisy_cov.shape[1]-1, ndims)
+
         if(noisy_cov.shape[1]>10):
             print('Large covariance matrix: Using sparse PCA for performance')
-            nd = min(noisy_cov.shape[1] - 1, ndims)
+            nd = noisy_cov.shape[1] - 1
             U, S, UT = lsa.svds(noisy_cov, nd)
             # For some stupid reason sparse svd is returned in increasing order
             S = np.flip(S)
             UT = np.flip(UT, axis=0)
         else:
-            nd = min(noisy_cov.shape[1], ndims)
             U, S, UT = la.svd(noisy_cov, lapack_driver='gesvd')
 
+        nd = self.variance_explained(S, var_exp)
+        print(nd)
         R = np.zeros((nd, nd))
         np.fill_diagonal(R, S[0:nd])
         U_r = UT[0:nd,:]
         P = sc.dot(np.sqrt(R), U_r)
         return P
 
-    def aggregate_partial_SVDs(self, svd_list, ndims=4, k=None):
+    def aggregate_partial_SVDs(self, svd_list, var_explained = 0.5):
         """
         This function aggregates the local proxy covariances by averaging them
 
@@ -128,7 +129,7 @@ class Distributed_DP_PCA():
 
         if (Ac.shape[1] > 10):
             print('Large covariance matrix: Using sparse PCA for performance')
-            nd = min(Ac.shape[1] - 1, ndims)
+            nd = Ac.shape[1] - 1
             U, S, UT = lsa.svds(Ac, nd)
             # For some stupid reason sparse svd is returned in increasing order
             S = np.flip(S)
@@ -136,14 +137,15 @@ class Distributed_DP_PCA():
         else:
             U, S, UT = la.svd(Ac, lapack_driver='gesvd')
 
+        nd = self.variance_explained(S, var_explained)
         UT = np.transpose(UT)
         UT = self.normalize_eigenvectors(UT)
         self.logger.info('...done')
-        return UT[:, 0:ndims],S[0:ndims]
+        return UT[:, 0:nd],S[0:nd]
 
-    def local_PCA(self, original, epsilon0, delta0, noise=True, ndims = 10):
+    def local_PCA(self, original, epsilon0, delta0, noise=True, var_explained = 0.5):
         noisy_cov = self.compute_noisy_cov(original, epsilon0, delta0, noise=noise)
-        PC = self.perform_SVD(noisy_cov, ndims)
+        PC = self.perform_SVD(noisy_cov, var_explained = var_explained)
         return PC
 
     def normalize_eigenvectors(self, V):
@@ -167,6 +169,15 @@ class Distributed_DP_PCA():
                     print('norm')
         return svd_list
 
+    def variance_explained(self, eigenvalues, perc = 0.5):
+        total_variance = sum(eigenvalues)
+        percentages = eigenvalues/total_variance
+        p = 0
+        sum_perc = 0
+        while sum_perc<perc:
+            sum_perc = sum_perc+percentages[p]
+            p = p+1
+        return p-1
 
 
     def projection(self, scaled, sim, ndims, filename=None):
@@ -182,7 +193,7 @@ class Distributed_DP_PCA():
             res.append(d.euclidean(V1[:, line], V2[:, line]))
         return (res)
 
-    def standalone_pca(self, data, ndims):
+    def standalone_pca(self, data, var_explained = 0.5, ndims = 1000):
         """
         This function performs a standard principal component analysis via eigendecomposition
         of the covariance matrix
@@ -199,9 +210,8 @@ class Distributed_DP_PCA():
         # the sparse matrix version of svd has better memory requirements, while being a little
         # slower
         # covariance matrix is positive semi definite so SVD= Eigenvalue decomposition
-        nd = min(data.shape[1], ndims)
         # print(nd)
-        if (nd > 10):
+        if (data.shape[1] > 10):
             print('Using sparse PCA for decreased memory consumption')
             nd = min(data.shape[1] - 1, ndims)
             V_global, S, W = sc.sparse.linalg.svds(cov, nd)
@@ -210,7 +220,6 @@ class Distributed_DP_PCA():
             W = np.flip(W, axis=0)
         else:
             print('Using canonical PCA')
-            nd = min(data.shape[1], ndims)
             V_global, S, W = sc.linalg.svd(cov)
 
 
