@@ -69,9 +69,8 @@ class AngleRunner():
         PCA = SimulationRunner()
         OR = OutlierRemoval()
 
-        perm = np.random.permutation(data.shape[0])
-        data = data[perm]
-        order = np.argsort(perm)
+        np.random.shuffle(data)
+
         Ac = []
         s = 0
         start = 0
@@ -109,8 +108,6 @@ class AngleRunner():
         W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndims=ndims)
         W = self.ddppca.normalize_eigenvectors(W)
 
-        # eigenvectors need to be sorted again
-        W = W[order]
 
         #self.save_PCA(None, W, X, directory + '/pca')
         return (W, X)
@@ -236,19 +233,19 @@ class AngleRunner():
 if __name__=="__main__":
     print('run split script')
 
-    parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
-    parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
-    parser.add_argument('-o', metavar='outfile', type=str, help='output file')
-    args = parser.parse_args()
+    #parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
+    ##parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
+    #parser.add_argument('-o', metavar='outfile', type=str, help='output file')
+    #args = parser.parse_args()
 
-    inputfile = args.f
-    outfile = args.o
+    #inputfile = args.f
+    #outfile = args.o
 
-    #inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
-    #outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/testttt/'
+    inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
+    outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/testttt/'
 
     cd = CustomDataImporter()
     sim = AngleRunner()
     summaryfile = sim.make_eigenvector_path(outfile, path.basename(path.dirname(inputfile)))
-    sim.run_and_compare_unequal(inputfile, summaryfile, dims = 20, scale_unit=False, sep = '\t')
+    sim.run_and_compare_unequal(inputfile, summaryfile, dims = 20, scale_unit=False, sep = ',')
 
