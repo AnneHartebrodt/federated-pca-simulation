@@ -1,28 +1,9 @@
-import numpy as np
-import pandas as pd
-import scipy as sc
-import random as r
-import math as math
 from master import Distributed_DP_PCA
 from PCA_runner import SimulationRunner
 from outlier_removal import OutlierRemoval
-import argparse as ap
-import numpy as np
-import scipy as sc
-import copy as copy
-import os as os
-import pandas as pd
-import importlib.util
-import scipy.linalg as la
-import math as math
 from import_export.import_data import CustomDataImporter
 import os.path as path
-import time as time
-
-import scipy.sparse.linalg as lsa
 import numpy as np
-import scipy.linalg as la
-
 import convenience as cv
 import comparison as co
 
@@ -35,7 +16,7 @@ class AngleRunner():
 
 
 
-    def unqeal_split(self, data, interval_end, scale_variance=True, center=True, scale01=False, scale_unit=False, ndims=100, directory='', header=0, rownames=0,  scale_var=True,transpose=False, sep = '\t'):
+    def unqeal_split(self, data, interval_end, scale_variance=True, center=True, scale01=False, scale_unit=False, ndims=1000, header=0, rownames=0,  scale_var=True,transpose=False, sep = '\t', exp_var = 0.5, mult_dims_ret =1):
         """
         This function simulates a multisite PCA with each site having
         varying number of samples.
@@ -48,6 +29,7 @@ class AngleRunner():
         np.random.shuffle(data)
 
         Ac = []
+        vexx = []
         s = 0
         start = 0
 
@@ -55,18 +37,20 @@ class AngleRunner():
             s = s + 1
             end = int(interval_end[i])
             # slice matrix
-            data_sub, var_names = self.importer.drop0Columns(data[start:end, :], None, drop=False, noise=True)
+            data_sub = data[start:end, :]
             
             print('Local PCA for outlier identification')
-            pca, W1, E1 = self.simulation.run_standalone(data_sub, outfile, dims=ndims, header=header, rownames=rownames,center=center,scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.loc', drop_samples=[])
+            pca, W1, E1 = self.simulation.run_standalone(data_sub, outfile, dims=ndims, header=header, rownames=rownames,center=center,scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.loc', drop_samples=[], log=True, exp_var=exp_var)
 
             print('Outlier removal')
             outliers = self.outlier.outlier_removal_mad(pca, 6, 3)
-            data_sub = np.delete(data_sub, outliers, 0)
+            if len(outliers) != 0:
+                data_sub = np.delete(data_sub, outliers, 0)
 
 
             print('Drop empty variable, scale local data, compute covariance')
             data_sub, vn = self.importer.drop0Columns(data_sub,None, drop = False, noise=True)
+            data_sub = self.importer.log_transform(data_sub)
             data_sub = self.importer.scale_data(data_sub, center=center, scale_var=scale_variance, scale01=scale01,
                                                 scale_unit=scale_unit)
             print('calculating cov')
@@ -75,58 +59,68 @@ class AngleRunner():
             start = int(interval_end[i])
             print('finished')
 
+            #return the local PCA with the maximal number of dimensions required.
+            m  = max(mult_dims_ret)
+            A, vex = self.ddppca.perform_SVD(noisy_cov, ndims=ndims, mult_dims_returned=m, var_exp=exp_var)
+            Ac.append(A)
+            vexx.append(vex)
 
-            Ac.append(self.ddppca.perform_SVD(noisy_cov, ndims))
-
-
-
+        Ws = []
+        Xs = []
+        vex = max(vexx)
         print('Aggregate local PCAs')
-        W, X = self.ddppca.aggregate_partial_SVDs(Ac)
-        W = self.ddppca.normalize_eigenvectors(W)
-        return (W, X)
+        for mm in mult_dims_ret:
+            mm = int(np.ceil(vex*mm))
+            W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndim=ndims, intermediate_dims=mm)
+            W = self.ddppca.normalize_eigenvectors(W)
+            Ws.append(W)
+            Xs.append(X)
+        return Ws, Xs
 
 
-    def run_and_compare_unequal(self, datafile, outfile=None, dims=100, header=0, rownames=0, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t', reported_angles = 20):
+    def run_and_compare_unequal(self, datafile, outfile=None, dims=1000, header=0, rownames=0, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t', reported_angles = 20, exp_var = 0.5, mult_dims_ret = [1,2,1.5, 5]):
 
+        # ID is the folder name
         study_id = path.basename(path.dirname(datafile))
         print('Standalone PCA before outlier removal')
-        PCA = SimulationRunner()
-        pca, W1, E1 = PCA.run_standalone(datafile, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01,scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.before_outlier_removal', log = True)
+
+        data, varnames, sampleids = self.importer.data_import(datafile, header=header, rownames=rownames, outfile=outfile, transpose=False, sep=sep)
+        n = data.shape[0]
+
+        pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01,scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.before_outlier_removal', log = True,exp_var=exp_var)
 
         print('Logging outliers')
         outliers = self.outlier.outlier_removal_mad(pca, 6, 3)
+        print(outliers)
         with open(outfile + '/removed_outliers.tsv', 'a+') as handle:
             handle.write(cv.collapse_array_to_string(outliers, study_id))
 
         print('Standalone PCA after outlier removal')
-        pca, W1, E1 = PCA.run_standalone(datafile, outfile, dims=dims, header=header, rownames=rownames, center=center,
-                                         scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,
-                                         transpose=transpose, sep=sep, filename='/pca.after_outlier_removal',
-                                         drop_samples=outliers)
+        pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.after_outlier_removal',drop_samples=outliers, log = True, exp_var=exp_var)
         W1 = self.ddppca.normalize_eigenvectors(W1)
-
-
-        # import data
-        data, varnames, sampleids = self.importer.data_import(datafile, header=header, rownames=rownames, outfile=outfile, transpose=False, sep=sep)
-        n = data.shape[0]
 
         interval_end = self.make_test_intervals(n)
 
+
         for ar in interval_end:
-            for i in range(10): # run it more often the smaller the splits
+            for i in range(1): # run it more often the smaller the splits
                 print('Current split')
                 print(ar)
-                W, X = self.unqeal_split(data, ar, ndims=dims)
-                angles = self.compute_angles(W1, W, reported_angles)
+                Ws, Xs = self.unqeal_split(data, ar, ndims=dims, exp_var = exp_var, mult_dims_ret=mult_dims_ret)
+                for w in range(len(Ws)) :
+                    angles = self.compute_angles(W1, Ws[w], reported_angles=reported_angles)
+                    with open(outfile + '/angles_unequal_splits'+str(mult_dims_ret[w])+'.tsv', 'a+') as handle:
+                        handle.write(cv.collapse_array_to_string(angles, study_id=study_id))
+                    with open(outfile + '/eigenvalues'+str(mult_dims_ret[w])+'.tsv', 'a+') as handle:
+                        handle.write(cv.collapse_array_to_string(Xs[w][1:reported_angles], str(i)))
 
-                #write results
+                    #write results
                 meta = [len(ar)] + ar
-                with open(outfile + '/angles_unequal_splits.tsv', 'a+') as handle:
-                    handle.write(cv.collapse_array_to_string(angles, study_id= study_id))
+
                 with open(outfile + '/meta_splits.tsv', 'a+') as handle:
                     handle.write(cv.collapse_array_to_string(meta,  str(i)))
-                with open(outfile + '/eigenvalues.tsv', 'a+') as handle:
-                    handle.write(cv.collapse_array_to_string(X[1:reported_angles], str(i)))
+
+
 
     def make_test_intervals(self, n):
         # hardcoded for now
@@ -163,16 +157,28 @@ if __name__=="__main__":
     parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
     parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
     parser.add_argument('-o', metavar='outfile', type=str, help='output file')
+    parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
+    parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
+    parser.add_argument('-m', metavar='mult_dims_ret', type=int, help='field delimiter', default = 1)
+    parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default = 100)
     args = parser.parse_args()
 
     inputfile = args.f
     outfile = args.o
+    exp_var = args.v
+    mult_dims_ret = args.m
+    sep = args.s
+    dims = args.d
 
     #inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
     #outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/testttt/'
+    #exp_var = 0.5
+    #sep = ','
+    #mult_dims_ret = 2
+    #dims = 100
 
-    cd = CustomDataImporter()
     sim = AngleRunner()
     summaryfile = cv.make_eigenvector_path(outfile, path.basename(path.dirname(inputfile)))
-    sim.run_and_compare_unequal(inputfile, summaryfile, dims = 20, scale_unit=False, sep = '\t')
+    sim.run_and_compare_unequal(inputfile, summaryfile, dims = dims, scale_unit=False, sep = sep, reported_angles=20, exp_var =exp_var,
+                                mult_dims_ret=[1,2,1.5, 5], rownames = None)
 

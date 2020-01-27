@@ -11,6 +11,7 @@ import logging
 import copy
 import scipy.spatial.distance as d
 import argparse as ap
+import convenience as cv
 
 
 
@@ -44,7 +45,7 @@ class Distributed_DP_PCA():
         n = original.shape[0]
         # np.dot is matrix product for 2 dimensional arrays
         cov = (1 / (n-1)) * sc.dot(original.transpose(),original)
-        print(cov.shape)
+        print(cov[1:10,1])
         #pd.DataFrame(cov).to_csv(path_or_buf= self.file+'cov.tsv', sep='\t', header=None, index=False)
         #print(cov)
         if noise: # else return covariance matrix as is
@@ -80,7 +81,7 @@ class Distributed_DP_PCA():
 
         return cov
 
-    def perform_SVD(self,noisy_cov, var_exp = 0.5, ndims = 1000):
+    def perform_SVD(self,noisy_cov, var_exp = 0.5, ndims = 1000, mult_dims_returned=1):
         """
         Performs a singular value decomposition of noisy_cov of the form
         A=USV.
@@ -95,20 +96,25 @@ class Distributed_DP_PCA():
             nd = min(noisy_cov.shape[1] - 1, ndims)
             U, S, UT = lsa.svds(noisy_cov, nd)
             # For some stupid reason sparse svd is returned in increasing order
-            S = np.flip(S)
+            S, indx = cv.extract_eigenvals(S)
             UT = np.flip(UT, axis=0)
         else:
             U, S, UT = la.svd(noisy_cov, lapack_driver='gesvd')
 
-        nd = self.variance_explained(S, var_exp=S)
-        print(nd)
+        vex = self.variance_explained(S, var_exp)
+        print('#nr of eigenvalues to explain: '+str(var_exp) +' variance ' +str(vex))
+        # In case we want to use more values in the approximation
+        nd = min(min(noisy_cov.shape[1], int(np.ceil(vex*mult_dims_returned))), len(S))
+        print('#nr of non zero eigenvalues: '+str(len(S)))
+        print('#nr of intermediate dimensions: '+str(nd))
+        
         R = np.zeros((nd, nd))
         np.fill_diagonal(R, S[0:nd])
         U_r = UT[0:nd,:]
         P = sc.dot(np.sqrt(R), U_r)
-        return P
+        return P, vex
 
-    def aggregate_partial_SVDs(self, svd_list, var_explained = 0.5):
+    def aggregate_partial_SVDs(self, svd_list, intermediate_dims=None, ndim=1000):
         """
         This function aggregates the local proxy covariances by averaging them
 
@@ -120,24 +126,28 @@ class Distributed_DP_PCA():
         # Average covariance matrices
         self.logger.info('Aggregating partial SVDs...')
         s = len(svd_list)
-
-        Ac = np.dot(svd_list[0].transpose(), svd_list[0])
+        # by defaul we take all dimensions available
+        if intermediate_dims is None:
+            intermediate_dims = svd_list[0].shape[1]
+        Ac = np.dot(svd_list[0][0:intermediate_dims, :].transpose(), svd_list[0][0:intermediate_dims, :])
         for svd in range(1, len(svd_list)):
-            Ac = Ac +np.dot(svd_list[svd].transpose(), svd_list[svd])
+            Ac = Ac +np.dot(svd_list[svd][0:intermediate_dims, :].transpose(), svd_list[svd][0:intermediate_dims, :])
+
        # Ac = np.concatenate(svd_list)
         Ac = 1/s* Ac
-
+        print(Ac[1:10, 1])
+        nd = min(Ac.shape[1] - 1, ndim)
         if (Ac.shape[1] > 10):
             print('Large covariance matrix: Using sparse PCA for performance')
-            nd = Ac.shape[1] - 1
             U, S, UT = lsa.svds(Ac, nd)
             # For some stupid reason sparse svd is returned in increasing order
-            S = np.flip(S)
-            UT = np.flip(UT, axis=0)
+            S, indx = cv.extract_eigenvals(S)
+            1 / s
+            UT = np.flip(np.delete(UT, indx, 0), axis=0)
         else:
             U, S, UT = la.svd(Ac, lapack_driver='gesvd')
 
-        nd = self.variance_explained(S, var_explained)
+        #nd = self.variance_explained(S, var_explained)
         UT = np.transpose(UT)
         UT = self.normalize_eigenvectors(UT)
         self.logger.info('...done')
@@ -145,7 +155,7 @@ class Distributed_DP_PCA():
 
     def local_PCA(self, original, epsilon0, delta0, noise=True, var_explained = 0.5):
         noisy_cov = self.compute_noisy_cov(original, epsilon0, delta0, noise=noise)
-        PC = self.perform_SVD(noisy_cov, var_explained = var_explained)
+        PC = self.perform_SVD(noisy_cov, var_exp = var_explained)
         return PC
 
     def normalize_eigenvectors(self, V):
@@ -206,7 +216,7 @@ class Distributed_DP_PCA():
         """
         n = data.shape[0]  # get the number of rows
         cov = (1 / (n - 1)) * sc.dot(data.transpose(), data)  # use unbiased estimator
-        # print(cov)
+        print(cov[1:10,1])
         # the sparse matrix version of svd has better memory requirements, while being a little
         # slower
         # covariance matrix is positive semi definite so SVD= Eigenvalue decomposition
@@ -216,8 +226,9 @@ class Distributed_DP_PCA():
             nd = min(data.shape[1] - 1, ndims)
             V_global, S, W = sc.sparse.linalg.svds(cov, nd)
             # For some stupid reason sparse svd is returned in increasing order
-            S = np.flip(S)
-            W = np.flip(W, axis=0)
+            S, indx = cv.extract_eigenvals(S)
+
+            W = np.flip(np.delete(W, indx, 0), axis=0)
         else:
             print('Using canonical PCA')
             V_global, S, W = sc.linalg.svd(cov)
