@@ -92,7 +92,7 @@ class Distributed_DP_PCA():
 
         if(noisy_cov.shape[1]>10):
             print('Large covariance matrix: Using sparse PCA for performance')
-            nd = noisy_cov.shape[1] - 1
+            nd = min(noisy_cov.shape[1] - 1, ndims)
             U, S, UT = lsa.svds(noisy_cov, nd)
             # For some stupid reason sparse svd is returned in increasing order
             S = np.flip(S)
@@ -100,7 +100,7 @@ class Distributed_DP_PCA():
         else:
             U, S, UT = la.svd(noisy_cov, lapack_driver='gesvd')
 
-        nd = self.variance_explained(S, var_exp)
+        nd = self.variance_explained(S, var_exp=S)
         print(nd)
         R = np.zeros((nd, nd))
         np.fill_diagonal(R, S[0:nd])
