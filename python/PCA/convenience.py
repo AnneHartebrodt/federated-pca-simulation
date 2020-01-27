@@ -1,5 +1,6 @@
 import os as os
 import os.path as path
+import numpy as np
 import time as time
 
 def collapse_array_to_string(a, study_id):
@@ -42,5 +43,7 @@ def extract_eigenvals(E):
     Returns: Eigenvalue vector in decreasing order, without 0s.
 
     '''
+    indz = np.where(E == 0)
+    E = np.flip(E)
     E = E[E != 0]
-    return E#, indz
+    return E, indz

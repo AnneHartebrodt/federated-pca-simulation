@@ -77,7 +77,7 @@ class AngleRunner():
             print('finished')
 
 
-            Ac.append(self.ddppca.perform_SVD(noisy_cov, ndims))
+            Ac.append(self.ddppca.perform_SVD(noisy_cov, ndims=ndims))
             # print(Ac)
         print('aggregating')
         W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndims=ndims)

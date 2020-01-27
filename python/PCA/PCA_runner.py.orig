@@ -137,7 +137,7 @@ class SimulationRunner():
             noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=epsilon, delta0=delta, nrSamples=data.shape[0],
                                                nrSites=sites, noise=noise)  # add noise
             start = start + interval
-            Ac.append(self.ddppca.perform_SVD(noisy_cov, ndims))
+            Ac.append(self.ddppca.perform_SVD(noisy_cov, ndims=ndims))
         # print(Ac)
         W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndims=ndims)
         W = self.ddppca.normalize_eigenvectors(W)

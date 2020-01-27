@@ -137,7 +137,7 @@ class SimulationRunner():
             noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=epsilon, delta0=delta, nrSamples=data.shape[0],
                                                nrSites=sites, noise=noise)  # add noise
             start = start + interval
-            Ac.append(self.ddppca.perform_SVD(noisy_cov, ndims))
+            Ac.append(self.ddppca.perform_SVD(noisy_cov, ndims=ndims))
         # print(Ac)
         W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndims=ndims)
         W = self.ddppca.normalize_eigenvectors(W)
@@ -159,14 +159,14 @@ class SimulationRunner():
                                                 scale_unit=scale_unit)
             noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=epsilon, delta0=delta, nrSamples=data_sub.shape[0], noise=noise)  # add noise
 
-            Ac.append(self.ddppca.perform_SVD(noisy_cov, ndims))
+            Ac.append(self.ddppca.perform_SVD(noisy_cov, ndims=ndims))
         # print(Ac)
         W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndims=ndims)
         W = self.ddppca.normalize_eigenvectors(W)
         return (W, X)
 
-    def run_standalone(self, data, outfile=None, dims=100, header=None, rownames=4, center=True, scale_var=True, scale01=False, scale_unit=True,
-                       transpose = False, sep='\t', filename = '/pca', drop_samples =[], log = True):
+    def run_standalone(self, data, outfile=None, dims=1000, header=None, rownames=4, center=True, scale_var=True, scale01=False, scale_unit=True,
+                       transpose = False, sep='\t', filename = '/pca', drop_samples =[], log = True, exp_var=0.5):
             '''
             This function performs a regular principal component analysis and saves the result to files containing
             the projection the
@@ -180,17 +180,25 @@ class SimulationRunner():
             :param rownames: column number which contains the rownames/sample ids
             :return: projection, eigenvectors and eigenvalues
             '''
+
+            # if data is a string, it is the filename and has to be imported
             if isinstance(data, str):
                 data, sample_ids, variable_names = self.importer.data_import(data, header=header, rownames=rownames, outfile=outfile, sep=sep, transpose=transpose)
-            data = np.delete(data, drop_samples, 0)
+            # remove outlier samples, previously identified
+            if len(drop_samples) != 0:
+                data = np.delete(data, drop_samples, 0)
+            # drop columns with 0 variance or add some pseudocounts with low variance
             data, varn = self.importer.drop0Columns(data,None, noise= True, drop=False)
-            # standalone PCA
+            # log(N+1) the data
             if log:
                 data = self.importer.log_transform(data)
+            #scale data
             data = self.importer.scale_data(data, center, scale_var, scale01, scale_unit)
-
-            pca, W, s = self.ddppca.standalone_pca(data, ndims=dims)
-            self.save_PCA(pca,W,s, outfile+filename)
+            # run pca
+            pca, W, s = self.ddppca.standalone_pca(data, ndims=dims, var_explained=exp_var)
+            if outfile is not None and filename is not None:
+                self.save_PCA(pca,W,s, outfile+filename)
+            # return the projected datapoints, the eigenvectors and the eigenvalues
             return pca, W, s
 
     def save_PCA(self, pca, W, s, outfile):
