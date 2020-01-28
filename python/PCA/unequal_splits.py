@@ -6,6 +6,8 @@ import os.path as path
 import numpy as np
 import convenience as cv
 import comparison as co
+import argparse as ap
+
 
 class AngleRunner():
     def __init__(self, file = '/tmp/'):
@@ -103,7 +105,7 @@ class AngleRunner():
 
 
         for ar in interval_end:
-            for i in range(1): # run it more often the smaller the splits
+            for i in range(10): # run it more often the smaller the splits
                 print('Current split')
                 print(ar)
                 Ws, Xs = self.unqeal_split(data, ar, ndims=dims, exp_var = exp_var, mult_dims_ret=mult_dims_ret)
@@ -176,6 +178,8 @@ if __name__=="__main__":
     #sep = ','
     #mult_dims_ret = 2
     #dims = 100
+
+    #TODO: mult_dims_ret
 
     sim = AngleRunner()
     summaryfile = cv.make_eigenvector_path(outfile, path.basename(path.dirname(inputfile)))

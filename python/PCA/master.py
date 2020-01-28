@@ -91,21 +91,11 @@ class Distributed_DP_PCA():
         :return: U_r*S_r (The product of the matrices taking the top r colums/rows)
         """
 
-        if(noisy_cov.shape[1]>10):
-            print('Large covariance matrix: Using sparse PCA for performance')
-            nd = min(noisy_cov.shape[1] - 1, ndims)
-            U, S, UT = lsa.svds(noisy_cov, nd)
-            # For some stupid reason sparse svd is returned in increasing order
-            S, indx = cv.extract_eigenvals(S)
-            UT = np.flip(UT, axis=0)
-        else:
-            U, S, UT = la.svd(noisy_cov, lapack_driver='gesvd')
-
-
+        U, S, UT, nd = self.svd_sub(noisy_cov, ndims)
         vex = self.variance_explained(S, var_exp)
         print('#nr of eigenvalues to explain: '+str(var_exp) +' variance ' +str(vex))
         # In case we want to use more values in the approximation
-        nd = min(min(noisy_cov.shape[1], int(np.ceil(vex*mult_dims_returned))), len(S))
+        nd = min(nd, int(np.ceil(vex*mult_dims_returned)))
         print('#nr of non zero eigenvalues: '+str(len(S)))
         print('#nr of intermediate dimensions: '+str(nd))
         R = np.zeros((nd, nd))
@@ -133,19 +123,11 @@ class Distributed_DP_PCA():
         for svd in range(1, len(svd_list)):
             Ac = Ac +np.dot(svd_list[svd][0:intermediate_dims, :].transpose(), svd_list[svd][0:intermediate_dims, :])
 
-       # Ac = np.concatenate(svd_list)
+        # Ac = np.concatenate(svd_list)
         Ac = 1/s* Ac
         print(Ac[1:10, 1])
-        nd = min(Ac.shape[1] - 1, ndim)
-        if (Ac.shape[1] > 10):
-            print('Large covariance matrix: Using sparse PCA for performance')
-            U, S, UT = lsa.svds(Ac, nd)
-            # For some stupid reason sparse svd is returned in increasing order
-            S, indx = cv.extract_eigenvals(S)
-            1 / s
-            UT = np.flip(np.delete(UT, indx, 0), axis=0)
-        else:
-            U, S, UT = la.svd(Ac, lapack_driver='gesvd')
+
+        U, S, UT, nd = self.svd_sub(Ac, ndim)
 
         #nd = self.variance_explained(S, var_explained)
         UT = np.transpose(UT)
@@ -157,6 +139,25 @@ class Distributed_DP_PCA():
         noisy_cov = self.compute_noisy_cov(original, epsilon0, delta0, noise=noise)
         PC = self.perform_SVD(noisy_cov, var_exp = var_explained)
         return PC
+
+    def svd_sub(self, cov, ndims):
+        # the sparse matrix version of svd has better memory requirements, while being a little
+        # slower
+        # covariance matrix is positive semi definite so SVD= Eigenvalue decomposition
+        # print(nd)
+        nd = min(cov.shape[1] - 1, ndims)
+        if (cov.shape[1] > 10):
+            print('Using sparse PCA for decreased memory consumption')
+            V_global, S, W = sc.sparse.linalg.svds(cov, nd)
+            # For some stupid reason sparse svd is returned in increasing order
+            S, indx = cv.extract_eigenvals(S)
+            W = np.flip(np.delete(W, indx, 0), axis=0)
+        else:
+            print('Using canonical PCA')
+            V_global, S, W = sc.linalg.svd(cov)
+        nd = min(nd, len(S))
+        return V_global, S, W, nd
+
 
     def normalize_eigenvectors(self, V):
         """
@@ -217,27 +218,9 @@ class Distributed_DP_PCA():
         n = data.shape[0]  # get the number of rows
         cov = (1 / (n - 1)) * sc.dot(data.transpose(), data)  # use unbiased estimator
         print(cov[1:10,1])
-        # the sparse matrix version of svd has better memory requirements, while being a little
-        # slower
-        # covariance matrix is positive semi definite so SVD= Eigenvalue decomposition
-        # print(nd)
-        if (data.shape[1] > 10):
-            print('Using sparse PCA for decreased memory consumption')
-            nd = min(data.shape[1] - 1, ndims)
-            V_global, S, W = sc.sparse.linalg.svds(cov, nd)
-            # For some stupid reason sparse svd is returned in increasing order
-            S, indx = cv.extract_eigenvals(S)
 
-            W = np.flip(np.delete(W, indx, 0), axis=0)
-        else:
-            print('Using canonical PCA')
-            V_global, S, W = sc.linalg.svd(cov)
-
-
+        V_global, S, W, nd = self.svd_sub(cov, ndims)
         W = np.transpose(W)  # eigenvectors
-        #W = self.normalize_eigenvectors(W)
-        # this changes nothing
-
         # create projection matrix by multiplying by the first nd eigenvectors
         proj_global = sc.dot(data, W[:, 0:nd])
         return (proj_global, W[:, 0:nd], S[0:nd])
