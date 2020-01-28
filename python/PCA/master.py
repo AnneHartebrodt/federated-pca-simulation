@@ -98,6 +98,7 @@ class Distributed_DP_PCA():
         nd = min(nd, int(np.ceil(vex*mult_dims_returned)))
         print('#nr of non zero eigenvalues: '+str(len(S)))
         print('#nr of intermediate dimensions: '+str(nd))
+        
         R = np.zeros((nd, nd))
         np.fill_diagonal(R, S[0:nd])
         U_r = UT[0:nd,:]
