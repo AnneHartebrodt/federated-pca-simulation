@@ -91,7 +91,20 @@ class Distributed_DP_PCA():
         :return: U_r*S_r (The product of the matrices taking the top r colums/rows)
         """
 
+<<<<<<< HEAD
         U, S, UT, nd = self.svd_sub(noisy_cov, ndims)
+=======
+        if(noisy_cov.shape[1]>10):
+            print('Large covariance matrix: Using sparse PCA for performance')
+            nd = min(noisy_cov.shape[1] - 1, ndims)
+            U, S, UT = lsa.svds(noisy_cov, nd)
+            # For some stupid reason sparse svd is returned in increasing order
+            S, indx = cv.extract_eigenvals(S)
+            UT = np.flip(UT, axis=0)
+        else:
+            U, S, UT = la.svd(noisy_cov, lapack_driver='gesvd')
+
+>>>>>>> b288f9fc3f57f0e5d67abed5f9052f3f2d96a4b9
         vex = self.variance_explained(S, var_exp)
         print('#nr of eigenvalues to explain: '+str(var_exp) +' variance ' +str(vex))
         # In case we want to use more values in the approximation
@@ -189,7 +202,7 @@ class Distributed_DP_PCA():
         while sum_perc<perc:
             sum_perc = sum_perc+percentages[p]
             p = p+1
-        return p
+        return p-1
 
 
     def projection(self, scaled, sim, ndims, filename=None):

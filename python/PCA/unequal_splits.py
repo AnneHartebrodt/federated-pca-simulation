@@ -88,8 +88,10 @@ class AngleRunner():
 
         data, varnames, sampleids = self.importer.data_import(datafile, header=header, rownames=rownames, outfile=outfile, transpose=False, sep=sep)
         n = data.shape[0]
+        dims = min(dims, n)
 
         pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01,scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.before_outlier_removal', log = True,exp_var=exp_var)
+
 
         print('Logging outliers')
         outliers = self.outlier.outlier_removal_mad(pca, 6, 3)
@@ -99,6 +101,11 @@ class AngleRunner():
 
         print('Standalone PCA after outlier removal')
         pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.after_outlier_removal',drop_samples=outliers, log = True, exp_var=exp_var)
+
+        with open(outfile + '/nr_vars_explain_aor.tsv', 'a+') as handle:
+            for var in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+                handle.write(str(var)+'\t'+str(self.ddppca.variance_explained(E1, perc=var))+'\n')
+
         W1 = self.ddppca.normalize_eigenvectors(W1)
 
         interval_end = self.make_test_intervals(n)
@@ -152,6 +159,13 @@ class AngleRunner():
             angles.append(angle)
         return(angles)
 
+def parse_array(value_str):
+    values_str = value_str.split(',')
+    values_int = []
+    for v in values_str:
+        values_int.append(float(v))
+    return values_int
+
 
 if __name__=="__main__":
     print('run split script')
@@ -161,7 +175,7 @@ if __name__=="__main__":
     parser.add_argument('-o', metavar='outfile', type=str, help='output file')
     parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
     parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
-    parser.add_argument('-m', metavar='mult_dims_ret', type=int, help='field delimiter', default = 1)
+    parser.add_argument('-m', metavar='mult_dims_ret', type=int, help='comma separated list of intermediate dimensions', default = 1)
     parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default = 100)
     args = parser.parse_args()
 
@@ -176,13 +190,14 @@ if __name__=="__main__":
     #outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/testttt/'
     #exp_var = 0.5
     #sep = ','
-    #mult_dims_ret = 2
+    #mult_dims_ret = '1,2,1.5,5'
     #dims = 100
 
-    #TODO: mult_dims_ret
 
     sim = AngleRunner()
+
+    mult_dims_ret = parse_array(mult_dims_ret)
     summaryfile = cv.make_eigenvector_path(outfile, path.basename(path.dirname(inputfile)))
     sim.run_and_compare_unequal(inputfile, summaryfile, dims = dims, scale_unit=False, sep = sep, reported_angles=20, exp_var =exp_var,
-                                mult_dims_ret=[1,2,1.5, 5], rownames = None)
+                                mult_dims_ret=mult_dims_ret, rownames = None, header = 0)
 

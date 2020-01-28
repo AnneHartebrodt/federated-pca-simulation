@@ -1,26 +1,10 @@
-import numpy as np
 import pandas as pd
-import scipy as sc
-import random as r
 import math as math
-import scipy.linalg as la
-import scipy.sparse.linalg as lsa
-import random as rnd
 import os as os
-import logging
-import copy
-import scipy.spatial.distance as d
-import argparse as ap
-from import_export.import_data import CustomDataImporter
-import os. path as path
 import shutil as sh
 import time as time
-
-
 import scipy.sparse.linalg as lsa
-import numpy as np
 import scipy.linalg as la
-
 from master import Distributed_DP_PCA
 from PCA_runner import SimulationRunner
 from outlier_removal import OutlierRemoval
@@ -28,7 +12,6 @@ from import_export.import_data import CustomDataImporter
 import os.path as path
 import numpy as np
 import convenience as cv
-import comparison as co
 import itertools as it
 
 class Dropout():
@@ -91,7 +74,7 @@ class Dropout():
         else:
             return angle
 
-    def superset(set, outliers):
+    def superset(self, set):
         la = []
         if len(set)<5:
             ll = list(it.product([0,1], repeat=len(set)))
@@ -103,14 +86,14 @@ class Dropout():
             tmp = []
             for i in range(len(ll[l])):
                 if ll[l][i] == 1:
-                    tmp.append(outliers[i])
+                    tmp.append(set[i])
             if len(tmp)>1 and len(tmp)<len(set):
                 la.append(tmp)
-        for s in outliers:
+        for s in set:
             la.append([s])
         return la
 
-    def run_dropout(self, data_scaled,  outdir, tempdir, nr_dropped, study_id, outliers=[], mode='outlier_free'):
+    def run_dropout(self, data_scaled,  outdir, tempdir, nr_dropped, study_id, outliers=[], mode='outlier_free', ndims = 100,header=None, rownames=None, center=True, scale_var=True, scale01=False, scale_unit=False, transpose= False, sep='\t'):
         '''
         This function runs a 'leave-k'out' simulation. An eigenvalue decomposition
         is calculated n times on a datamatrix, leaving out nr_dropped samples at each time.
@@ -154,17 +137,19 @@ class Dropout():
                 data_scaled = np.delete(data_scaled, droprows[row], 0)
             else:
                 # remove the samples rows= patients from the data
-                data_scaled = np.delete(data_scaled, droprows[row:row + nr_dropped], 0)
+                e = min(row+nr_dropped, data_scaled.shape[0])
+                data_scaled = np.delete(data_scaled, droprows[row:e], 0)
             #calculate covariance matrix and svd
-            cov = np.cov(data_scaled.T)
             #print('Computing Singular Value Decomposition')
             # It should be sufficient to calculate at most n PCs, because the others will contain noise
-            U, E, UT = lsa.svds(cov, min(n - nr_dropped, cov.shape[0]-1))
-
-            # take 20 PCS
-            #sparse svd in scipy.linalg.sparse returns in increaseing order
-            E, indz = cv.extract_eigenvals(E)[0:20]
-            U = np.flip(np.delete(U, indz, 1), axis = 1)[:, 0:20]
+            nd = min(min(n - nr_dropped, data_scaled.shape[0]-1), ndims)
+            pca, U, E = self.simulation.run_standalone(data_scaled, outdir, dims=ndims, header=header, rownames=rownames,
+                                                         center=center, scale_var=scale_var, scale01=scale01,
+                                                         scale_unit=scale_unit, transpose=transpose, sep=sep,
+                                                         filename='/pca.after_outlier_removal', log=True,
+                                                         exp_var=1.0)
+            E= E[0:20]
+            U = U[:, 0:20]
 
             # print the 20 first eigenvectors
             res_eigen = self.collapse_array_to_string(E, study_id, nr_dropped)
@@ -184,34 +169,9 @@ class Dropout():
             # get the correct data back.
             data_scaled = np.copy(data_scaled_copy)
 
-            #sums = np.sum(E)
-            #explained = []
-            #for e in E:
-                #explained.append(e/sums)
 
-    # def run_canoncical(data_scaled, outfile, ev_path):
-    #     # calculate covariance matrix and svd
-    #     cov = np.cov(data_scaled.T)
-    #     # print('Computing Singular Value Decomposition')
-    #     # It should be sufficient to calculate at most n PCs, because the others will contain noise
-    #     U, E, UT = lsa.svds(cov, cov.shape[0] - 1)
-    #
-    #     # take 20 PCS
-    #     # sparse svd in scipy.linalg.sparse returns in increaseing order
-    #     E, indz = extract_eigenvals(E)[0:20]
-    #     U = np.flip(np.delete(U, indz, 1), axis=1)[:, 0:20]
-    #
-    #     # print the 20 first eigenvectors
-    #     res_eigen = collapse_array_to_string(E,study_id, '0')
-    #
-    #     # write eigenvalues, dropped samples and eigenvectors to file
-    #     with open(outfile + '/eigenvalues.tsv', 'a+') as handle:
-    #         handle.write(res_eigen)
-    #     # save the eigenvectors in a separate directory. They likely will be deleted after
-    #     # calculating the angles due to missing diskspace
-    #     pd.DataFrame(U).to_csv(ev_path + '/eigenvectors0.tsv', sep='\t', header=None, index=None)
 
-    def run_standalone(self, data, outdir=None, dims=1000, header=None, rownames=None, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t', reported_angles = 20, exp_var = 1, study_id='ID1'):
+    def run_standalone(self, data, outdir=None, dims=100, header=None, rownames=None, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t', reported_angles = 20, exp_var = 1, study_id='ID1'):
 
 
         pca, W1, E1 = self.simulation.run_standalone(data, outdir, dims=dims, header=header, rownames=rownames,
@@ -250,14 +210,15 @@ class Dropout():
         pd.DataFrame(W1[:,0:reported_angles]).to_csv(outdir + '/eigenvectors_reference.tsv', sep='\t', header=None, index=None)
         return outliers
 
-    def run_study(self, datafile, outdir, tempdir, header = None, rownames = None, sep = '\t'):
+    def run_study(self, datafile, outdir, tempdir, header = None, rownames = None, sep = '\t', dims = 100, mode = 'outlier_free', nr_dropped=1):
         # ID is the folder name
         study_id = path.basename(path.dirname(datafile))
 
         data, varnames, sampleids = self.importer.data_import(datafile, header=header, rownames=rownames, outfile=outdir,transpose=False, sep=sep)
+        dims = min(dims, data.shape[0])
         outliers = self.run_standalone(data, outdir = outdir, study_id=study_id)
-        self.run_dropout(data, outdir, tempdir, nr_dropped=1, study_id=study_id, outliers=outliers)
-        self.compute_angles(tempdir, outdir)
+        self.run_dropout(data, outdir, tempdir, nr_dropped=nr_dropped, study_id=study_id, outliers=outliers, mode=mode, ndims=dims)
+        self.compute_angles(tempdir, outdir, nr_dropped)
 
 
 
@@ -291,7 +252,7 @@ class Dropout():
                 ll = [i, 0, k, self.angle(current.iloc[:,k], reference.iloc[:,k])]
                 angles.append(ll)
             i = i+1
-        pd.DataFrame(angles).to_csv(outdir+'/angles_dropout'+nr_dropped+'.tsv', sep = '\t', header = None, index=None)
+        pd.DataFrame(angles).to_csv(outdir+'/angles_dropout'+str(nr_dropped)+'.tsv', sep = '\t', header = None, index=None)
 
     def make_eigenvector_path(self, inputfile, foldername):
         """
@@ -330,21 +291,35 @@ class Dropout():
 if __name__=="__main__":
     print('run eigengap script')
 
-    #parser = ap.ArgumentParser(description='Eigengap calculation')
-    #parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
-    #parser.add_argument('-o', metavar='outfile', type=str, help='output file')
-    #args = parser.parse_args()
+    parser = ap.ArgumentParser(description='Eigengap calculation')
+    parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
+    parser.add_argument('-o', metavar='outfile', type=str, help='output file')
+    parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default=100)
+    parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
+    parser.add_argument('-n', metavar='nr_dropped', type=int, help='number of rows dropped')
+    parser.add_argument('-m', metavar='mode', type=str, help='cheat or outflier_free')
+    args = parser.parse_args()
 
-    #inputfile = args.f
-    #outfile = args.o
+    inputfile = args.f
+    outfile = args.o
+    dims = args.d
+    sep = args.s
+    nr_dropped = args.n
+    mode = args.m
 
-    inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
-    outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/summary.txt'
+    #inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
+    #outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/leaveoone1out/'
+    #dims = 100
+    #sep = ','
+    #nr_dropped = 1
+    #mode = 'outlier_free'
 
     d = Dropout()
-    summaryfile = d.make_eigenvector_path(outfile, path.basename(path.dirname(inputfile)))
+
+    dname = path.basename(path.dirname(inputfile))+'/'+mode+'_'+str(nr_dropped)+'/'
+    summaryfile = d.make_eigenvector_path(outfile, dname)
     ev_path  = d.make_eigenvector_path(summaryfile, 'eigenvectors')
-    d.run_study(inputfile, summaryfile, ev_path, sep=',')
+    d.run_study(inputfile, summaryfile, ev_path, sep=sep, header = 0, dims=dims, mode=mode)
 
 
 
