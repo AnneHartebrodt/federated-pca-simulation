@@ -20,9 +20,10 @@ explained.variance<-function(x) cumsum(pca$sdev^2/sum(pca$sdev^2))
 which.perc<-function(x, perc) min(which(x>=perc))
 
 #Read and log transform data
-#opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
+opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_only.tsv'
 data<-fread(file = opt$f)
-data<-data[, which(colSums(data)!=0), with=F]
+var0<-which(apply(data,1, function(x) var(x)==0))
+data<-data[, c(which(colSums(data)!=0), var0), with=F]
 data<-log2(data+1)
 
 #run first PCA
@@ -34,7 +35,8 @@ ggsave(p, filename = file.path(opt$o, file.name))
 
 #Remove outlier and rerun.
 outlier.free<-data[-ou]
-outlier.free<-outlier.free[, which(colSums(outlier.free)!=0), with=F] 
+var0<-which(apply(outlier.free,1, function(x) var(x)==0))
+outlier.free<-outlier.free[, c(which(colSums(outlier.free)!=0), var0), with=F] 
 pca.outlier.free<-prcomp(outlier.free, scale. = T, center = T)
 lab<-1:nrow(data)
 p.out<-ggbiplot(pca.outlier.free, var.axes = F, labels = lab[-ou])
