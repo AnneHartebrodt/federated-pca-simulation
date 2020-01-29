@@ -20,7 +20,11 @@ explained.variance<-function(x) cumsum(pca$sdev^2/sum(pca$sdev^2))
 which.perc<-function(x, perc) min(which(x>=perc))
 
 #Read and log transform data
+<<<<<<< HEAD
 #opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
+=======
+opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_only.tsv'
+>>>>>>> 1c3a63986653f501a00a74ed315a3c42a9ecca83
 data<-fread(file = opt$f)
 data<-data[, which(colSums(data)!=0), with=F]
 data<-log2(data+1)
