@@ -319,7 +319,7 @@ if __name__=="__main__":
     dname = path.basename(path.dirname(inputfile))+'/'+mode+'_'+str(nr_dropped)+'/'
     summaryfile = d.make_eigenvector_path(outfile, dname)
     ev_path  = d.make_eigenvector_path(summaryfile, 'eigenvectors')
-    d.run_study(inputfile, summaryfile, ev_path, sep=sep, header = 0, dims=dims, mode=mode)
+    d.run_study(inputfile, summaryfile, ev_path, sep=sep, header = 0, dims=dims, mode=mode, nr_dropped=nr_dropped)
 
 
 
