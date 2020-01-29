@@ -20,14 +20,14 @@ explained.variance<-function(x) cumsum(pca$sdev^2/sum(pca$sdev^2))
 which.perc<-function(x, perc) min(which(x>=perc))
 
 #Read and log transform data
-opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
+opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_only.tsv'
 data<-fread(file = opt$f)
 data<-data[, which(colSums(data)!=0), with=F]
 data<-log2(data+1)
 
 #run first PCA
 pca<-prcomp(data, center = T, scale. = T)
-ou<-robust.outlier(pca$x[,1:3])
+ou<-as.numeric(unlist(apply(pca$x[,1:3], 2, function(x) robust.outlier(x))))
 p<-ggbiplot(pca, var.axes = F, labels = 1:nrow(data))
 file.name<-paste0(basename(dirname(opt$f)), '.pdf')
 ggsave(p, filename = file.path(opt$o, file.name))
