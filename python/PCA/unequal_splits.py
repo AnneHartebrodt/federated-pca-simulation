@@ -175,7 +175,7 @@ if __name__=="__main__":
     parser.add_argument('-o', metavar='outfile', type=str, help='output file')
     parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
     parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
-    parser.add_argument('-m', metavar='mult_dims_ret', type=int, help='comma separated list of intermediate dimensions', default = 1)
+    parser.add_argument('-m', metavar='mult_dims_ret', type=str, help='comma separated list of intermediate dimensions', default = 1)
     parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default = 100)
     args = parser.parse_args()
 

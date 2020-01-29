@@ -13,6 +13,7 @@ import os.path as path
 import numpy as np
 import convenience as cv
 import itertools as it
+import argparse as ap
 
 class Dropout():
     def __init__(self, file = '/tmp/'):

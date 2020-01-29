@@ -186,7 +186,7 @@ class Distributed_DP_PCA():
         percentages = eigenvalues/total_variance
         p = 0
         sum_perc = 0
-        while sum_perc<perc:
+        while sum_perc<perc and p<len(eigenvalues):
             sum_perc = sum_perc+percentages[p]
             p = p+1
         return p
