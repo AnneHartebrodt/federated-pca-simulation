@@ -14,13 +14,13 @@ option_list = list(
 )
 opt = parse_args(OptionParser(option_list=option_list))
 
-
+#https://www.r-bloggers.com/detecting-outlier-samples-in-pca/
 robust.outlier<-function(x) which( (abs(x - median(x)) / mad(x)) > 6 )
 explained.variance<-function(x) cumsum(pca$sdev^2/sum(pca$sdev^2))
 which.perc<-function(x, perc) min(which(x>=perc))
 
 #Read and log transform data
-opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_only.tsv'
+#opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/TARGET-ALL-P2//coding_only.tsv'
 data<-fread(file = opt$f)
 var0<-which(apply(data,1, function(x) var(x)==0))
 data<-data[, c(which(colSums(data)!=0), var0), with=F]
@@ -33,12 +33,25 @@ p<-ggbiplot(pca, var.axes = F, labels = 1:nrow(data))
 file.name<-paste0(basename(dirname(opt$f)), '.pdf')
 ggsave(p, filename = file.path(opt$o, file.name))
 
+var60.pca<-which.perc(explained.variance(pca$sdev), 0.6)
+
 #Remove outlier and rerun.
+if(length(ou)!=0){
 outlier.free<-data[-ou]
+}else{
+  outlier.free<-data
+}
 var0<-which(apply(outlier.free,1, function(x) var(x)==0))
 outlier.free<-outlier.free[, c(which(colSums(outlier.free)!=0), var0), with=F] 
 pca.outlier.free<-prcomp(outlier.free, scale. = T, center = T)
 lab<-1:nrow(data)
-p.out<-ggbiplot(pca.outlier.free, var.axes = F, labels = lab[-ou])
+lab<- lab[-ou]
+p.out<-ggbiplot(pca.outlier.free, var.axes = F, labels = lab)
+p.out
 file.name.out<-paste0(basename(dirname(opt$f)),'_outlier_free', '.pdf')
 ggsave(p.out, filename = file.path(opt$o, file.name.out))
+
+var60.pca.aor<-which.perc(explained.variance(pca.outlier.free$sdev), 0.6)
+
+line<-paste(c(basename(dirname(opt$f)), length(ou), var60.pca, var60.pca.aor, ou), collapse  = '\t')
+write(line,file=file.path(opt$o, 'summary.txt'),append=TRUE)
