@@ -120,15 +120,20 @@ class Distributed_DP_PCA():
         # by defaul we take all dimensions available
         if intermediate_dims is None:
             intermediate_dims = svd_list[0].shape[1]
+        print(intermediate_dims)
         Ac = np.dot(svd_list[0][0:intermediate_dims, :].transpose(), svd_list[0][0:intermediate_dims, :])
         for svd in range(1, len(svd_list)):
             Ac = Ac +np.dot(svd_list[svd][0:intermediate_dims, :].transpose(), svd_list[svd][0:intermediate_dims, :])
 
         # Ac = np.concatenate(svd_list)
         Ac = 1/s* Ac
-        print(Ac[1:10, 1])
+        print(Ac[0:10, 0])
 
         U, S, UT, nd = self.svd_sub(Ac, ndim)
+        print('[Eigenvalues')
+        print(S[0:10])
+        print('Eigenvectors')
+        print(UT[0:10,1])
 
         #nd = self.variance_explained(S, var_explained)
         UT = np.transpose(UT)

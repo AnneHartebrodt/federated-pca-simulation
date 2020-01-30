@@ -165,7 +165,7 @@ class SimulationRunner():
         W = self.ddppca.normalize_eigenvectors(W)
         return (W, X)
 
-    def run_standalone(self, data, outfile=None, dims=1000, header=None, rownames=4, center=True, scale_var=True, scale01=False, scale_unit=True,
+    def run_standalone(self, data, outfile=None, dims=1000, header=None, rownames=None, center=True, scale_var=True, scale01=False, scale_unit=True,
                        transpose = False, sep='\t', filename = '/pca', drop_samples =[], log = True, exp_var=0.5):
             '''
             This function performs a regular principal component analysis and saves the result to files containing
