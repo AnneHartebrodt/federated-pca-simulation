@@ -13,6 +13,7 @@ import scipy.spatial.distance as d
 import argparse as ap
 from statsmodels import robust
 
+
 class OutlierRemoval():
 
     def __init__(self, logger = None, file='/tmp/'):
