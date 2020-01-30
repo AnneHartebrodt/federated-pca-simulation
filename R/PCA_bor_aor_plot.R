@@ -38,16 +38,17 @@ var60.pca<-which.perc(explained.variance(pca$sdev), 0.6)
 #Remove outlier and rerun.
 if(length(ou)!=0){
 outlier.free<-data[-ou]
+lab<-1:nrow(data)
+lab<-lab[-ou]
 }else{
   outlier.free<-data
+lab<-1:nrow(data)
 }
 var0<-which(apply(outlier.free,1, function(x) var(x)==0))
 outlier.free<-outlier.free[, c(which(colSums(outlier.free)!=0), var0), with=F] 
 pca.outlier.free<-prcomp(outlier.free, scale. = T, center = T)
-lab<-1:nrow(data)
-lab<- lab[-ou]
 p.out<-ggbiplot(pca.outlier.free, var.axes = F, labels = lab)
-p.out
+#p.out
 file.name.out<-paste0(basename(dirname(opt$f)),'_outlier_free', '.pdf')
 ggsave(p.out, filename = file.path(opt$o, file.name.out))
 
