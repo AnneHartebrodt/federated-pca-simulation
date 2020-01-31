@@ -34,6 +34,8 @@ class AngleRunner():
         vexx = []
         s = 0
         start = 0
+        print('Mult dim rets')
+        print(mult_dims_ret)
 
         for i in range(len(interval_end)):
             s = s + 1
@@ -112,7 +114,7 @@ class AngleRunner():
 
 
         for ar in interval_end:
-            for i in range(10): # run it more often the smaller the splits
+            for i in range(10):
                 print('Current split')
                 print(ar)
                 Ws, Xs = self.unqeal_split(data, ar, ndims=dims, exp_var = exp_var, mult_dims_ret=mult_dims_ret)
@@ -135,7 +137,7 @@ class AngleRunner():
         # hardcoded for now
         # more extreme cases maybe later
         unequal_splits = list()
-        unequal_splits.append([[1.0]])
+        #unequal_splits.append([[1.0]])
         unequal_splits.append([[0.1, 0.9], [0.3, 0.7], [0.5, 0.5]])
         unequal_splits.append([[0.2, 0.2, 0.2, 0.2, 0.2], [0.1, 0.1, 0.2, 0.2, 0.4], [0.1, 0.1, 0.1, 0.1, 0.6],
                                [0.2375, 0.2375, 0.2375, 0.2375, 0.05]])
@@ -170,34 +172,35 @@ def parse_array(value_str):
 if __name__=="__main__":
     print('run split script')
 
-    #parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
-    #parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
-    #parser.add_argument('-o', metavar='outfile', type=str, help='output file')
-    #parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
-    #parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
-    #parser.add_argument('-m', metavar='mult_dims_ret', type=str, help='comma separated list of intermediate dimensions', default = 1)
-    #parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default = 100)
-    #args = parser.parse_args()
+    parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
+    parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
+    parser.add_argument('-o', metavar='outfile', type=str, help='output file')
+    parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
+    parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
+    parser.add_argument('-m', metavar='mult_dims_ret', type=str, help='comma separated list of intermediate dimensions', default = 1)
+    parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default = 100)
+    args = parser.parse_args()
 
-    #inputfile = args.f
-    #outfile = args.o
-    #exp_var = args.v
-    #mult_dims_ret = args.m
-    #sep = args.s
-    #dims = args.d
+    inputfile = args.f
+    outfile = args.o
+    exp_var = args.v
+    mult_dims_ret = args.m
+    sep = args.s
+    dims = args.d
 
-    inputfile ='/home/anne/Downloads/mnist/train_flat.csv'
-    outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/mnistt/'
-    exp_var = 0.5
-    sep = ','
-    mult_dims_ret = '1,2,1.5,5'
-    dims = 100
+    #inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
+    #outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/target/'
+    #exp_var = 0.5
+    #sep = ','
+    #mult_dims_ret = '0.25, 0.5, 0.75'
+    #dims = 100
 
 
     sim = AngleRunner()
 
+
     mult_dims_ret = parse_array(mult_dims_ret)
-    summaryfile = cv.make_eigenvector_path(outfile, path.basename(path.dirname(inputfile)))
+    summaryfile = cv.make_eigenvector_path(outfile, path.basename(path.dirname(inputfile))+'/'+str(exp_var))
     sim.run_and_compare_unequal(inputfile, summaryfile, dims = dims, scale_unit=False, sep = sep, reported_angles=20, exp_var =exp_var,
                                 mult_dims_ret=mult_dims_ret, rownames = None, header = 0)
 
