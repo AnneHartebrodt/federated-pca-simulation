@@ -3,7 +3,7 @@ source('PCA_bor_aor_plot.R')
 
 
 #Extract clusters with k-means
-clusters<-kmeans(pca.outlier.free$x[,1:2], 2)
+clusters<-kmeans(pca.outlier.free$x[,1:2], centers = opt$k, iter = 10000)
 p.out.clu<-ggbiplot(pca.outlier.free, var.axes = F, labels = lab, groups = as.factor(clusters$cluster))
 
 cluster_result<-data.table(sample_id = 1:nrow(outlier.free), cluster_id = clusters$cluster)
