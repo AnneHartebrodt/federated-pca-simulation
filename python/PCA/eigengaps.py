@@ -93,51 +93,34 @@ def extract_eigenvals(E):
 if __name__=="__main__":
     print('run eigengap script')
 
-    #parser = ap.ArgumentParser(description='Eigengaps')
-    ##parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
-    #parser.add_argument('-o', metavar='outfile', type=str, help='output file')
+    parser = ap.ArgumentParser(description='Eigengaps')
+    parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
+    parser.add_argument('-o', metavar='outfile', type=str, help='output file')
     #parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
-    #parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
+    parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
     #parser.add_argument('-m', metavar='mult_dims_ret', type=str, help='comma separated list of intermediate dimensions', default = 1)
     #parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default = 100)
-    #args = parser.parse_args()
+    args = parser.parse_args()
 
-    #inputfile = args.f
-    #outfile = args.o
+    inputfile = args.f
+    outfile = args.o
     #exp_var = args.v
     #mult_dims_ret = args.m
-    #sep = args.s
+    sep = args.s
     #dims = args.d
 
-    inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
-    outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/testttt/sum.txtxt'
-    exp_var = 0.5
-    sep = ','
-    mult_dims_ret = '1,2,1.5,5'
-    dims = 100
+    #inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
+    #outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/testttt/sum.txtxt'
+    exp_var = 0.8
+    #sep = ','
+    #dims = 100
 
-    #cd = CustomDataImporter()
-
-
-    # Scale data an calculate eigengap
-    ##data, sample_id, var_names = cd.data_import(inputfile, header = 0, rownames=0)
-    #data_scaled = cd.scale_data(data, center=True, scale_var=True, scale_unit=True)
-    #cov = np.cov(data_scaled.T)
-    #n = data.shape[0]
-    #U,E, UT = lsa.svds(cov,n)
-    #E = extract_eigenvals(E)
-
-    #study_id = path.basename(path.dirname(inputfile))
-
-    #data, varnames, sampleids = cd.data_import(inputfile, header=, rownames=rownames, outfile=outdir,transpose=False, sep=sep)
-    #dims = min(dims, data.shape[0])
 
     dpca = SimulationRunner()
     pca, W, E = dpca.run_standalone(inputfile, outfile=None, dims=1000, header=0, rownames=None, center=True, scale_var=True, scale01=False, scale_unit=True,
                        transpose = False, sep=sep, filename = '/pca', drop_samples =[], log = True, exp_var=0.99)
 
     n = pca.shape[0]
-    print(n)
     epsilons = [0.01, 0.1, 1, 10]
     deltas = [None, 0.01, 0.1, 1]
 
