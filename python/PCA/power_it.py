@@ -13,6 +13,7 @@ import scipy.spatial.distance as d
 import argparse as ap
 from import_export.import_data import CustomDataImporter
 import os. path as path
+import convenience as cv
 
 
 import scipy.sparse.linalg as lsa
@@ -29,6 +30,8 @@ class DistributedPowerIteration():
         else:
             self.logger = logger
         self.file = file
+        self.cd = CustomDataImporter()
+
 
     def noise_variance_pow_it(self, epsilon, p, L, delta):
         '''
@@ -114,6 +117,16 @@ class DistributedPowerIteration():
         # transform matrix into s
         return noise
 
+    def variance_explained(self, eigenvalues, perc = 0.5):
+        total_variance = sum(eigenvalues)
+        percentages = eigenvalues/total_variance
+        p = 0
+        sum_perc = 0
+        while sum_perc<perc and p<len(eigenvalues):
+            sum_perc = sum_perc+percentages[p]
+            p = p+1
+        return p
+
     def power_method(self,data, sigma, L, p, noise=False):
         noise_norms = []
         # U,T,UT = lsa.svds(data, 1000)
@@ -132,7 +145,10 @@ class DistributedPowerIteration():
                 X_0, R = la.qr(np.dot(data, X_0[:,0:p]) + G)
             else:
                 X_0, R =  la.qr(np.dot(data, X_0[:, 0:p]))
-        return (X_0[:, 0:p], noise_norms)
+        eigenvals = self.eigenvalues(X_0, data)
+        proj_global = sc.dot(data, X_0)
+
+        return (proj_global, X_0[:, 0:p], eigenvals, noise_norms)
 
     # dimension n samples d dimensions
     # fix target rank k, intermediate rank 1 and iteration rank q
@@ -141,6 +157,12 @@ class DistributedPowerIteration():
     def eigenvalue(self,A, v):
         Av = A.dot(v)
         return v.dot(Av)
+
+    def eigenvalues(self, eigenvectors, cov):
+        eigenvals = []
+        for v in range(eigenvectors.shape[1]):
+            eigenvals.append(self.eigenvalue(cov, eigenvectors[:, v]))
+        return eigenvals
 
     def e_upper(self,eig_k, eig_q, r, d):
         e_upper = (eig_q / eig_k) * min(1 / np.log(eig_k / eig_q), 1 / np.log(r * d))
@@ -173,122 +195,34 @@ class DistributedPowerIteration():
     def assumed_noise(self, eig_k, eig_q1, e):
         return e*(eig_k-eig_q1)
 
-    def extract_eigenvals(self, E):
-        '''
-        Eigendecomposition from scipy.linalg.sparse returns eigenvalues ordered in
-        increasing order, followed by eigenvalues which are 0.
-        Eigenvalues are returned in decreasing order ommiting th 0s alltogether
-        Args:
-            E: Eigenvalues from a sparse singular value decomposition.
 
-        Returns: Eigenvalue vector in decreasing order, without 0s.
+    def determine_parameters(self, cov, epsilon, delta, n, var_exp=0.7, k=10, q1=20, p=40, r=1):
+        r  = 1 # r is 'some parameter'
+        d = cov.shape[1]
+        U, E, UT = lsa.svds(cov, n)
+        E, indz = cv.extract_eigenvals(E)
+        U = np.flip(np.delete(U, indz, axis=1), axis=1)
+        k, idx = self.variance_explained(E, var_exp)
+        q1 = 2*k
+        p = 4*k
 
-        '''
-        indz = np.where(E == 0)
-        E = np.flip(E)
-        E = E[E != 0]
-        return E, indz
+        coher = self.coherence(U, d)
+        L = self.L_nr_it(E[k], E[q1], n)
+        noise_variance = self.noise_variance_pow_it(epsilon, p, L, delta)
 
+        # The question is: are those two epsilons supposed to be the same
+        # I don't think so. They just have the same name.
+        # this is the epsilon for the noise
+        eu = self.e_upper(E[k], E[q1 - 1], r, d)
+        assumed_noise = self.assumed_noise(E[k], E[q1], eu)
 
-    def generate_result_str(self, inputfile, epsilon, delta, n, d, q, p, r, coherence, L, noise_variance, e, noise_vals, assumed_noise):
-        res = path.basename(path.dirname(inputfile)) + '\t' + str(epsilon)+ '\t' + str(delta) + '\t' + str(n)+'\t' + str(d)+'\t' + str(q)+'\t' + str(p)\
-              +'\t'+str(r)+'\t'+ str(coherence)+ '\t'+ str(L)+'\t' + str(noise_variance)+ '\t'+ str(e)+'\t'+str(assumed_noise)+'\t'
-        header = 'study.id\tepsilon\tdelta\tnr.samples\tnr.dimension\tnr.itermediate\tit.rank\tr\tcoherence\tnr.iterations\tnoise.variance\terror.bound\tassumed.noise\t'
-        i = 1
-        for v in noise_vals:
-            res = res +str(v) + '\t'
-            header = header+'n1.'+str(i)+'\t'
-            i= i+1
-        return (res, header)
+        # this is the utility parameter
+        bound = self.epsilon_bound(coher, d, L, E[k], E[q1], epsilon, delta, p)
+        params = {'coher': coher, 'L':L, 'sigma':noise_variance, 'e_upper': eu, 'assumed_noise':assumed_noise,
+                  'bound':bound, 'k':k, 'p':p, 'q1':q1}
+        return params
 
-    def write_summary(self, res, header, outfile):
-        try:
-            os.makedirs(path.dirname(outfile))
-        except OSError:
-            print(path.dirname(outfile) + ' could not be created')
-        else:
-            print(path.dirname(outfile) + ' was created')
-
-        if not path.exists(outfile):
-            with open(outfile, 'w') as handle:
-                handle.write(header + '\n')
-
-        with open(outfile, 'a+') as handle:
-            handle.write(res + '\n')
 
 if __name__ == '__main__':
+    print('distributed power iteration library file')
 
-    parser = ap.ArgumentParser(description='Eigengap calculation')
-    parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
-    parser.add_argument('-o', metavar='outfile', type=str, help='output file')
-    args = parser.parse_args()
-
-    inputfile = args.f
-    outfile = args.o
-
-    inputfile = '/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_only.tsv'
-    outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/summary.txt'
-
-
-    cd = CustomDataImporter()
-    DPIT = DistributedPowerIteration()
-
-    # Scale data an calculate eigengap
-    data, sample_id, var_names = cd.data_import(inputfile, header=0, rownames=0)
-    data= data[:,0:2000]
-    data_scaled = cd.scale_data(data, center=True, scale_var=True, scale_unit=False, scale01=False)
-    n = data.shape[0]
-
-    cov = np.cov(data_scaled.T)
-    U, E, UT = lsa.svds(cov, n)
-    E, indz = DPIT.extract_eigenvals(E)
-    U = np.flip(np.delete(U, indz, axis=1), axis=1)
-
-    pd.DataFrame(E[0:20]).to_csv(path.dirname(inputfile)+'/eigenvalues.tsv', sep='\t')
-    pd.DataFrame(U[0:20]).to_csv(path.dirname(inputfile)+'/eigenvectors.tsv', sep='\t')
-
-    d = cov.shape[1]
-    k = 5
-    q1 = 100
-    p = 200
-    epsilon = 1
-    delta = 0.1
-    r = 1
-
-    coher = DPIT.coherence(U, d)
-    L = DPIT.L_nr_it(E[k], E[q1], n)
-    noise_variance = DPIT.noise_variance_pow_it(epsilon, p, L, delta)
-
-
-    # The question is: are those two epsilons supposed to be the same
-    # I don't think so. They just have the same name.
-    # this is the epsilon for the noise
-    eu = DPIT.e_upper(E[k], E[q1-1], r, d)
-    assumed_noise = DPIT.assumed_noise(E[k], E[q1], eu)
-
-    # this is the utility parameter
-    bound = DPIT.epsilon_bound(coher, d, L, E[k], E[q1], epsilon, delta, p)
-
-
-
-    eigenvectors, noise = DPIT.power_method(cov, noise_variance, int(L), p, True)
-
-    res, header = DPIT.generate_result_str(inputfile, epsilon, delta, n, d, q1, p, r, coher, L, noise_variance, bound, noise, assumed_noise)
-    DPIT.write_summary(res, header, outfile)
-
-    eigenvals = []
-    for v in range(eigenvectors.shape[1]) :
-        eigenvals.append(DPIT.eigenvalue(cov, eigenvectors[:, v]))
-
-    pd.DataFrame(eigenvals).to_csv(path.dirname(inputfile) + '/eigenvalues_noisy_pit.tsv', sep='\t')
-    pd.DataFrame(eigenvectors).to_csv(path.dirname(inputfile) + '/eigenvectors_noisy_pit.tsv', sep='\t')
-
-
-    #
-    eigenvectors, noise = DPIT.power_method(cov, noise_variance, int(L), q1, False)
-    eigenvals = []
-    for v in range(eigenvectors.shape[1]) :
-        eigenvals.append(DPIT.eigenvalue(cov, eigenvectors[:, v]))
-
-    pd.DataFrame(eigenvals).to_csv(path.dirname(inputfile) + '/eigenvalues_pit.tsv', sep='\t')
-    pd.DataFrame(eigenvectors).to_csv(path.dirname(inputfile) + '/eigenvectors_pit.tsv', sep='\t')

@@ -9,7 +9,7 @@ require(ggbiplot)
 option_list = list(
   make_option(c("-f", "--file"), action="store", default=NA, type='character',
               help="coding genes output file"),
-  make_option(c("-o", "--output.folder"), action="store", default=NA, type='character',
+  make_option(c("-o", "--output.folder"), action="store", default=NA, dtype='character',
               help="The output file"),
   make_option(c("-k", "--number.clusters"), action="store", default=NA, type='character',
               help="The number of clusters for cluster detection")

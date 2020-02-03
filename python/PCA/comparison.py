@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.linalg as la
 import math as math
+import comparison as co
 
 
 def angle(v1, v2):
@@ -29,3 +30,10 @@ def angle(v1, v2):
         return np.abs(angle - 180)
     else:
         return angle
+
+def compute_angles(canonical, split, reported_angles=20):
+    angles = list()
+    for i in range(min(reported_angles, min(canonical.shape[1], split.shape[1]))):
+        angle = co.angle(canonical[:, i], split[:, i])
+        angles.append(angle)
+    return(angles)

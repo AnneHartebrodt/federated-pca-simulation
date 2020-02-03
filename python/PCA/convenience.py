@@ -11,6 +11,7 @@ def collapse_array_to_string(a, study_id):
     return res
 
 
+
 def make_eigenvector_path(inputfile, foldername):
     """
     creates a folder called eigenvectors in the input directory

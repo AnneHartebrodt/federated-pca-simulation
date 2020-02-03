@@ -1,0 +1,130 @@
+import os.path as path
+import convenience as cv
+import comparison as co
+from import_export.import_data import CustomDataImporter
+from outlier_removal import OutlierRemoval
+from PCA_runner import SimulationRunner
+import numpy as np
+import pandas as pd
+from master import Distributed_DP_PCA
+import argparse as ap
+
+
+
+class ClusterSplitRunner():
+    def __init__(self, file = '/tmp/'):
+        self.ddppca = Distributed_DP_PCA(file = file)
+        self.importer = CustomDataImporter()
+        self.simulation = SimulationRunner()
+        self.outlier = OutlierRemoval()
+
+    def run_and_compare_cluster_split(self, datafile, clusterfile, outfile=None, dims=1000, header=0, rownames=0, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t', reported_angles = 20, exp_var = 0.5):
+
+        # ID is the folder name
+        study_id = path.basename(path.dirname(datafile))
+        print('Standalone PCA before outlier removal')
+
+        data, varnames, sampleids = self.importer.data_import(datafile, header=header, rownames=rownames, outfile=outfile, transpose=False, sep=sep)
+        n = data.shape[0]
+        dims = min(dims, n)
+
+        pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01,scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.before_outlier_removal', log = True,exp_var=exp_var)
+
+
+        print('Logging outliers')
+        outliers = self.outlier.outlier_removal_mad(pca, 6, 3)
+        print(outliers)
+        with open(outfile + '/removed_outliers.tsv', 'a+') as handle:
+            handle.write(cv.collapse_array_to_string(outliers, study_id))
+
+        print('Standalone PCA after outlier removal')
+        pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.after_outlier_removal',drop_samples=outliers, log = True, exp_var=exp_var)
+
+        W, X = self.cluster_split(data, clusterfile=clusterfile, ndims=dims, exp_var=exp_var)
+
+        angles = co.compute_angles(W1, W, reported_angles=reported_angles)
+        with open(outfile + '/angles_cluster_splits.tsv', 'a+') as handle:
+            handle.write(cv.collapse_array_to_string(angles, study_id=study_id))
+        with open(outfile + '/eigenvalues.tsv', 'a+') as handle:
+            handle.write(cv.collapse_array_to_string(X[0:reported_angles], study_id=study_id))
+
+    def cluster_split(self, data, clusterfile, scale_variance=True, center=True, scale01=False, scale_unit=False,
+                     ndims=1000, header=0, rownames=0, scale_var=True, transpose=False, sep='\t', exp_var=0.5):
+        """
+        This function simulates a multisite PCA with each site having
+        varying number of samples.
+        :param data:
+        :param sites: number of sites to split the data into
+        :return:
+        """
+
+
+        Ac = []
+        vexx = []
+        s = 0
+        start = 0
+
+        clusters = pd.read_csv(filepath_or_buffer=clusterfile, header=header, sep=sep)
+
+
+
+        for i in range(max(clusters.iloc[:,1])):
+
+            index = clusters.iloc[:, 1] == (i+1)
+            index = clusters[index].index
+            # slice matrix
+            data_sub = data[index, :]
+
+            print('Local PCA for outlier identification')
+            pca, W1, E1 = self.simulation.run_standalone(data_sub, outfile, dims=ndims, header=header,
+                                                         rownames=rownames, center=center, scale_var=scale_var,
+                                                         scale01=scale01, scale_unit=scale_unit, transpose=transpose, sep=sep, filename='/pca.loc', drop_samples=[], log=True,
+                                                         exp_var=exp_var)
+
+            print('Outlier removal')
+            outliers = self.outlier.outlier_removal_mad(pca, 6, 3)
+            if len(outliers) != 0:
+                data_sub = np.delete(data_sub, outliers, 0)
+
+            print('Drop empty variable, scale local data, compute covariance')
+            data_sub, vn = self.importer.drop0Columns(data_sub, None, drop=False, noise=True)
+            data_sub = self.importer.log_transform(data_sub)
+            data_sub = self.importer.scale_data(data_sub, center=center, scale_var=scale_variance, scale01=scale01,
+                                                scale_unit=scale_unit)
+            print('calculating cov')
+            noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=1, delta0=1, noise=False)
+            print('finished')
+            A, vex = self.ddppca.perform_SVD(noisy_cov, ndims=ndims, mult_dims_returned=ndims, var_exp=exp_var)
+            Ac.append(A)
+            vexx.append(vex)
+
+        W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndim=ndims)
+        return W, X
+
+if __name__=="__main__":
+    print('run split script')
+
+    parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
+    parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
+    parser.add_argument('-o', metavar='outfile', type=str, help='output file')
+    parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
+    parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
+    parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default = 100)
+    parser.add_argument('-c', metavar='clusters', type=int, help='field delimiter', default=100)
+    args = parser.parse_args()
+
+    inputfile = args.f
+    outfile = args.o
+    exp_var = args.v
+    sep = args.s
+    dims = args.d
+
+    inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/CPTAC-2/coding_trunc.tsv'
+    outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/target/'
+    exp_var = 0.5
+    sep = '\t'
+    dims = 100
+    clusterfile = '~/Documents/featurecloud/results/pca_plots/cluster/CPTAC-2_clusters.tsv'
+
+    cluster = ClusterSplitRunner()
+    cluster.run_and_compare_cluster_split(inputfile, clusterfile, outfile=outfile, dims=dims, header=0, rownames=0, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t', reported_angles = 20, exp_var = 0.5)

@@ -31,7 +31,7 @@ def sigma_analyze_gauss(epsilon, n, delta=None):
         sigma = (1 /epsilon) * np.sqrt(2 * np.log(1.25/delta))
     return sigma
 
-
+ #sigma = (1 / (n * epsilon0)) * sc.sqrt(2 * np.log(1.25 / delta0))
 def required_eigengap(sigma, n):
     '''
 

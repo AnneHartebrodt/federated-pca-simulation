@@ -24,7 +24,7 @@ class Distributed_DP_PCA():
             self.logger = logger
         self.file = file
 
-    def compute_noisy_cov(self,original, epsilon0, delta0, nrSamples=0, nrSites=0, noise=True):
+    def compute_noisy_cov(self, original, epsilon0=1, delta0=1, noise=True):
         """
         Compute a covariance matrix of a matrix and add epsilon, delta scaled
         iid gaussian noise to each entry of the matrix.
@@ -210,7 +210,7 @@ class Distributed_DP_PCA():
             res.append(d.euclidean(V1[:, line], V2[:, line]))
         return (res)
 
-    def standalone_pca(self, data, var_explained = 0.5, ndims = 1000):
+    def standalone_pca(self, data, ndims = 1000, noise = False, epsilon=1, delta=1, var_explained=0.5):
         """
         This function performs a standard principal component analysis via eigendecomposition
         of the covariance matrix
@@ -222,8 +222,9 @@ class Distributed_DP_PCA():
         :return: the projected data, The first ndim eigenvectors and eigenvalues
         """
         n = data.shape[0]  # get the number of rows
-        cov = (1 / (n - 1)) * sc.dot(data.transpose(), data)  # use unbiased estimator
-        print(cov[1:10,1])
+        cov = self.compute_noisy_cov(data, noise=noise, epsilon0=epsilon, delta0=delta)
+        #cov = (1 / (n - 1)) * sc.dot(data.transpose(), data)  # use unbiased estimator
+        # print(cov[1:10,1])
 
         V_global, S, W, nd = self.svd_sub(cov, ndims)
         W = np.transpose(W)  # eigenvectors

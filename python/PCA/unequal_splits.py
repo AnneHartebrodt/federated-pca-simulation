@@ -119,7 +119,7 @@ class AngleRunner():
                 print(ar)
                 Ws, Xs = self.unqeal_split(data, ar, ndims=dims, exp_var = exp_var, mult_dims_ret=mult_dims_ret)
                 for w in range(len(Ws)) :
-                    angles = self.compute_angles(W1, Ws[w], reported_angles=reported_angles)
+                    angles = co.compute_angles(W1, Ws[w], reported_angles=reported_angles)
                     with open(outfile + '/angles_unequal_splits'+str(mult_dims_ret[w])+'.tsv', 'a+') as handle:
                         handle.write(cv.collapse_array_to_string(angles, study_id=study_id))
                     with open(outfile + '/eigenvalues'+str(mult_dims_ret[w])+'.tsv', 'a+') as handle:
@@ -154,12 +154,7 @@ class AngleRunner():
                 interval_end.append(inter)
         return interval_end
 
-    def compute_angles(self, canonical, split, reported_angles=20):
-        angles = list()
-        for i in range(min(reported_angles, min(canonical.shape[1], split.shape[1]))):
-            angle = co.angle(canonical[:, i], split[:, i])
-            angles.append(angle)
-        return(angles)
+
 
 def parse_array(value_str):
     values_str = value_str.split(',')
