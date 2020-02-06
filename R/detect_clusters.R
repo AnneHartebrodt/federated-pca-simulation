@@ -11,10 +11,10 @@ cluster_split<-function(x, opt, pca.outlier.free){
   cluster_result<-data.table(sample_id = 1:nrow(outlier.free), cluster_id = clusters$cluster)
 
   fwrite(cluster_result,
-       file = file.path(opt$o, paste0(basename(dirname(opt$f)),'_', i, '_clusters.tsv')), 
+       file = file.path(opt$o, paste0(basename(dirname(opt$f)),'_', x, '_clusters.tsv')), 
        col.names = F, row.names = F, quote = F, sep = '\t')
 
-  file.name.out<-paste0(basename(dirname(opt$f)),'_', i,'_outlier_free_with_cluster', '.pdf')
+  file.name.out<-paste0(basename(dirname(opt$f)),'_', x,'_outlier_free_with_cluster', '.pdf')
   ggsave(p.out.clu, filename = file.path(opt$o, file.name.out))
 }
 
