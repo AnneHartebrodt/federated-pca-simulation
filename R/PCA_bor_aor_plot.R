@@ -28,7 +28,7 @@ explained.variance<-function(x) cumsum(pca$sdev^2/sum(pca$sdev^2))
 which.perc<-function(x, perc) min(which(x>=perc))
 
 #Read and log transform data
-#opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/TARGET-ALL-P2/coding_only.tsv'
+opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/TARGET-ALL-P2/coding_only.tsv'
 data<-fread(file = opt$f)
 var0<-which(apply(data,1, function(x) var(x)==0))
 data<-data[, c(which(colSums(data)!=0), var0), with=F]
@@ -37,8 +37,8 @@ data<-log2(data+1)
 #run first PCA
 pca<-prcomp(data, center = T, scale. = T)
 
-for ( i in 1:10){
-  ou<-unique(as.numeric(unlist(apply(pca$x[,1:i], 2, function(x) robust.outlier(x)))))
+for ( i in 2:10){
+  ou<-unique(as.numeric(unlist(apply(pca$x[,1:i], 2, function(a) robust.outlier(a)))))
   lof = LOF(pca$x[, 1:i], seq_k = c(5,10,20))
   lof.hist<-ggplot(data.table(lof), aes(x = lof))+geom_histogram()
   ggsave(lof.hist, filename = file.path(lof.dir, paste0('hist_lof_', i, '.pdf')))
@@ -49,8 +49,8 @@ for ( i in 1:10){
   write(line,file=file.path(opt$o, 'outliers_lof.txt'),append=TRUE)
 }
 
-ou<-unique(as.numeric(unlist(apply(pca$x[,1:4], 2, function(x) robust.outlier(x)))))
-lof = LOF(pca$x[, 1:4], seq_k = c(5,10,20))
+ou<-unique(as.numeric(unlist(apply(pca$x[,1:3], 2, function(x) robust.outlier(x)))))
+lof = LOF(pca$x[, 1:3], seq_k = c(5,10,20))
 lof<-which(lof>1)
 
 
