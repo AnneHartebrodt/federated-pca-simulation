@@ -28,7 +28,7 @@ explained.variance<-function(x) cumsum(pca$sdev^2/sum(pca$sdev^2))
 which.perc<-function(x, perc) min(which(x>=perc))
 
 #Read and log transform data
-opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/TARGET-ALL-P2/coding_only.tsv'
+#opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/TARGET-ALL-P2/coding_only.tsv'
 data<-fread(file = opt$f)
 var0<-which(apply(data,1, function(x) var(x)==0))
 data<-data[, c(which(colSums(data)!=0), var0), with=F]
