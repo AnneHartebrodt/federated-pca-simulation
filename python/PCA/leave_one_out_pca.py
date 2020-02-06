@@ -146,8 +146,7 @@ class Dropout():
             nd = min(min(n - nr_dropped, data_scaled.shape[0]-1), ndims)
             pca, U, E = self.simulation.run_standalone(data_scaled, outdir, dims=ndims, header=header, rownames=rownames,
                                                          center=center, scale_var=scale_var, scale01=scale01,
-                                                         scale_unit=scale_unit, transpose=transpose, sep=sep,
-                                                         filename='/pca.after_outlier_removal', log=True,
+                                                         scale_unit=scale_unit, transpose=transpose, sep=sep, log=True,
                                                          exp_var=1.0)
             E= E[0:20]
             U = U[:, 0:20]
@@ -177,8 +176,7 @@ class Dropout():
 
         pca, W1, E1 = self.simulation.run_standalone(data, outdir, dims=dims, header=header, rownames=rownames,
                                                      center=center, scale_var=scale_var, scale01=scale01,
-                                                     scale_unit=scale_unit, transpose=transpose, sep=sep,
-                                                     filename='/pca.before_outlier_removal', log=True, exp_var=exp_var)
+                                                     scale_unit=scale_unit, transpose=transpose, sep=sep, log=True, exp_var=exp_var)
 
         res_eigen = self.collapse_array_to_string(E1[0:reported_angles],study_id, '0')
         with open(outdir + '/eigenvalues_with_outliers.tsv', 'a+') as handle:
@@ -199,8 +197,7 @@ class Dropout():
         print('Standalone PCA after outlier removal')
         pca, W1, E1 = self.simulation.run_standalone(data, outdir, dims=dims, header=header, rownames=rownames,
                                                      center=center, scale_var=scale_var, scale01=scale01,
-                                                     scale_unit=scale_unit, transpose=transpose, sep=sep,
-                                                     filename='/pca.after_outlier_removal', log=True,
+                                                     scale_unit=scale_unit, transpose=transpose, sep=sep, log=True,
                                                      exp_var=exp_var)
 
         res_eigen = self.collapse_array_to_string(E1[0:reported_angles],study_id, '0')
@@ -321,7 +318,7 @@ if __name__=="__main__":
     summaryfile = d.make_eigenvector_path(outfile, dname)
     ev_path  = d.make_eigenvector_path(summaryfile, 'eigenvectors')
     d.run_study(inputfile, summaryfile, ev_path, sep=sep, header = 0, dims=dims, mode=mode, nr_dropped=nr_dropped)
-
+    d.delete(ev_path)
 
 
 

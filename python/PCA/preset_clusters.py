@@ -28,7 +28,7 @@ class ClusterSplitRunner():
         n = data.shape[0]
         dims = min(dims, n)
 
-        pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01,scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.before_outlier_removal', log = True,exp_var=exp_var)
+        pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01,scale_unit=scale_unit,transpose=transpose, sep=sep, log = True,exp_var=exp_var)
 
 
         print('Logging outliers')
@@ -38,7 +38,7 @@ class ClusterSplitRunner():
             handle.write(cv.collapse_array_to_string(outliers, study_id))
 
         print('Standalone PCA after outlier removal')
-        pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.after_outlier_removal',drop_samples=outliers, log = True, exp_var=exp_var)
+        pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,transpose=transpose, sep=sep,drop_samples=outliers, log = True, exp_var=exp_var)
 
         W, X = self.cluster_split(data, clusterfile=clusterfile, ndims=dims, exp_var=exp_var)
 
@@ -78,7 +78,7 @@ class ClusterSplitRunner():
             print('Local PCA for outlier identification')
             pca, W1, E1 = self.simulation.run_standalone(data_sub, outfile, dims=ndims, header=header,
                                                          rownames=rownames, center=center, scale_var=scale_var,
-                                                         scale01=scale01, scale_unit=scale_unit, transpose=transpose, sep=sep, filename='/pca.loc', drop_samples=[], log=True,
+                                                         scale01=scale01, scale_unit=scale_unit, transpose=transpose, sep=sep, drop_samples=[], log=True,
                                                          exp_var=exp_var)
 
             print('Outlier removal')
@@ -104,27 +104,28 @@ class ClusterSplitRunner():
 if __name__=="__main__":
     print('run split script')
 
-    parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
-    parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
-    parser.add_argument('-o', metavar='outfile', type=str, help='output file')
-    parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
-    parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
-    parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default = 100)
-    parser.add_argument('-c', metavar='clusters', type=int, help='field delimiter', default=100)
-    args = parser.parse_args()
+    #parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
+    #parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
+    #parser.add_argument('-o', metavar='outfile', type=str, help='output file')
+    #parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
+    #parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
+    #parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default = 100)
+    #parser.add_argument('-c', metavar='clusters', type=int, help='field delimiter', default=100)
+    #args = parser.parse_args()
 
-    inputfile = args.f
-    outfile = args.o
-    exp_var = args.v
-    sep = args.s
-    dims = args.d
+    #inputfile = args.f
+    #outfile = args.o
+    #exp_var = args.v
+    #sep = args.s
+    #dims = args.d
+    #clusterfile = args.c
 
     inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/CPTAC-2/coding_trunc.tsv'
-    outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/target/'
+    outfile = '/home/anne/Documents/featurecloud/results/test/target/'
     exp_var = 0.5
     sep = '\t'
     dims = 100
-    clusterfile = '~/Documents/featurecloud/results/pca_plots/cluster/CPTAC-2_clusters.tsv'
+    clusterfile = '/home/anne/Documents/featurecloud/results/pca_plots/cluster/CPTAC-2_clusters.tsv'
 
     cluster = ClusterSplitRunner()
     cluster.run_and_compare_cluster_split(inputfile, clusterfile, outfile=outfile, dims=dims, header=0, rownames=0, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t', reported_angles = 20, exp_var = 0.5)

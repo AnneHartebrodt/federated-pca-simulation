@@ -44,7 +44,7 @@ class AngleRunner():
             data_sub = data[start:end, :]
             
             print('Local PCA for outlier identification')
-            pca, W1, E1 = self.simulation.run_standalone(data_sub, outfile, dims=ndims, header=header, rownames=rownames,center=center,scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.loc', drop_samples=[], log=True, exp_var=exp_var)
+            pca, W1, E1 = self.simulation.run_standalone(data_sub, outfile, dims=ndims, header=header, rownames=rownames,center=center,scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,transpose=transpose, sep=sep, drop_samples=[], log=True, exp_var=exp_var)
 
             print('Outlier removal')
             outliers = self.outlier.outlier_removal_mad(pca, 6, 3)
@@ -92,7 +92,7 @@ class AngleRunner():
         n = data.shape[0]
         dims = min(dims, n)
 
-        pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01,scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.before_outlier_removal', log = True,exp_var=exp_var)
+        pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01,scale_unit=scale_unit,transpose=transpose, sep=sep, log = True,exp_var=exp_var)
 
 
         print('Logging outliers')
@@ -102,7 +102,7 @@ class AngleRunner():
             handle.write(cv.collapse_array_to_string(outliers, study_id))
 
         print('Standalone PCA after outlier removal')
-        pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,transpose=transpose, sep=sep, filename='/pca.after_outlier_removal',drop_samples=outliers, log = True, exp_var=exp_var)
+        pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,transpose=transpose, sep=sep,drop_samples=outliers, log = True, exp_var=exp_var)
 
         with open(outfile + '/nr_vars_explain_aor.tsv', 'a+') as handle:
             for var in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
@@ -196,6 +196,5 @@ if __name__=="__main__":
 
     mult_dims_ret = parse_array(mult_dims_ret)
     summaryfile = cv.make_eigenvector_path(outfile, path.basename(path.dirname(inputfile))+'/'+str(exp_var))
-    sim.run_and_compare_unequal(inputfile, summaryfile, dims = dims, scale_unit=False, sep = sep, reported_angles=20, exp_var =exp_var,
-                                mult_dims_ret=mult_dims_ret, rownames = None, header = 0)
+    sim.run_and_compare_unequal(inputfile, summaryfile, dims = dims, scale_unit=False, sep = sep, reported_angles=20, exp_var =exp_var, mult_dims_ret=mult_dims_ret, rownames = None, header = 0)
 
