@@ -17,6 +17,7 @@ option_list = list(
 )
 opt = parse_args(OptionParser(option_list=option_list))
 
+k = opt$k
 pca.dir<-file.path(opt$o, 'pca')
 dir.create(pca.dir)
 lof.dir<-file.path(opt$o, 'lof')
@@ -28,7 +29,7 @@ explained.variance<-function(x) cumsum(pca$sdev^2/sum(pca$sdev^2))
 which.perc<-function(x, perc) min(which(x>=perc))
 
 #Read and log transform data
-#opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/TARGET-ALL-P2/coding_only.tsv'
+opt$f<-'/home/anne/Documents/featurecloud/data/tcga/data_clean/TARGET-ALL-P2/coding_only.tsv'
 data<-fread(file = opt$f)
 var0<-which(apply(data,1, function(x) var(x)==0))
 data<-data[, c(which(colSums(data)!=0), var0), with=F]
@@ -78,15 +79,19 @@ ggsave(p, filename = file.path(pca.dir, file.name))
 
 #Remove outlier and rerun.
 if(length(unique(c(ou, lof)))!=0){
-outlier.free<-data[-unique(c(ou, lof))]
+outlier.free<-data[-unique(c(ou, lof)), with=TRUE]
 lab<-1:nrow(data)
-lab<-lab[-c(ou, lof)]
+lab<-lab[-unique(c(ou, lof))]
 }else{
   outlier.free<-data
   lab<-1:nrow(data)
 }
 var0<-which(apply(outlier.free,1, function(x) var(x)==0))
-outlier.free<-outlier.free[, c(which(colSums(outlier.free)!=0), var0), with=F] 
+v<-c(which(colSums(outlier.free)==0), var0)
+if(length(v)!=0){
+  outlier.free<-outlier.free[, -v , with=T] 
+}
+
 pca.outlier.free<-prcomp(outlier.free, scale. = T, center = T)
 
 p.out<-ggbiplot(pca.outlier.free, var.axes = F, labels = lab)
