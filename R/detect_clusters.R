@@ -1,5 +1,5 @@
 # Run the PCA, outllier removal, PCA again
-source('PCA_bor_aor_plot.R')
+source('./code/federated_dp_pca/R/PCA_bor_aor_plot.R')
 
 
 #Extract clusters with k-means
