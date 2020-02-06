@@ -11,7 +11,7 @@ option_list = list(
               help="coding genes output file"),
   make_option(c("-o", "--output.folder"), action="store", default=NA, type='character',
               help="The output file"),
-  make_option(c("-k", "--number.clusters"), action="store", default=NA, type='character',
+  make_option(c("-k", "--number.clusters"), action="store", default=NA, type='numeric',
               help="The number of clusters for cluster detection")
 )
 opt = parse_args(OptionParser(option_list=option_list))
