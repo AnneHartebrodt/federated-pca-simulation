@@ -80,7 +80,7 @@ ggsave(p, filename = file.path(pca.dir, file.name))
 if(length(unique(c(ou, lof)))!=0){
 outlier.free<-data[-unique(c(ou, lof))]
 lab<-1:nrow(data)
-lab<-lab[-ou]
+lab<-lab[-c(ou, lof)]
 }else{
   outlier.free<-data
   lab<-1:nrow(data)
