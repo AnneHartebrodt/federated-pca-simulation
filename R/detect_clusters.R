@@ -17,5 +17,5 @@ cluster_split<-function(x, opt, pca.outlier.free){
   ggsave(p.out.clu, filename = file.path(opt$o, file.name.out))
 }
 
-cluster_split(2)
-cluster_split(3)
+cluster_split(2, opt, pca.outlier.free)
+cluster_split(3, opt, pca.outlier.free)
