@@ -18,7 +18,7 @@ class AngleRunner():
 
 
 
-    def unqeal_split(self, data, interval_end, scale_variance=True, center=True, scale01=False, scale_unit=False, ndims=1000, header=0, rownames=0,  scale_var=True,transpose=False, sep = '\t', exp_var = 0.5, mult_dims_ret =1):
+    def unqeal_split(self, data, interval_end, scale_variance=True, center=True, scale01=False, scale_unit=False, ndims=100, header=0, rownames=0,  scale_var=True,transpose=False, sep = '\t', exp_var = 0.5, mult_dims_ret =1):
         """
         This function simulates a multisite PCA with each site having
         varying number of samples.
@@ -58,8 +58,7 @@ class AngleRunner():
             data_sub = self.importer.scale_data(data_sub, center=center, scale_var=scale_variance, scale01=scale01,
                                                 scale_unit=scale_unit)
             print('calculating cov')
-            noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=1, delta0=1, nrSamples=data.shape[0],
-                                                      nrSites=len(interval_end), noise=False)
+            noisy_cov = self.ddppca.compute_noisy_cov(data_sub, epsilon0=1, delta0=1, noise=False)
             start = int(interval_end[i])
             print('finished')
 
@@ -82,7 +81,7 @@ class AngleRunner():
         return Ws, Xs
 
 
-    def run_and_compare_unequal(self, datafile, outfile=None, dims=1000, header=0, rownames=0, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t', reported_angles = 20, exp_var = 0.5, mult_dims_ret = [1,2,1.5, 5]):
+    def run_and_compare_unequal(self, datafile, outfile=None, dims=100, header=0, rownames=0, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t', reported_angles = 20, exp_var = 0.5, mult_dims_ret = [1,2,1.5, 5]):
 
         # ID is the folder name
         study_id = path.basename(path.dirname(datafile))
@@ -183,13 +182,13 @@ if __name__=="__main__":
     sep = args.s
     dims = args.d
 
-    #inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
-    #outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/target/'
-    #exp_var = 0.5
-    #sep = ','
-    #mult_dims_ret = '0.25, 0.5, 0.75'
-    #dims = 100
-
+    # inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
+    # outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/target/'
+    # exp_var = 0.5
+    # sep = ','
+    # mult_dims_ret = '0.25, 0.5, 0.75'
+    # dims = 100
+    #
 
     sim = AngleRunner()
 
