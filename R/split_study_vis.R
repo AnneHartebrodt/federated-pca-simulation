@@ -1,7 +1,7 @@
 require(data.table)
 require(ggplot2)
 
-dir<-"~/Documents/featurecloud/results/gexp_stats/mnistt/mnist2.016712712/"
+dir<-"~/Documents/featurecloud/results/split_study_cluster/CPTAC-2/"
 
 meta<-fread(paste0(dir, 'meta_splits.tsv'), fill = T)
 combo<-unique(meta[,2:(ncol(meta)-1)])
