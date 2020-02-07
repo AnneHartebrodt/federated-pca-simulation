@@ -41,12 +41,13 @@ class ClusterSplitRunner():
         pca, W1, E1 = self.simulation.run_standalone(data, outfile, dims=dims, header=header, rownames=rownames, center=center, scale_var=scale_var, scale01=scale01, scale_unit=scale_unit,transpose=transpose, sep=sep,drop_samples=outliers, log = True, exp_var=exp_var)
 
         W, X = self.cluster_split(data, clusterfile=clusterfile, ndims=dims, exp_var=exp_var)
+        id = study_id+'\t'+clusterfile+'\t'+str(exp_var)
 
         angles = co.compute_angles(W1, W, reported_angles=reported_angles)
         with open(outfile + '/angles_cluster_splits.tsv', 'a+') as handle:
-            handle.write(cv.collapse_array_to_string(angles, study_id=study_id))
+            handle.write(cv.collapse_array_to_string(angles, study_id=id))
         with open(outfile + '/eigenvalues.tsv', 'a+') as handle:
-            handle.write(cv.collapse_array_to_string(X[0:reported_angles], study_id=study_id))
+            handle.write(cv.collapse_array_to_string(X[0:reported_angles], study_id=id))
 
     def cluster_split(self, data, clusterfile, scale_variance=True, center=True, scale01=False, scale_unit=False,
                      ndims=1000, header=0, rownames=0, scale_var=True, transpose=False, sep='\t', exp_var=0.5):
@@ -128,4 +129,4 @@ if __name__=="__main__":
     #clusterfile = '/home/anne/Documents/featurecloud/results/pca_plots/cluster/CPTAC-2_clusters.tsv'
 
     cluster = ClusterSplitRunner()
-    cluster.run_and_compare_cluster_split(inputfile, clusterfile, outfile=outfile, dims=dims, header=0, rownames=0, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t', reported_angles = 20, exp_var = 0.5)
+    cluster.run_and_compare_cluster_split(inputfile, clusterfile, outfile=outfile, dims=dims, header=0, rownames=0, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t', reported_angles = 20, exp_var = exp_var)
