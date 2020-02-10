@@ -18,7 +18,7 @@ class AngleRunner():
 
 
 
-    def unqeal_split(self, data, interval_end, scale_variance=True, center=True, scale01=False, scale_unit=False, ndims=100, header=0, rownames=0,  scale_var=True,transpose=False, sep = '\t', exp_var = 0.5, mult_dims_ret =1):
+    def unqeal_split(self, data, interval_end, scale_variance=True, center=True, scale01=False, scale_unit=False, ndims=100, header=0, rownames=0,  scale_var=True,transpose=False, sep = '\t', exp_var = 0.5, mult_dims_ret =1, weights=None):
         """
         This function simulates a multisite PCA with each site having
         varying number of samples.
@@ -70,6 +70,8 @@ class AngleRunner():
 
         Ws = []
         Xs = []
+        Ww = []
+        Xw = []
         vex = max(vexx)
         print('Aggregate local PCAs')
         for mm in mult_dims_ret:
@@ -78,8 +80,13 @@ class AngleRunner():
             W = self.ddppca.normalize_eigenvectors(W)
             Ws.append(W)
             Xs.append(X)
-        return Ws, Xs
-
+            if weights is not None:
+                W, X = self.ddppca.aggregate_partial_SVDs(Ac, ndim=ndims, intermediate_dims=mm, weights=weights)
+                W = self.ddppca.normalize_eigenvectors(W)
+                Ww.append(W)
+                Xw.append(X)
+            return Ws, Xs , Ww, Xw
+        return Ws, Xs, None, None
 
     def run_and_compare_unequal(self, datafile, outfile=None, dims=100, header=0, rownames=0, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t', reported_angles = 20, exp_var = 0.5, mult_dims_ret = [1,2,1.5, 5]):
 
@@ -87,7 +94,7 @@ class AngleRunner():
         study_id = path.basename(path.dirname(datafile))
         print('Standalone PCA before outlier removal')
 
-        data, varnames, sampleids = self.importer.data_import(datafile, header=header, rownames=rownames, outfile=outfile, transpose=False, sep=sep)
+        data, varnames, sampleids = self.importer.data_import(datafile, header=header, rownames=rownames, transpose=False, sep=sep)
         n = data.shape[0]
         dims = min(dims, n)
 
@@ -109,14 +116,14 @@ class AngleRunner():
 
         W1 = self.ddppca.normalize_eigenvectors(W1)
 
-        interval_end = self.make_test_intervals(n)
+        interval_end, perc = self.make_test_intervals(n)
 
 
-        for ar in interval_end:
+        for ar in range(len(interval_end)):
             for i in range(10):
                 print('Current split')
-                print(ar)
-                Ws, Xs = self.unqeal_split(data, ar, ndims=dims, exp_var = exp_var, mult_dims_ret=mult_dims_ret)
+                print(interval_end[ar])
+                Ws, Xs, Ww, Xw = self.unqeal_split(data, interval_end[ar], ndims=dims, exp_var = exp_var, mult_dims_ret=mult_dims_ret, weights = perc[ar])
                 for w in range(len(Ws)) :
                     angles = co.compute_angles(W1, Ws[w], reported_angles=reported_angles)
                     with open(outfile + '/angles_unequal_splits'+str(mult_dims_ret[w])+'.tsv', 'a+') as handle:
@@ -124,8 +131,15 @@ class AngleRunner():
                     with open(outfile + '/eigenvalues'+str(mult_dims_ret[w])+'.tsv', 'a+') as handle:
                         handle.write(cv.collapse_array_to_string(Xs[w][0:reported_angles], str(i)))
 
+                    angles = co.compute_angles(W1, Ww[w], reported_angles=reported_angles)
+                    with open(outfile + '/angles_unequal_splits_weighted_' + str(mult_dims_ret[w]) + '.tsv', 'a+') as handle:
+                        handle.write(cv.collapse_array_to_string(angles, study_id=study_id))
+                    with open(outfile + '/eigenvalues_weighted_' + str(mult_dims_ret[w]) + '.tsv', 'a+') as handle:
+                        handle.write(cv.collapse_array_to_string(Xs[w][0:reported_angles], str(i)))
+
+
                     #write results
-                meta = [len(ar)] + ar
+                meta = [len(interval_end[ar])] + interval_end[ar]
 
                 with open(outfile + '/meta_splits.tsv', 'a+') as handle:
                     handle.write(cv.collapse_array_to_string(meta,  str(i)))
@@ -135,23 +149,18 @@ class AngleRunner():
     def make_test_intervals(self, n):
         # hardcoded for now
         # more extreme cases maybe later
-        unequal_splits = list()
-        #unequal_splits.append([[1.0]])
-        unequal_splits.append([[0.1, 0.9], [0.3, 0.7], [0.5, 0.5]])
-        unequal_splits.append([[0.2, 0.2, 0.2, 0.2, 0.2], [0.1, 0.1, 0.2, 0.2, 0.4], [0.1, 0.1, 0.1, 0.1, 0.6],
-                               [0.2375, 0.2375, 0.2375, 0.2375, 0.05]])
+        unequal_splits = [[0.1, 0.9], [0.3, 0.7], [0.5, 0.5],[0.2, 0.2, 0.2, 0.2, 0.2], [0.1, 0.1, 0.2, 0.2, 0.4], [0.1, 0.1, 0.1, 0.1, 0.6],[0.2375, 0.2375, 0.2375, 0.2375, 0.05]]
 
         interval_end = list()
         sum = 0
         for i in unequal_splits:
-            for j in i:
-                inter = list()
-                for k in j:
-                    sum = sum + k
-                    inter.append(np.ceil(n * sum))
-                sum = 0
-                interval_end.append(inter)
-        return interval_end
+            inter = list()
+            for k in i:
+                sum = sum + k
+                inter.append(np.ceil(n * sum))
+            sum = 0
+            interval_end.append(inter)
+        return interval_end, unequal_splits
 
 
 
@@ -188,7 +197,7 @@ if __name__=="__main__":
     # sep = ','
     # mult_dims_ret = '0.25, 0.5, 0.75'
     # dims = 100
-    #
+
 
     sim = AngleRunner()
 

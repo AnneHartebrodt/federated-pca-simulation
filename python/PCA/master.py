@@ -81,7 +81,7 @@ class Distributed_DP_PCA():
 
         return cov
 
-    def perform_SVD(self,noisy_cov, var_exp = 0.5, ndims = 1000, mult_dims_returned=1):
+    def perform_SVD(self,noisy_cov, var_exp = 0.5, ndims = 100, mult_dims_returned=1):
         """
         Performs a singular value decomposition of noisy_cov of the form
         A=USV.
@@ -105,7 +105,7 @@ class Distributed_DP_PCA():
         P = sc.dot(np.sqrt(R), U_r)
         return P, vex
 
-    def aggregate_partial_SVDs(self, svd_list, intermediate_dims=None, ndim=1000):
+    def aggregate_partial_SVDs(self, svd_list, intermediate_dims=None, ndim=100, weights=None):
         """
         This function aggregates the local proxy covariances by averaging them
 
@@ -121,12 +121,15 @@ class Distributed_DP_PCA():
         if intermediate_dims is None:
             intermediate_dims = svd_list[0].shape[1]
         print(intermediate_dims)
-        Ac = np.dot(svd_list[0][0:intermediate_dims, :].transpose(), svd_list[0][0:intermediate_dims, :])
-        for svd in range(1, len(svd_list)):
-            Ac = Ac +np.dot(svd_list[svd][0:intermediate_dims, :].transpose(), svd_list[svd][0:intermediate_dims, :])
-
-        # Ac = np.concatenate(svd_list)
-        Ac = 1/s* Ac
+        if weights is not None:
+            Ac = weights[0]*(np.dot(svd_list[0][0:intermediate_dims, :].transpose(), svd_list[0][0:intermediate_dims, :]))
+            for svd in range(1, len(svd_list)):
+                Ac = Ac +weights[svd]*(np.dot(svd_list[svd][0:intermediate_dims, :].transpose(), svd_list[svd][0:intermediate_dims, :]))
+        else:
+            Ac = np.dot(svd_list[0][0:intermediate_dims, :].transpose(), svd_list[0][0:intermediate_dims, :])
+            for svd in range(1, len(svd_list)):
+                Ac = Ac +np.dot(svd_list[svd][0:intermediate_dims, :].transpose(), svd_list[svd][0:intermediate_dims, :])
+            Ac = 1/s* Ac
         print(Ac[0:10, 0])
 
         U, S, UT, nd = self.svd_sub(Ac, ndim)
