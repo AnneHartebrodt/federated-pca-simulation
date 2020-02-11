@@ -85,8 +85,7 @@ class AngleRunner():
                 W = self.ddppca.normalize_eigenvectors(W)
                 Ww.append(W)
                 Xw.append(X)
-            return Ws, Xs , Ww, Xw
-        return Ws, Xs, None, None
+        return Ws, Xs, Ww, Xw
 
     def run_and_compare_unequal(self, datafile, outfile=None, dims=100, header=0, rownames=0, center=True, scale_var=True, scale01=False, scale_unit=False,transpose=False, sep = '\t', reported_angles = 20, exp_var = 0.5, mult_dims_ret = [1,2,1.5, 5]):
 
@@ -124,7 +123,7 @@ class AngleRunner():
                 print('Current split')
                 print(interval_end[ar])
                 Ws, Xs, Ww, Xw = self.unqeal_split(data, interval_end[ar], ndims=dims, exp_var = exp_var, mult_dims_ret=mult_dims_ret, weights = perc[ar])
-                for w in range(len(Ws)) :
+                for w in range(len(Ws)):
                     angles = co.compute_angles(W1, Ws[w], reported_angles=reported_angles)
                     with open(outfile + '/angles_unequal_splits'+str(mult_dims_ret[w])+'.tsv', 'a+') as handle:
                         handle.write(cv.collapse_array_to_string(angles, study_id=study_id))
@@ -175,28 +174,28 @@ def parse_array(value_str):
 if __name__=="__main__":
     print('run split script')
 
-    parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
-    parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
-    parser.add_argument('-o', metavar='outfile', type=str, help='output file')
-    parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
-    parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
-    parser.add_argument('-m', metavar='mult_dims_ret', type=str, help='comma separated list of intermediate dimensions', default = 1)
-    parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default = 100)
-    args = parser.parse_args()
+    # parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
+    # parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
+    # parser.add_argument('-o', metavar='outfile', type=str, help='output file')
+    # parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
+    # parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
+    # parser.add_argument('-m', metavar='mult_dims_ret', type=str, help='comma separated list of intermediate dimensions', default = 1)
+    # parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default = 100)
+    # args = parser.parse_args()
+    #
+    # inputfile = args.f
+    # outfile = args.o
+    # exp_var = args.v
+    # mult_dims_ret = args.m
+    # sep = args.s
+    # dims = args.d
 
-    inputfile = args.f
-    outfile = args.o
-    exp_var = args.v
-    mult_dims_ret = args.m
-    sep = args.s
-    dims = args.d
-
-    # inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
-    # outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/target/'
-    # exp_var = 0.5
-    # sep = ','
-    # mult_dims_ret = '0.25, 0.5, 0.75'
-    # dims = 100
+    inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
+    outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/target/'
+    exp_var = 0.5
+    sep = ','
+    mult_dims_ret = '0.25, 0.5, 0.75'
+    dims = 100
 
 
     sim = AngleRunner()
