@@ -52,6 +52,14 @@ class PowerIterationRunner():
         # return the projected datapoints, the eigenvectors and the eigenvalues
         return pca, W, s, params
 
+    def simulate_distributed(self, local, p = 8):
+        d = local[0].shape[0]
+        X = self.powerit.generate_random_gaussian(d, p)
+        for i in range(25):
+            local = []
+            for l in local:
+                locals.append(self.powerit.local_step(X, l))
+            X = self.powerit
 
     def generate_result_str(self, inputfile, epsilon, delta, n, d, q, p, r, coherence, L, noise_variance, e, noise_vals, assumed_noise):
         res = path.basename(path.dirname(inputfile)) + '\t' + str(epsilon)+ '\t' + str(delta) + '\t' + str(n)+'\t' + str(d)+'\t' + str(q)+'\t' + str(p)\

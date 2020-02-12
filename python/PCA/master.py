@@ -144,6 +144,40 @@ class Distributed_DP_PCA():
         self.logger.info('...done')
         return UT[:, 0:nd],S[0:nd]
 
+    def aggregate_partial_SVDs_balacan(self, svd_list, intermediate_dims=None, ndim=100, weights=None):
+        """
+        This function aggregates the local proxy covariances by averaging them
+
+        Function assumes equally shaped covariances matrices.
+        :param svd_list: List of local P matrices
+        :return:
+        """
+        #svd_list=self.normalize_eigenspaces(svd_list)
+        # Average covariance matrices
+        self.logger.info('Aggregating partial SVDs...')
+        s = len(svd_list)
+        # by defaul we take all dimensions available
+        if intermediate_dims is None:
+            intermediate_dims = svd_list[0].shape[1]
+        print(intermediate_dims)
+
+        Ac = svd_list[0][0:intermediate_dims, :]
+        for svd in range(1, len(svd_list)):
+            Ac = np.concatenate((Ac, svd_list[svd][0:intermediate_dims, :]), axis=0)
+
+        ndim = min(ndim, Ac.shape[0]-1)
+        U, S, UT, nd = self.svd_sub(Ac, ndim)
+        print('[Eigenvalues')
+        print(S[0:10])
+        print('Eigenvectors')
+        print(UT[0:10,1])
+        nd= ndim
+        #nd = self.variance_explained(S, var_explained)
+        UT = np.transpose(UT)
+        UT = self.normalize_eigenvectors(UT)
+        self.logger.info('...done')
+        return UT[:, 0:nd],S[0:nd]
+
     def local_PCA(self, original, epsilon0, delta0, noise=True, var_explained = 0.5):
         noisy_cov = self.compute_noisy_cov(original, epsilon0, delta0, noise=noise)
         PC = self.perform_SVD(noisy_cov, var_exp = var_explained)

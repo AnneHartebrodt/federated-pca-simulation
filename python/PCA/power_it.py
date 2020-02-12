@@ -127,6 +127,20 @@ class DistributedPowerIteration():
             p = p+1
         return p
 
+    def local_step(self, Xi, data):
+        Yi = np.dot(data, Xi)
+        return Yi
+
+    def pooling_step(self, Yis, current):
+        converged = False
+        Yi = np.concatenate(Yis, axis=0)
+        Yi, R = la.qr(Yi)
+
+        if np.abs(np.dot(np.transpose(Yi), current)-Yi.shape[1])<0.01:
+            converged=True
+        return Yi, converged
+
+
     def power_method(self,data, sigma, L, p, noise=False):
         noise_norms = []
         # U,T,UT = lsa.svds(data, 1000)
