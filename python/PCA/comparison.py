@@ -1,7 +1,8 @@
 import numpy as np
 import scipy.linalg as la
 import math as math
-import comparison as co
+import convenience as cv
+import os.path as path
 
 
 def angle(v1, v2):
@@ -20,20 +21,26 @@ def angle(v1, v2):
     norm_y = la.norm(v2)
     co = np.clip(dp / (norm_x * norm_y), -1, 1)
     theta = np.arccos(co)
-    angle = math.degrees(theta)
+    a = math.degrees(theta)
     # angle can be Nan
     # print(angle)
-    if math.isnan(angle):
-        return angle
+    if math.isnan(a):
+        return a
     # return the canonical angle
-    if angle > 90:
-        return np.abs(angle - 180)
+    if a > 90:
+        return np.abs(a - 180)
     else:
-        return angle
+        return a
+
 
 def compute_angles(canonical, split, reported_angles=20):
     angles = list()
     for i in range(min(reported_angles, min(canonical.shape[1], split.shape[1]))):
-        angle = co.angle(canonical[:, i], split[:, i])
-        angles.append(angle)
-    return(angles)
+        a = angle(canonical[:, i], split[:, i])
+        angles.append(a)
+    return angles
+
+def compute_save_angles(W0, W1, study_id, filename, outfile, reported_angles=20):
+    angles = compute_angles(W0, W1, reported_angles=reported_angles)
+    with open(path.join(outfile, filename), 'a+') as handle:
+        handle.write(cv.collapse_array_to_string(angles, study_id=study_id))

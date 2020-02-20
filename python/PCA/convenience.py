@@ -1,7 +1,10 @@
 import os as os
 import os.path as path
-import numpy as np
+import shutil as sh
 import time as time
+
+import numpy as np
+
 
 def collapse_array_to_string(a, study_id):
     res = study_id + '\t'
@@ -10,6 +13,12 @@ def collapse_array_to_string(a, study_id):
     res = res + '\n'
     return res
 
+def collapse_array_to_string_nrdropped(a, study_id, nr_dropped):
+    res = study_id+'\t'+str(nr_dropped)+'\t'
+    for e in a:
+        res =  res + str(e)+'\t'
+    res = res+'\n'
+    return res
 
 
 def make_eigenvector_path(inputfile, foldername):
@@ -19,32 +28,71 @@ def make_eigenvector_path(inputfile, foldername):
     'eigenvectors<currentTimestamp> will be created
     Args:
         inputfile: name of the inputfile
+        foldername:
 
     Returns: a pathname according to the stated rules
 
     """
     print(path.dirname(inputfile))
-    if not os.path.exists(path.dirname(inputfile) + '/' + foldername):
-        pn = path.dirname(inputfile) + '/' + foldername
+    if not os.path.exists(path.join(path.dirname(inputfile), foldername)):
+        pn = path.join(path.dirname(inputfile), foldername)
         os.makedirs(pn)
     else:
         print('Path exists')
-        pn = path.dirname(inputfile) + '/' + foldername + str(time.process_time())
+        pn = path.join(path.dirname(inputfile), foldername + str(time.process_time()))
         os.makedirs(pn)
     return pn
 
-def extract_eigenvals(E):
+
+def delete(eigenvector_path):
     '''
-    Eigendecomposition from scipy.linalg.sparse returns eigenvalues ordered in
+    CAREFUL with this.
+    To save disk space, the eigenvectors will be remove after the angles have been computed
+    Args:
+        eigenvector_path: directory which will be removed including all subdirectories.
+
+    Returns:
+
+    '''
+    sh.rmtree(eigenvector_path)
+
+
+def extract_eigenvals(eigenvalues):
+    """
+    eigenvaluesigendecomposition from scipy.linalg.sparse returns eigenvalues ordered in
     increasing order, followed by eigenvalues which are 0.
     Eigenvalues are returned in decreasing order ommiting th 0s alltogether
     Args:
-        E: Eigenvalues from a sparse singular value decomposition.
+        eigenvalues: Eigenvalues from a sparse singular value decomposition.
 
     Returns: Eigenvalue vector in decreasing order, without 0s.
 
-    '''
-    indz = np.where(E == 0)
-    E = np.flip(E)
-    E = E[E != 0]
-    return E, indz
+    """
+    indz = np.where(eigenvalues == 0)
+    eigenvalues = np.flip(eigenvalues)
+    eigenvalues = eigenvalues[eigenvalues != 0]
+    return eigenvalues, indz
+
+
+def parse_array(value_str):
+    values_str = value_str.split(',')
+    values_int = []
+    for v in values_str:
+        values_int.append(float(v))
+    return values_int
+
+
+def write_summary(res, header, outfile):
+    try:
+        os.makedirs(path.dirname(outfile))
+    except OSError:
+        print(path.dirname(outfile) + ' could not be created')
+    else:
+        print(path.dirname(outfile) + ' was created')
+
+    if not path.exists(outfile):
+        with open(outfile, 'w') as handle:
+            handle.write(header + '\n')
+
+    with open(outfile, 'a+') as handle:
+        handle.write(res + '\n')

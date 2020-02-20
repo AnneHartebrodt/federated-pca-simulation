@@ -1,9 +1,0 @@
-connexion
-swagger_ui_bundle
-python_dateutil
-setuptools
-six
-flask
-numpy
-pandas
-scipy
