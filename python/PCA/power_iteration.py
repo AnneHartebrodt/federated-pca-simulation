@@ -3,7 +3,6 @@ import scipy as sc
 import scipy.linalg as la
 import scipy.sparse.linalg as lsa
 import scipy.spatial.distance as d
-import numba as numba
 import convenience as cv
 
 
