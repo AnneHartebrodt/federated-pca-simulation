@@ -1,14 +1,17 @@
-import numpy as np
-import os.path as path
-import scipy.linalg as lsa
-from import_export.import_data import CustomDataImporter
-import proxy_covariance as dpca
-import power_iteration as powerit
-import import_export.easy_import as easy
 import argparse as ap
+import os.path as path
+
+import numpy as np
+import scipy.linalg as lsa
+
+import import_export.easy_import as easy
+import power_iteration as powerit
+import proxy_covariance as dpca
 
 
-def run_standalone(data, outfile=None, p=10, header=None, rownames=None, center=True, scale_var=True,scale01=False, scale_unit=True, transpose=False, sep='\t', drop_samples=[], log=True, exp_var=0.5, epsilon=1, delta=1, noise=False):
+def run_standalone(data, outfile=None, p=10, header=None, rownames=None, center=True, scale_var=True, scale01=False,
+                   scale_unit=True, transpose=False, sep='\t', drop_samples=[], log=True, exp_var=0.5, epsilon=1,
+                   delta=1, noise=False):
     """
     This function performs a regular principal component analysis and saves the result to files containing
     the projection the
@@ -25,7 +28,9 @@ def run_standalone(data, outfile=None, p=10, header=None, rownames=None, center=
     # if data is a string, data needs to be read first, otherwise it is
     # assumed to be scaled and ready to use
     if isinstance(data, str):
-        data = easy.easy_import(data, header=header, rownames=rownames, sep=sep, center=center, scale_var=scale_var, scale01=scale01, scale_unit=scale_unit, drop_samples=drop_samples, log=log, outfile=outfile, transpose=transpose)
+        data = easy.easy_import(data, header=header, rownames=rownames, sep=sep, center=center, scale_var=scale_var,
+                                scale01=scale01, scale_unit=scale_unit, drop_samples=drop_samples, log=log,
+                                outfile=outfile, transpose=transpose)
     # run pca
     noisy_cov = dpca.compute_noisy_cov(data, epsilon0=1, delta0=1, noise=False)
     if noise:
@@ -34,11 +39,12 @@ def run_standalone(data, outfile=None, p=10, header=None, rownames=None, center=
     else:
         noise_variance = 1
         params = []
-        pca, W, s, nr_iter, noise = powerit.power_method(noisy_cov, sigma=noise_variance,p=p, noise=noise)
+        pca, W, s, nr_iter, noise = powerit.power_method(noisy_cov, sigma=noise_variance, p=p, noise=noise)
     # return the projected datapoints, the eigenvectors and the eigenvalues
     return pca, W, s, nr_iter, params
 
-def simulate_distributed(local, p = 8, tolerance=0.000001):
+
+def simulate_distributed(local, p=8, tolerance=0.000001):
     """
     Simulate a distributed subspace iteration on a list of
     covariance matrices
@@ -52,23 +58,26 @@ def simulate_distributed(local, p = 8, tolerance=0.000001):
     """
     d = local[0].shape[0]
     X = powerit.generate_random_gaussian(d, p, sigma=1)
-    X, R = lsa.qr(X, mode = 'economic')
+    X, R = lsa.qr(X, mode='economic')
     # order eigenvectors from largest to smallest, to achive
     # ordered eigenvectors
     converged = False
     count = 0
     while not converged:
-        count = count +1
+        count = count + 1
         locals = []
         for l in local:
             locals.append(powerit.local_step(X, l))
-        X, E, converged = powerit.pooling_step(locals,X)
+        X, E, converged = powerit.pooling_step(locals, X)
     ord = np.argsort(E)
     X = np.flip(X[:, ord], axis=1)
     E = np.flip(np.sort(E))
     return X, E, count
 
-def simulate_deflation(data, outfile=None, dims=10, header=None, rownames=None, center=True, scale_var=True,scale01=False, scale_unit=True, transpose=False, sep='\t', filename='/pca', drop_samples=[], log=True, exp_var=0.5, epsilon=1, delta=1, noise=False):
+
+def simulate_deflation(data, outfile=None, dims=10, header=None, rownames=None, center=True, scale_var=True,
+                       scale01=False, scale_unit=True, transpose=False, sep='\t', filename='/pca', drop_samples=[],
+                       log=True, exp_var=0.5, epsilon=1, delta=1, noise=False):
     """
     This function performs a regular principal component analysis and saves the result to files containing
     the projection the
@@ -86,37 +95,41 @@ def simulate_deflation(data, outfile=None, dims=10, header=None, rownames=None, 
     # if data is a string, data needs to be read first, otherwise it is
     # assumed to be scaled and ready to use
     if isinstance(data, str):
-        data = easy.easy_import(data, header=header, rownames=rownames, sep=sep, center=center, scale_var=scale_var,scale01=scale01, scale_unit=scale_unit, drop_samples=drop_samples, log=log, outfile=outfile,transpose=transpose)
+        data = easy.easy_import(data, header=header, rownames=rownames, sep=sep, center=center, scale_var=scale_var,
+                                scale01=scale01, scale_unit=scale_unit, drop_samples=drop_samples, log=log,
+                                outfile=outfile, transpose=transpose)
     # run pca
     noisy_cov = dpca.compute_noisy_cov(data, epsilon0=epsilon, delta0=delta, noise=False)
     eigenvalues = []
     eigenvectors = []
-    nr_iter=[]
+    nr_iter = []
     for d in range(dims):
-        pca, W, E, nriter, noise = powerit.power_method(noisy_cov, 1, 1, noise)
-        noisy_cov = powerit.hotelling_deflation(noisy_cov, W, E)
+
+        pca, W, E, nriter= powerit.power_iteration(noisy_cov)
+        noisy_cov = powerit.hotelling_deflation(noisy_cov, W, E, False)
         eigenvalues.append(E)
         eigenvectors.append(W.flatten())
         nr_iter.append(nriter)
+        print(d)
 
     eigenvectors = np.column_stack(eigenvectors)
 
     return eigenvectors, eigenvalues, nr_iter
 
 
-
-def generate_result_str(inputfile, epsilon, delta, n, d, q, p, r, coherence, L, noise_variance, e, noise_vals, assumed_noise):
-    res = path.basename(path.dirname(inputfile)) + '\t' + str(epsilon)+ '\t' + str(delta) + '\t' + str(n)+'\t' + str(d)+'\t' + str(q)+'\t' + str(p)\
-          +'\t'+str(r)+'\t'+ str(coherence)+ '\t'+ str(L)+'\t' + str(noise_variance)+ '\t'+ str(e)+'\t'+str(assumed_noise)+'\t'
+def generate_result_str(inputfile, epsilon, delta, n, d, q, p, r, coherence, L, noise_variance, e, noise_vals,
+                        assumed_noise):
+    res = path.basename(path.dirname(inputfile)) + '\t' + str(epsilon) + '\t' + str(delta) + '\t' + str(n) + '\t' + str(
+        d) + '\t' + str(q) + '\t' + str(p) \
+          + '\t' + str(r) + '\t' + str(coherence) + '\t' + str(L) + '\t' + str(noise_variance) + '\t' + str(
+        e) + '\t' + str(assumed_noise) + '\t'
     header = 'study.id\tepsilon\tdelta\tnr.samples\tnr.dimension\tnr.itermediate\tit.rank\tr\tcoherence\tnr.iterations\tnoise.variance\terror.bound\tassumed.noise\t'
     i = 1
     for v in noise_vals:
-        res = res +str(v) + '\t'
-        header = header+'n1.'+str(i)+'\t'
-        i= i+1
+        res = res + str(v) + '\t'
+        header = header + 'n1.' + str(i) + '\t'
+        i = i + 1
     return (res, header)
-
-
 
 
 if __name__ == '__main__':

@@ -153,11 +153,32 @@ def power_method(data, sigma, p, noise=False):
     proj_global = sc.dot(data, X_0)
     return proj_global, X_0[:, 0:p], eigenvals[0:p], nr_iterations, noise_norms
 
-def power_iteration():
-    print('teszt')
-# dimension n samples d dimensions
-# fix target rank k, intermediate rank 1 and iteration rank q
-# k>=q and 2q<=p<d
+def power_iteration(data, tolerance = 0.000001):
+    """
+
+    Args:
+        data:
+
+    Returns:
+
+    """
+    X_0 = sc.random.normal(0, 1, data.shape[0])
+    nr_iterations = 0
+    converged = False
+    current =X_0
+    while not converged:
+        # U1, E, UT1 = lsa.svds(X_0,1000)
+        nr_iterations = nr_iterations + 1
+
+        X_0 = np.dot(data, X_0)
+        X_0 = X_0/la.norm(X_0)
+        if np.abs(np.abs(np.dot(X_0, current)) - 1) < tolerance:
+            converged=True
+        current = X_0
+    eigenval = eigenvalue(data, X_0)
+    proj_global = sc.dot(data, X_0)
+    return proj_global, X_0, eigenval, nr_iterations
+
 
 def convergence_checker(current, previous, tolerance=0.000001, required=None):
     '''
@@ -189,8 +210,8 @@ def convergence_checker(current, previous, tolerance=0.000001, required=None):
     return converged
 
 
-def hotelling_deflation(data, eigenvector, eigenvalue):
-    data = data - eigenvalue * np.dot(eigenvector, eigenvector.T)
+def hotelling_deflation(data, eigenvector, eigenvalue, isColumn=True):
+    data = data - eigenvalue * np.outer(eigenvector.T, eigenvector)
     return data
 
 

@@ -1,6 +1,6 @@
 import os.path as path
 import time as time
-
+import argparse as ap
 import numpy as np
 import pandas as pd
 
@@ -30,7 +30,7 @@ def unqeal_split_power_iteration(data, interval_end, p=10, tolerance=0.000001):
     return W, E, count
 
 
-def local_outlier_removal(data_sub, pca, ndims=100, study_id=None, outfile=None):
+def local_outlier_removal(data_sub, pca, study_id=None, outfile=None):
     print('Local outlier removal')
     outliers = orm.outlier_removal_mad(pca, 6, 3)
     if outfile is not None and study_id is not None:
@@ -42,7 +42,7 @@ def local_outlier_removal(data_sub, pca, ndims=100, study_id=None, outfile=None)
 
 
 def unqeal_split_proxy_covariance(data, interval_end, ndims=100, exp_var=0.5, mult_dims_ret=1,
-                                  weights=None, balacan=False, unweighted=True, remove_local_outliers=False):
+                                  weights=None, balacan=False, unweighted=False, remove_local_outliers=False):
     """
     This function simulates a multisite PCA with each site having
     varying number of samples.
@@ -194,8 +194,7 @@ def write_single_site(dw, de, reported_angles, outfile):
     write_eigenvectors_single_site(de, reported_angles, outfile=outfile)
 
 
-def run_and_compare_unequal(data, outfile, dims=100, p=10, clusterfile=None, cluster_sep='\t', study_id='',
-                            reported_angles=20, exp_var=0.5, mult_dims_ret=[1, 2, 1.5, 5]):
+def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, cluster_sep='\t', study_id='',reported_angles=20, exp_var=0.5, mult_dims_ret=[0.5, 1, 2], balcan=False, unweighted = False, weighted = False):
     n = data.shape[0]
     dims = min(dims, n)
     interval_end, perc = make_test_intervals(n)
@@ -207,32 +206,34 @@ def run_and_compare_unequal(data, outfile, dims=100, p=10, clusterfile=None, clu
         for i in range(1):
             print('Current split ' + str(interval_end[ar]))
             start = time.monotonic()
-            eigenvectors_prox, eigenvalues_prox = unqeal_split_proxy_covariance(data, interval_end[ar], ndims=dims,
-                                                                                mult_dims_ret=mult_dims_ret,
-                                                                                exp_var=exp_var, weights=perc[ar],
-                                                                                balacan=True)
-            start = time_logger('Unequal split proxy', start, outfile)
-            write_results_prox(eigenvectors_prox=eigenvectors_prox, eigenvalues_prox=eigenvalues_prox,
+            if unweighted or balcan or weighted:
+                if not weighted:
+                    perc = None
+                eigenvectors_prox, eigenvalues_prox = unqeal_split_proxy_covariance(data, interval_end[ar], ndims=dims,mult_dims_ret=mult_dims_ret,exp_var=exp_var, weights=perc[ar],balacan=balcan, unweighted=unweighted)
+
+                start = time_logger('Unequal split proxy', start, outfile)
+                write_results_prox(eigenvectors_prox=eigenvectors_prox, eigenvalues_prox=eigenvalues_prox,
                                reference=dw['single_site_bor'], mult_dims_ret=mult_dims_ret,
                                reported_angles=reported_angles, study_id=study_id, it=i, outfile=outfile)
-
-            eigenvectors_pit, eigenvalues_pit, count_pit = unqeal_split_power_iteration(data, interval_end[ar], p)
-            start = time_logger('Unequal split subspace iteration', start, outfile)
-            write_results(eigenvectors_pit=eigenvectors_pit, reference=dw['single_site_subspace'],
+            if p!=-1:
+                eigenvectors_pit, eigenvalues_pit, count_pit = unqeal_split_power_iteration(data, interval_end[ar], p)
+                start = time_logger('Unequal split subspace iteration', start, outfile)
+                write_results(eigenvectors_pit=eigenvectors_pit, reference=dw['single_site_subspace'],
                           eigenvalues_pit=eigenvalues_pit, study_id=study_id, reported_angles=reported_angles,
                           it=i, file_id='single_site_subspace_dpit_', outfile=outfile)
 
             if clusterfile is not None:
-
                 eigenvectors_ueq, eigenvalue_ueq, nr_iter = cluster_split(data, clusterfile=clusterfile,
                                                                           sep=cluster_sep,
                                                                           proxy_cov=True, power_it=True)
                 start = time_logger('Unequal split preclustered', start, outfile)
-                write_results(eigenvectors_pit=eigenvectors_ueq['weighted'], reference=dw['single_site_bor'], eigenvalues_pit=eigenvalue_ueq['weighted'],
+                write_results(eigenvectors_pit=eigenvectors_ueq['weighted'], reference=dw['single_site_bor'],
+                              eigenvalues_pit=eigenvalue_ueq['weighted'],
                               study_id=study_id,
                               reported_angles=reported_angles, it=i, file_id='single_site_bor_cluster_weighted_',
                               outfile=outfile)
-                write_results(eigenvectors_pit= eigenvectors_ueq['powerit'], reference =dw['single_site_subspace'], eigenvalues_pit=eigenvalue_ueq['powerit'],
+                write_results(eigenvectors_pit=eigenvectors_ueq['powerit'], reference=dw['single_site_subspace'],
+                              eigenvalues_pit=eigenvalue_ueq['powerit'],
                               study_id=study_id, reported_angles=reported_angles, it=i, nr_it=nr_iter,
                               file_id='single_site_bor_cluster_weighted_', outfile=outfile)
 
@@ -298,21 +299,43 @@ if __name__ == "__main__":
     # print('run split script')
     #
     # parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
-    # parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
-    # parser.add_argument('-o', metavar='outfile', type=str, help='output file')
+    # parser.add_argument('-f', metavar='file', type=str, help='filename of data file; default tab separated')
+    # parser.add_argument('-o', metavar='outfile', type=str, help='output directory')
+    # parser.add_argument('-c', metavar='clusterfile', type=str, help='clustersplit file: tab separated by default')
+    # parser.add_argument('-n', metavar='header', type=int, help='has data column names?', default=None)
+    # parser.add_argument('-r', metavar='rownames', type=int, help='has data row names?', default = None)
+    # parser.add_argument('-s', metavar='sep', type=str, help='field delimiter input file', default = '\t')
+    # parser.add_argument('-S', metavar='cluster_sep', type=str, help='field delimiter cluster file', default='\t')
     # parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
-    # parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
-    # parser.add_argument('-m', metavar='mult_dims_ret', type=str, help='comma separated list of intermediate dimensions',
-    #                     default=1)
-    # parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default=100)
+    # parser.add_argument('-m', metavar='mult_dims_ret', type=str, help='comma separated list of intermediate dimensions',default='1')
+    # parser.add_argument('-d', metavar='dims', type=int, help='intermediate dimensions single site/proxy pca', default=100)
+    # parser.add_argument('-p', metavar='powdim', type=int, help='# eigenvectors poweriteration / reported dimensions', default=20)
+    # parser.add_argument('--center', action='store_true')
+    # parser.add_argument('--log2', action='store_true')
+    # parser.add_argument('--balcan', action='store_true')
+    # parser.add_argument('--weighted', action='store_true')
+    # parser.add_argument('--unweighted', action='store_true')
+    #
     # args = parser.parse_args()
     #
     # inputfile = args.f
     # outfile = args.o
+    # clusterfile = args.c
+    # header = args.n
+    # rownames = args.r
+    # sep = args.s
+    # cluster_sep = args.S
     # exp_var = args.v
     # mult_dims_ret = args.m
-    # sep = args.s
-    # dims = args.d
+    # dims  = args.d
+    # p = args.p
+    # center = args.center
+    # log = args.log2
+    # weighted = args.weighted
+    # balcan = args.balcan
+    # unweighted = args.unweighted
+
+
 
     cluster_sep = '\t'
     exp_var = 0.5
@@ -323,19 +346,21 @@ if __name__ == "__main__":
     center = True
     log = True
     rownames = None
-    p = 2
-    reported_angles = 20
+    p = 10
     inputfile = '/home/anne/Documents/featurecloud/data/tcga/data_clean/CPTAC-2/coding_trunc.tsv'
-    outfile = '/home/anne/Documents/featurecloud/results/sandbox1/'
+    outfile = '/home/anne/Documents/featurecloud/results/sandbox2/'
     clusterfile = '/home/anne/Documents/featurecloud/results/pca_plots/cluster/CPTAC-2_10_clusters.tsv'
+    weighted = True
+    balcan = True
+    unweighted = True
 
     mult_dims_ret = parse_array(mult_dims_ret)
     summaryfile = cv.make_eigenvector_path(outfile, path.join(path.basename(path.dirname(inputfile)), str(exp_var)))
     study_id = path.basename(path.dirname(inputfile))
 
+    st = time.monotonic()
     # import data, center (can be done globally in the distributed case), log2 transform
     data = easy.easy_import(inputfile, header=header, rownames=rownames, center=center, log=log, sep=sep)
 
-    run_and_compare_unequal(data, summaryfile, reported_angles=reported_angles, study_id=study_id, exp_var=exp_var,
-                            mult_dims_ret=mult_dims_ret, clusterfile=clusterfile, cluster_sep=cluster_sep, dims=dims,
-                            p=p)
+    run_and_compare_unequal(data, summaryfile, reported_angles=p, study_id=study_id, exp_var=exp_var,mult_dims_ret=mult_dims_ret, clusterfile=clusterfile, cluster_sep=cluster_sep, dims=dims,p=p, weighted=weighted, unweighted=unweighted, balcan=balcan)
+    time_logger("Total time", st, filename=outfile)
