@@ -227,23 +227,23 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
             with open(path.join(outfile, 'meta_splits.tsv'), 'a+') as handle:
                 handle.write(cv.collapse_array_to_string(meta, study_id))
 
-            if clusterfile is not None:
-                try:
-                    eigenvectors_ueq, eigenvalue_ueq, nr_iter = cluster_split(data, clusterfile=clusterfile,
+        if clusterfile is not None:
+            try:
+                eigenvectors_ueq, eigenvalue_ueq, nr_iter = cluster_split(data, clusterfile=clusterfile,
                                                                           sep=cluster_sep,
                                                                           proxy_cov=True, power_it=True)
-                    start = time_logger('Unequal split preclustered', start, outfile)
-                    write_results(eigenvectors_pit=eigenvectors_ueq['weighted'], reference=dw['single_site_bor'],
+                start = time_logger('Unequal split preclustered', start, outfile)
+                write_results(eigenvectors_pit=eigenvectors_ueq['weighted'], reference=dw['single_site_bor'],
                               eigenvalues_pit=eigenvalue_ueq['weighted'],
                               study_id=study_id,
-                              reported_angles=reported_angles, it=i, file_id='single_site_bor_cluster_weighted_',
+                              reported_angles=reported_angles, it=1, file_id='single_site_bor_cluster_weighted_',
                               outfile=outfile)
-                    write_results(eigenvectors_pit=eigenvectors_ueq['powerit'], reference=dw['single_site_subspace'],
+                write_results(eigenvectors_pit=eigenvectors_ueq['powerit'], reference=dw['single_site_subspace'],
                               eigenvalues_pit=eigenvalue_ueq['powerit'],
-                              study_id=study_id, reported_angles=reported_angles, it=i, nr_it=nr_iter,
+                              study_id=study_id, reported_angles=reported_angles, it=1, nr_it=nr_iter,
                               file_id='single_site_bor_cluster_weighted_', outfile=outfile)
-                except FileNotFoundError:
-                    print('File does not exist. Are your sure there is a preclustered file for this dataset?')
+            except FileNotFoundError:
+                print('File does not exist. Are your sure there is a preclustered file for this dataset?')
 
 
 
