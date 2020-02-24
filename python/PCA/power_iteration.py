@@ -4,6 +4,7 @@ import scipy.linalg as la
 import scipy.sparse.linalg as lsa
 import scipy.spatial.distance as d
 import convenience as cv
+import time as time
 
 
 def noise_variance_pow_it(epsilon, p, L, delta):
@@ -130,7 +131,7 @@ def power_method(data, sigma, p, noise=False):
     noise_norms = []
     # U,T,UT = lsa.svds(data, 1000)
     X_0 = generate_random_gaussian(data.shape[0], p, sigma)
-    X_0, R = la.qr(X_0)
+    X_0, R = la.qr(X_0, mode='economic')
     nr_iterations = 0
     converged = False
     current = X_0
@@ -140,9 +141,12 @@ def power_method(data, sigma, p, noise=False):
         if noise:
             G = generate_random_gaussian(data.shape[0], p, np.max(X_0) * sigma)
             noise_norms.append(la.norm(G.flatten()))
-            X_0, R = la.qr(np.dot(data, X_0[:, 0:p]) + G)
+            X_0, R = la.qr(np.dot(data, X_0[:, 0:p]) + G, mode='economic')
         else:
-            X_0, R = la.qr(np.dot(data, X_0[:, 0:p]))
+            start = time.monotonic()
+            print('Starting QR decomposition')
+            X_0, R = la.qr(np.dot(data, X_0[:, 0:p]), mode='economic')
+            print('Finished: '+str((time.monotonic()-start)))
         converged = convergence_checker(X_0[:, 0:p], current[:, 0:p])
         current = X_0
     eigenvals = eigenvalues(X_0, data)
