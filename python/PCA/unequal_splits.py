@@ -203,7 +203,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
     write_single_site(dw, de, reported_angles, outfile=outfile)
 
     for ar in range(len(interval_end)):
-        for i in range(1):
+        for i in range(10):
             print('Current split ' + str(interval_end[ar]))
             start = time.monotonic()
             if unweighted or balcan or weighted:
@@ -228,19 +228,22 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
                 handle.write(cv.collapse_array_to_string(meta, study_id))
 
             if clusterfile is not None:
-                eigenvectors_ueq, eigenvalue_ueq, nr_iter = cluster_split(data, clusterfile=clusterfile,
+                try:
+                    eigenvectors_ueq, eigenvalue_ueq, nr_iter = cluster_split(data, clusterfile=clusterfile,
                                                                           sep=cluster_sep,
                                                                           proxy_cov=True, power_it=True)
-                start = time_logger('Unequal split preclustered', start, outfile)
-                write_results(eigenvectors_pit=eigenvectors_ueq['weighted'], reference=dw['single_site_bor'],
+                    start = time_logger('Unequal split preclustered', start, outfile)
+                    write_results(eigenvectors_pit=eigenvectors_ueq['weighted'], reference=dw['single_site_bor'],
                               eigenvalues_pit=eigenvalue_ueq['weighted'],
                               study_id=study_id,
                               reported_angles=reported_angles, it=i, file_id='single_site_bor_cluster_weighted_',
                               outfile=outfile)
-                write_results(eigenvectors_pit=eigenvectors_ueq['powerit'], reference=dw['single_site_subspace'],
+                    write_results(eigenvectors_pit=eigenvectors_ueq['powerit'], reference=dw['single_site_subspace'],
                               eigenvalues_pit=eigenvalue_ueq['powerit'],
                               study_id=study_id, reported_angles=reported_angles, it=i, nr_it=nr_iter,
                               file_id='single_site_bor_cluster_weighted_', outfile=outfile)
+                except FileNotFoundError:
+                    print('File does not exist. Are your sure there is a preclustered file for this dataset?')
 
 
 
@@ -276,7 +279,6 @@ def make_test_intervals(n):
     # more extreme cases maybe later
     unequal_splits = [[0.1, 0.9], [0.3, 0.7], [0.5, 0.5], [0.2, 0.2, 0.2, 0.2, 0.2], [0.1, 0.1, 0.2, 0.2, 0.4],
                       [0.1, 0.1, 0.1, 0.1, 0.6], [0.2375, 0.2375, 0.2375, 0.2375, 0.05]]
-    unequal_splits = [[0.5, 0.5]]
     interval_end = list()
     sum = 0
     for i in unequal_splits:

@@ -144,9 +144,7 @@ def power_method(data, sigma, p, noise=False):
             X_0, R = la.qr(np.dot(data, X_0[:, 0:p]) + G, mode='economic')
         else:
             start = time.monotonic()
-            print('Starting QR decomposition')
             X_0, R = la.qr(np.dot(data, X_0[:, 0:p]), mode='economic')
-            print('Finished: '+str((time.monotonic()-start)))
         converged = convergence_checker(X_0[:, 0:p], current[:, 0:p])
         current = X_0
     eigenvals = eigenvalues(X_0, data)
