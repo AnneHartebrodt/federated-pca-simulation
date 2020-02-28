@@ -217,7 +217,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
                 if not weighted:
                     perc = None
 
-                signal.alarm(500)
+                signal.alarm(1000)
                 try:
                     eigenvectors_prox, eigenvalues_prox = unqeal_split_proxy_covariance(data, interval_end[ar], ndims=dims,mult_dims_ret=mult_dims_ret,exp_var=exp_var, weights=perc[ar],balacan=balcan, unweighted=unweighted)
                     start = time_logger('Unequal split proxy', start, outfile)
@@ -235,7 +235,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
                 start = time_logger('Unequal split subspace iteration', start, outfile)
                 write_results(eigenvectors_pit=eigenvectors_pit, reference=dw['single_site_subspace'],
                           eigenvalues_pit=eigenvalues_pit, study_id=study_id, reported_angles=reported_angles,
-                          it=i, file_id='single_site_subspace_dpit_', outfile=outfile)
+                          it=i, file_id='dpit_subspace_', outfile=outfile)
 
             # create and write metadata
             meta = [i] + [len(interval_end[ar])] + interval_end[ar]
