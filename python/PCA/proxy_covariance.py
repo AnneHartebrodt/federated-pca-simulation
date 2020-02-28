@@ -59,7 +59,7 @@ def compute_noisy_cov(original, epsilon0=1, delta0=1, noise=False):
         noise = sc.tril(noise, -1)
         # add noise matrix and original matrix element-wise
         cov = cov + noise
-        print(cov.shape)
+        #print(cov.shape)
     # pd.DataFrame(cov).to_csv(path_or_buf=self.file+'noisy.tsv', sep='\t', header=None, index=False)
 
     return cov
@@ -77,11 +77,11 @@ def perform_SVD(noisy_cov, var_exp=0.5, ndims=100, mult_dims_returned=1):
 
     U, S, UT, nd = svd_sub(noisy_cov, ndims)
     vex = variance_explained(S, var_exp)
-    print('#nr of eigenvalues to explain: ' + str(var_exp) + ' variance ' + str(vex))
+    #print('#nr of eigenvalues to explain: ' + str(var_exp) + ' variance ' + str(vex))
     # In case we want to use more values in the approximation
     nd = min(nd, int(np.ceil(vex * mult_dims_returned)))
-    print('#nr of non zero eigenvalues: ' + str(len(S)))
-    print('#nr of intermediate dimensions: ' + str(nd))
+    #print('#nr of non zero eigenvalues: ' + str(len(S)))
+    #print('#nr of intermediate dimensions: ' + str(nd))
 
     R = np.zeros((nd, nd))
     np.fill_diagonal(R, S[0:nd])
@@ -105,7 +105,7 @@ def aggregate_partial_SVDs(svd_list, intermediate_dims=None, ndim=100, weights=N
     # by defaul we take all dimensions available
     if intermediate_dims is None:
         intermediate_dims = svd_list[0].shape[1]
-    print(intermediate_dims)
+    #print(intermediate_dims)
     if weights is not None:
         Ac = weights[0] * (np.dot(svd_list[0][0:intermediate_dims, :].transpose(), svd_list[0][0:intermediate_dims, :]))
         for svd in range(1, len(svd_list)):
@@ -116,13 +116,9 @@ def aggregate_partial_SVDs(svd_list, intermediate_dims=None, ndim=100, weights=N
         for svd in range(1, len(svd_list)):
             Ac = Ac + np.dot(svd_list[svd][0:intermediate_dims, :].transpose(), svd_list[svd][0:intermediate_dims, :])
         Ac = 1 / s * Ac
-    print(Ac[0:10, 0])
 
     U, S, UT, nd = svd_sub(Ac, ndim)
-    print('[Eigenvalues')
-    print(S[0:10])
-    print('Eigenvectors')
-    print(UT[0:10, 1])
+
 
     # nd = self.variance_explained(S, var_explained)
     UT = np.transpose(UT)
@@ -146,7 +142,7 @@ def aggregate_partial_SVDs_balacan(svd_list, intermediate_dims=None, ndim=100, w
     # by defaul we take all dimensions available
     if intermediate_dims is None:
         intermediate_dims = svd_list[0].shape[1]
-    print(intermediate_dims)
+    #print(intermediate_dims)
 
     Ac = svd_list[0][0:intermediate_dims, :]
     for svd in range(1, len(svd_list)):
@@ -154,10 +150,6 @@ def aggregate_partial_SVDs_balacan(svd_list, intermediate_dims=None, ndim=100, w
 
     ndim = min(ndim, Ac.shape[0] - 1)
     U, S, UT, nd = svd_sub(Ac, ndim)
-    print('[Eigenvalues')
-    print(S[0:10])
-    print('Eigenvectors')
-    print(UT[0:10, 1])
     nd = ndim
     # nd = self.variance_explained(S, var_explained)
     UT = np.transpose(UT)
@@ -210,7 +202,7 @@ def normalize_eigenspaces(svd_list):
             dp = sc.dot(svd_list[0][:, column], svd_list[i][:, column])
             if dp < 0:
                 svd_list[i][:, column] = svd_list[i][:, column] * -1
-                print('norm')
+                #print('norm')
     return svd_list
 
 
