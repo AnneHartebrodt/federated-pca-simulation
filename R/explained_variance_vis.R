@@ -1,5 +1,6 @@
 require(data.table)
 require(ggplot2)
+#require(cowplot)
 
 setwd('/home/anne/Documents/featurecloud/')
 variance<-fread('results/pca_plots/all/var_explained_aor.txt')
@@ -18,13 +19,17 @@ variance[, perc:= nr.vars/nr.samples]
 
 ggplot(variance[variable %in% c('0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8')], aes(x = variable,y = perc))+
   geom_boxplot()+
-  ylab('#PCs/#PCs to explain 100% of variance')+
+  ylab('#PCs/total #PCs')+
   xlab('Explained variance')
 
-ggplot(variance[variable %in% c('0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8')], aes(x = variable,y =nr.vars))+
+require(cowplot)
+# remove 1 outlier for better visibility
+#variance[variable %in% c('0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7')][42]
+g<-ggplot(variance[variable %in% c('0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7')][-42], aes(x = variable,y =nr.vars))+
   geom_boxplot()+
-  ylab('#PCs/#PCs to explain 100% of variance')+
-  xlab('Explained variance')
+  ylab('#PCs / total #PCs')+
+  xlab('% explained variance')
+ggsave('/home/anne/Documents/paper_fed_PCA/figures/explained_variance.pdf', g, units='cm', height=10, width = 10, dpi = 'print')
 
 ggplot(variance, aes(x = variable,y = perc))+
   geom_boxplot()+
