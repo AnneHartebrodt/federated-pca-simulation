@@ -209,56 +209,57 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
     dw, de = single_site(data, study_id, p=p, dims=dims, outfile=outfile)
     write_single_site(dw, de, reported_angles, outfile=outfile)
 
-    for ar in range(len(interval_end)):
-        for i in range(10):
-            print('Current split ' + str(interval_end[ar]))
-            start = time.monotonic()
-            if unweighted or balcan or weighted:
-                if not weighted:
-                    perc = None
+    if balcan or unweighted or weighted or p!=-1:
+        for ar in range(len(interval_end)):
+            for i in range(10):
+                print('Current split ' + str(interval_end[ar]))
+                start = time.monotonic()
+                if unweighted or balcan or weighted:
+                    if not weighted:
+                        perc = None
 
-                signal.alarm(1000)
-                try:
-                    eigenvectors_prox, eigenvalues_prox = unqeal_split_proxy_covariance(data, interval_end[ar], ndims=dims,mult_dims_ret=mult_dims_ret,exp_var=exp_var, weights=perc[ar],balacan=balcan, unweighted=unweighted)
-                    start = time_logger('Unequal split proxy', start, outfile)
-                    write_results_prox(eigenvectors_prox=eigenvectors_prox, eigenvalues_prox=eigenvalues_prox,
-                                       reference=dw['single_site_bor'], mult_dims_ret=mult_dims_ret,
-                                       reported_angles=reported_angles, study_id=study_id, it=i, outfile=outfile)
-                except TimeException:
-                    print('TIME EXCEPTION')
-                    start = time_logger('Time excpetion', start, outfile)
-                signal.alarm(0)
+                    signal.alarm(1000)
+                    try:
+                        eigenvectors_prox, eigenvalues_prox = unqeal_split_proxy_covariance(data, interval_end[ar], ndims=dims,mult_dims_ret=mult_dims_ret,exp_var=exp_var, weights=perc[ar],balacan=balcan, unweighted=unweighted)
+                        start = time_logger('Unequal split proxy', start, outfile)
+                        write_results_prox(eigenvectors_prox=eigenvectors_prox, eigenvalues_prox=eigenvalues_prox,
+                                           reference=dw['single_site_bor'], mult_dims_ret=mult_dims_ret,
+                                           reported_angles=reported_angles, study_id=study_id, it=i, outfile=outfile)
+                    except TimeException:
+                        print('TIME EXCEPTION')
+                        start = time_logger('Time excpetion', start, outfile)
+                    signal.alarm(0)
 
 
-            if p!=-1:
-                eigenvectors_pit, eigenvalues_pit, count_pit = unqeal_split_power_iteration(data, interval_end[ar], p)
-                start = time_logger('Unequal split subspace iteration', start, outfile)
-                write_results(eigenvectors_pit=eigenvectors_pit, reference=dw['single_site_subspace'],
-                          eigenvalues_pit=eigenvalues_pit, study_id=study_id, reported_angles=reported_angles,
-                          it=i, file_id='dpit_subspace_', outfile=outfile)
+                if p!=-1:
+                    eigenvectors_pit, eigenvalues_pit, count_pit = unqeal_split_power_iteration(data, interval_end[ar], p)
+                    start = time_logger('Unequal split subspace iteration', start, outfile)
+                    write_results(eigenvectors_pit=eigenvectors_pit, reference=dw['single_site_subspace'],
+                              eigenvalues_pit=eigenvalues_pit, study_id=study_id, reported_angles=reported_angles,
+                              it=i, file_id='dpit_subspace_', outfile=outfile)
 
-            # create and write metadata
-            meta = [i] + [len(interval_end[ar])] + interval_end[ar]
-            with open(path.join(outfile, 'meta_splits.tsv'), 'a+') as handle:
-                handle.write(cv.collapse_array_to_string(meta, study_id))
+                # create and write metadata
+                meta = [i] + [len(interval_end[ar])] + interval_end[ar]
+                with open(path.join(outfile, 'meta_splits.tsv'), 'a+') as handle:
+                    handle.write(cv.collapse_array_to_string(meta, study_id))
 
-        if clusterfile is not None:
-            try:
-                eigenvectors_ueq, eigenvalue_ueq, nr_iter = cluster_split(data, clusterfile=clusterfile,
+    if clusterfile is not None:
+        try:
+            eigenvectors_ueq, eigenvalue_ueq, nr_iter = cluster_split(data, clusterfile=clusterfile,
                                                                           sep=cluster_sep,
                                                                           proxy_cov=True, power_it=True)
-                start = time_logger('Unequal split preclustered', start, outfile)
-                write_results(eigenvectors_pit=eigenvectors_ueq['weighted'], reference=dw['single_site_bor'],
+            start = time_logger('Unequal split preclustered', start, outfile)
+            write_results(eigenvectors_pit=eigenvectors_ueq['weighted'], reference=dw['single_site_bor'],
                               eigenvalues_pit=eigenvalue_ueq['weighted'],
                               study_id=study_id,
                               reported_angles=reported_angles, it=1, file_id='single_site_bor_cluster_weighted_',
                               outfile=outfile)
-                write_results(eigenvectors_pit=eigenvectors_ueq['powerit'], reference=dw['single_site_subspace'],
+            write_results(eigenvectors_pit=eigenvectors_ueq['powerit'], reference=dw['single_site_subspace'],
                               eigenvalues_pit=eigenvalue_ueq['powerit'],
                               study_id=study_id, reported_angles=reported_angles, it=1, nr_it=nr_iter,
                               file_id='single_site_bor_cluster_weighted_', outfile=outfile)
-            except FileNotFoundError:
-                print('File does not exist. Are your sure there is a preclustered file for this dataset?')
+        except FileNotFoundError:
+            print('File does not exist. Are your sure there is a preclustered file for this dataset?')
 
 
 

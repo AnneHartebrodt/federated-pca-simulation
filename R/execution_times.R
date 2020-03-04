@@ -1,15 +1,23 @@
 require(data.table)
 require(ggplot2)
 
-setwd('/home/anne/Documents/featurecloud/results/sandbox/splits/')
+setwd('/home/anne/Documents/featurecloud/results/sand/splits/')
 
 
 single<-c('Power iteration', 'Single site PCA', 'Subspace iteration')
 multi<-c('Unequal split proxy', 'Unequal split subspace iteration')
+ 
+fne<-c()
 
 times<-list()
 for(d in list.dirs(recursive = F)){
-  times[[d]]<-fread(file.path(d, '0.5', 'time_log.tsv'))
+  fl<-file.path(d, '0.5', 'time_log.tsv')
+  if(file.exists(fl)){
+    times[[d]]<-fread(fl)
+  }else{
+   fne<-c(fne, fl)
+  }
+  
 }
 
 time<-rbindlist(times)
@@ -17,7 +25,7 @@ single_site<-ggplot(time[V1 %in% single], aes(V1, V2))+
   geom_boxplot()+
   theme(axis.text.x = element_text())+
   ggtitle('Execution times for single site runs')
-multi_site<-ggplot(time[V1 %in% multi], aes(V1, V2))+
+multi_site<-ggplot(time[V1 %in% multi & V2<1000], aes(V1, V2))+
   geom_boxplot()+
   theme(axis.text.x = element_text())+
   ggtitle('Execution times for multi site runs')+
