@@ -200,7 +200,7 @@ def write_single_site(dw, de, reported_angles, outfile):
     write_eigenvectors_single_site(de, reported_angles, outfile=outfile)
 
 
-def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, cluster_sep='\t', study_id='',reported_angles=20, exp_var=0.5, mult_dims_ret=[0.5, 1, 2], balcan=False, unweighted = False, weighted = False):
+def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, cluster_sep='\t', study_id='',reported_angles=20, exp_var=0.5, mult_dims_ret=[0.5, 1, 2], balcan=False, unweighted = False, weighted = False, power=False):
     signal.signal(signal.SIGALRM, timeout)
     n = data.shape[0]
     dims = min(dims, n)
@@ -209,7 +209,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
     dw, de = single_site(data, study_id, p=p, dims=dims, outfile=outfile)
     write_single_site(dw, de, reported_angles, outfile=outfile)
 
-    if balcan or unweighted or weighted or p!=-1:
+    if balcan or unweighted or weighted or power:
         for ar in range(len(interval_end)):
             for i in range(10):
                 print('Current split ' + str(interval_end[ar]))
@@ -335,7 +335,7 @@ if __name__ == "__main__":
     parser.add_argument('--balcan', action='store_true')
     parser.add_argument('--weighted', action='store_true')
     parser.add_argument('--unweighted', action='store_true')
-
+    parser.add_argument('--power', action='store_true')
     args = parser.parse_args()
 
     inputfile = args.f
@@ -354,6 +354,7 @@ if __name__ == "__main__":
     weighted = args.weighted
     balcan = args.balcan
     unweighted = args.unweighted
+    powerit = args.power
 
 
 
@@ -382,5 +383,5 @@ if __name__ == "__main__":
     # import data, center (can be done globally in the distributed case), log2 transform
     data = easy.easy_import(inputfile, header=header, rownames=rownames, center=center, log=log, sep=sep)
 
-    run_and_compare_unequal(data, summaryfile, reported_angles=p, study_id=study_id, exp_var=exp_var,mult_dims_ret=mult_dims_ret, clusterfile=clusterfile, cluster_sep=cluster_sep, dims=dims,p=p, weighted=weighted, unweighted=unweighted, balcan=balcan)
+    run_and_compare_unequal(data, summaryfile, reported_angles=p, study_id=study_id, exp_var=exp_var,mult_dims_ret=mult_dims_ret, clusterfile=clusterfile, cluster_sep=cluster_sep, dims=dims,p=p, weighted=weighted, unweighted=unweighted, balcan=balcan, power = powerit)
     time_logger("Total time", st, filename=outfile)
