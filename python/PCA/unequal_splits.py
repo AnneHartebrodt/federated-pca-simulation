@@ -17,7 +17,7 @@ class TimeException(Exception):
     def __init__(self, message):
         self.message = message
 
-def unqeal_split_power_iteration(data, interval_end, p=10, tolerance=0.000001):
+def unqeal_split_power_iteration(data, interval_end, p=10, tolerance=0.000001, dump=False, outfile=None):
     # Shuffling data to create random samples
     np.random.shuffle(data)
     start = 0
@@ -26,6 +26,8 @@ def unqeal_split_power_iteration(data, interval_end, p=10, tolerance=0.000001):
         end = int(interval_end[i])
         # slice matrix
         data_sub = data[start:end, :]
+        if dump:
+            dump_site(data_sub, start, end, outfile, 'power_datasub')
         # calculate covariance matrix
         noisy_cov = dpca.compute_noisy_cov(data_sub, epsilon0=1, delta0=1, noise=False)
         start = int(interval_end[i])
@@ -46,7 +48,7 @@ def local_outlier_removal(data_sub, pca, study_id=None, outfile=None):
 
 
 def unqeal_split_proxy_covariance(data, interval_end, ndims=100, exp_var=0.5, mult_dims_ret=1,
-                                  weights=None, balacan=False, unweighted=False, remove_local_outliers=False):
+                                  weights=None, balacan=False, unweighted=False, remove_local_outliers=False, dump=False, outfile=None):
     """
     This function simulates a multisite PCA with each site having
     varying number of samples.
@@ -65,6 +67,8 @@ def unqeal_split_proxy_covariance(data, interval_end, ndims=100, exp_var=0.5, mu
         end = int(interval_end[i])
         # slice matrix
         data_sub = data[start:end, :]
+        if dump:
+            dump_site(data_sub, start, end, outfile, "proxy")
         if remove_local_outliers:
             data_sub = local_outlier_removal(data_sub, ndims)
         noisy_cov = dpca.compute_noisy_cov(data_sub, epsilon0=1, delta0=1, noise=False)
@@ -94,6 +98,8 @@ def unqeal_split_proxy_covariance(data, interval_end, ndims=100, exp_var=0.5, mu
             eigenvalues['balcan'].append(X)
     return eigenvectors, eigenvalues
 
+def dump_site(data, start, end, outfile, fileid):
+    pd.DataFrame(data).to_csv(path.join(outfile, fileid+'_'+str(start)+'_'+str(end)+'.tsv'))
 
 def cluster_split(data, clusterfile, ndims=100, p=20, header_clu=None, sep='\t', exp_var=0.5,
                   remove_local_outliers=False,
@@ -186,10 +192,11 @@ def single_site(data, study_id, dims=100, p=20, outfile=''):
     return dw, de
 
 
-def write_eigenvectors_single_site(de, reported_angles, outfile):
+def write_eigenvalues_single_site(de, reported_angles, outfile):
     for key in de.keys():
         with open(path.join(outfile, key + '_eigenvalues.tsv'), 'a+') as handle:
             handle.write(cv.collapse_array_to_string(de[key][0:reported_angles], study_id))
+
 
 
 def write_angles_single_site(dw, reported_angles, outfile):
@@ -201,24 +208,29 @@ def write_angles_single_site(dw, reported_angles, outfile):
                                    filename=keys[k1] + '_' + keys[k2] + '_angles.tsv',
                                    outfile=outfile, reported_angles=reported_angles)
 
+def write_eigenvectors_single_site(dw, reported_angles, outfile):
+    for key in dw.keys():
+        pd.DataFrame(dw[key]).iloc[:,0:reported_angles].to_csv(path.join(outfile, 'eigenvectors_'+str(key)+ '.tsv'))
 
-def write_single_site(dw, de, reported_angles, outfile):
+def write_single_site(dw, de, reported_angles, outfile, dump=False):
     write_angles_single_site(dw, reported_angles, outfile=outfile)
-    write_eigenvectors_single_site(de, reported_angles, outfile=outfile)
+    write_eigenvalues_single_site(de, reported_angles, outfile=outfile)
+    if dump:
+        write_eigenvectors_single_site(dw, reported_angles, outfile=outfile)
 
 
-def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, cluster_sep='\t', study_id='',reported_angles=20, exp_var=0.5, mult_dims_ret=[0.5, 1, 2], balcan=False, unweighted = False, weighted = False, power=False, header_clu=None):
+def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, cluster_sep='\t', study_id='',reported_angles=20, exp_var=0.5, mult_dims_ret=[0.5, 1, 2], balcan=False, unweighted = False, weighted = False, power=False, header_clu=None, dump = False, nrit=10):
     signal.signal(signal.SIGALRM, timeout)
     n = data.shape[0]
     dims = min(dims, n)
     interval_end, perc = make_test_intervals(n)
 
     dw, de = single_site(data, study_id, p=p, dims=dims, outfile=outfile)
-    write_single_site(dw, de, reported_angles, outfile=outfile)
+    write_single_site(dw, de, reported_angles, outfile=outfile, dump=dump)
     start = time.monotonic()
     if balcan or unweighted or weighted or power:
         for ar in range(len(interval_end)):
-            for i in range(10):
+            for i in range(nrit):
                 print('Current split ' + str(interval_end[ar]))
                 if unweighted or balcan or weighted:
                     if not weighted:
@@ -226,7 +238,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
 
                     signal.alarm(1000)
                     try:
-                        eigenvectors_prox, eigenvalues_prox = unqeal_split_proxy_covariance(data, interval_end[ar], ndims=dims,mult_dims_ret=mult_dims_ret,exp_var=exp_var, weights=perc[ar],balacan=balcan, unweighted=unweighted)
+                        eigenvectors_prox, eigenvalues_prox = unqeal_split_proxy_covariance(data, interval_end[ar], ndims=dims,mult_dims_ret=mult_dims_ret,exp_var=exp_var, weights=perc[ar],balacan=balcan, unweighted=unweighted, dump = dump, outfile=outfile)
                         start = time_logger('Unequal split proxy', start, outfile)
                         write_results_prox(eigenvectors_prox=eigenvectors_prox, eigenvalues_prox=eigenvalues_prox,
                                            reference=dw['single_site_bor'], mult_dims_ret=mult_dims_ret,
@@ -238,7 +250,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
 
 
                 if p!=-1:
-                    eigenvectors_pit, eigenvalues_pit, count_pit = unqeal_split_power_iteration(data, interval_end[ar], p)
+                    eigenvectors_pit, eigenvalues_pit, count_pit = unqeal_split_power_iteration(data, interval_end[ar], p, dump=dump, outfile=outfile)
                     start = time_logger('Unequal split subspace iteration', start, outfile)
                     write_results(eigenvectors_pit=eigenvectors_pit, reference=dw['single_site_subspace'],
                               eigenvalues_pit=eigenvalues_pit, study_id=study_id, reported_angles=reported_angles,
@@ -337,12 +349,14 @@ if __name__ == "__main__":
     parser.add_argument('-m', metavar='mult_dims_ret', type=str, help='comma separated list of intermediate dimensions',default='1')
     parser.add_argument('-d', metavar='dims', type=int, help='intermediate dimensions single site/proxy pca', default=100)
     parser.add_argument('-p', metavar='powdim', type=int, help='# eigenvectors poweriteration / reported dimensions', default=20)
+    parser.add_argument('-i', metavar='runs', type=int, help='number of repeats per split',default=1)
     parser.add_argument('--center', action='store_true')
     parser.add_argument('--log2', action='store_true')
     parser.add_argument('--balcan', action='store_true')
     parser.add_argument('--weighted', action='store_true')
     parser.add_argument('--unweighted', action='store_true')
     parser.add_argument('--power', action='store_true')
+    parser.add_argument('--dump', action='store_true')
     args = parser.parse_args()
 
     inputfile = args.f
@@ -363,6 +377,8 @@ if __name__ == "__main__":
     unweighted = args.unweighted
     powerit = args.power
     header_clu=args.N
+    dump = args.dump
+    nrit = args.i
 
 
 
@@ -377,13 +393,15 @@ if __name__ == "__main__":
     # rownames = None
     # p = 10
     # inputfile = '/home/anne/Documents/featurecloud/results/sandbox2/TCGA-KIRC_TCGA-LIHC.sub.tsv'
-    # outfile = '/home/anne/Documents/featurecloud/results/sandbox2/'
+    # outfile = '/home/anne/Documents/featurecloud/results/sandbox2'
     # clusterfile = '/home/anne/Documents/featurecloud/results/sandbox2/TCGA-KIRC_TCGA-LIHC_clusters.tsv'
-    # weighted = False
+    # weighted = True
     # balcan = False
-    # powerit = False
+    # powerit = True
     # unweighted = False
     # header_clu=0
+    # dump = True
+    # nrit=1
 
     mult_dims_ret = parse_array(mult_dims_ret)
     summaryfile = cv.make_eigenvector_path(outfile, path.join(path.basename(path.dirname(inputfile)), str(exp_var)))
@@ -393,5 +411,5 @@ if __name__ == "__main__":
     # import data, center (can be done globally in the distributed case), log2 transform
     data = easy.easy_import(inputfile, header=header, rownames=rownames, center=center, log=log, sep=sep)
 
-    run_and_compare_unequal(data, summaryfile, reported_angles=p, study_id=study_id, exp_var=exp_var,mult_dims_ret=mult_dims_ret, clusterfile=clusterfile, cluster_sep=cluster_sep, dims=dims,p=p, weighted=weighted, unweighted=unweighted, balcan=balcan, power = powerit, header_clu=header_clu)
+    run_and_compare_unequal(data, summaryfile, reported_angles=p, study_id=study_id, exp_var=exp_var,mult_dims_ret=mult_dims_ret, clusterfile=clusterfile, cluster_sep=cluster_sep, dims=dims,p=p, weighted=weighted, unweighted=unweighted, balcan=balcan, power = powerit, header_clu=header_clu, dump = dump, nrit=1)
     time_logger("Total time", st, filename=outfile)
