@@ -161,7 +161,13 @@ def single_site(data, study_id, dims=100, p=20, outfile=''):
     pca, W2, E2, nriter, params = power_runner.run_standalone(data, p=p)
     start = time_logger('Subspace iteration', start, outfile)
     # single site power iteration with deflation
-    W3, E3, nr_iter = power_runner.simulate_deflation(data, dims=p)
+    signal.alarm(1000)
+    try:
+        W3, E3, nr_iter = power_runner.simulate_deflation(data, dims=p)
+    except TimeException:
+        print('TIME EXCEPTION')
+        start = time_logger('Time exception', start, outfile)
+    signal.alarm(0)
     start = time_logger('Power iteration', start, outfile)
     # save number of iterations
     with open(path.join(outfile, 'nr_iter_powit.tsv'), 'a+') as handle:
@@ -190,7 +196,8 @@ def write_angles_single_site(dw, reported_angles, outfile):
     keys = list(dw.keys())
     for k1 in range(len(dw.keys())):
         for k2 in range(k1 + 1, len(dw.keys())):
-            co.compute_save_angles(dw[keys[k1]], dw[keys[k2]], study_id=study_id,
+            if dw[keys[k1]] is not None  and dw[keys[k2]] is not None:
+                co.compute_save_angles(dw[keys[k1]], dw[keys[k2]], study_id=study_id,
                                    filename=keys[k1] + '_' + keys[k2] + '_angles.tsv',
                                    outfile=outfile, reported_angles=reported_angles)
 
@@ -226,7 +233,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
                                            reported_angles=reported_angles, study_id=study_id, it=i, outfile=outfile)
                     except TimeException:
                         print('TIME EXCEPTION')
-                        start = time_logger('Time excpetion', start, outfile)
+                        start = time_logger('Time excpetion proxy', start, outfile)
                     signal.alarm(0)
 
 
