@@ -253,7 +253,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
         try:
             eigenvectors_ueq, eigenvalue_ueq, nr_iter = cluster_split(data, clusterfile=clusterfile,
                                                                           sep=cluster_sep,
-                                                                          proxy_cov=True, power_it=True)
+                                                                          proxy_cov=True, power_it=True, header_clu=header_clu)
             start = time_logger('Unequal split preclustered', start, outfile)
             write_results(eigenvectors_pit=eigenvectors_ueq['weighted'], reference=dw['single_site_bor'],
                               eigenvalues_pit=eigenvalue_ueq['weighted'],
@@ -324,66 +324,66 @@ def parse_array(value_str):
 if __name__ == "__main__":
     print('run split script')
 
-    parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
-    parser.add_argument('-f', metavar='file', type=str, help='filename of data file; default tab separated')
-    parser.add_argument('-o', metavar='outfile', type=str, help='output directory')
-    parser.add_argument('-c', metavar='clusterfile', type=str, help='clustersplit file: tab separated by default')
-    parser.add_argument('-n', metavar='header', type=int, help='has data column names?', default=None)
-    parser.add_argument('-r', metavar='rownames', type=int, help='has data row names?', default = None)
-    parser.add_argument('-s', metavar='sep', type=str, help='field delimiter input file', default = '\t')
-    parser.add_argument('-S', metavar='cluster_sep', type=str, help='field delimiter cluster file', default='\t')
-    parser.add_argument('-N', metavar='header', type=int, help='has clusterfile column names?', default=None)
-    parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
-    parser.add_argument('-m', metavar='mult_dims_ret', type=str, help='comma separated list of intermediate dimensions',default='1')
-    parser.add_argument('-d', metavar='dims', type=int, help='intermediate dimensions single site/proxy pca', default=100)
-    parser.add_argument('-p', metavar='powdim', type=int, help='# eigenvectors poweriteration / reported dimensions', default=20)
-    parser.add_argument('--center', action='store_true')
-    parser.add_argument('--log2', action='store_true')
-    parser.add_argument('--balcan', action='store_true')
-    parser.add_argument('--weighted', action='store_true')
-    parser.add_argument('--unweighted', action='store_true')
-    parser.add_argument('--power', action='store_true')
-    args = parser.parse_args()
+    # parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
+    # parser.add_argument('-f', metavar='file', type=str, help='filename of data file; default tab separated')
+    # parser.add_argument('-o', metavar='outfile', type=str, help='output directory')
+    # parser.add_argument('-c', metavar='clusterfile', type=str, help='clustersplit file: tab separated by default')
+    # parser.add_argument('-n', metavar='header', type=int, help='has data column names?', default=None)
+    # parser.add_argument('-r', metavar='rownames', type=int, help='has data row names?', default = None)
+    # parser.add_argument('-s', metavar='sep', type=str, help='field delimiter input file', default = '\t')
+    # parser.add_argument('-S', metavar='cluster_sep', type=str, help='field delimiter cluster file', default='\t')
+    # parser.add_argument('-N', metavar='header', type=int, help='has clusterfile column names?', default=None)
+    # parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
+    # parser.add_argument('-m', metavar='mult_dims_ret', type=str, help='comma separated list of intermediate dimensions',default='1')
+    # parser.add_argument('-d', metavar='dims', type=int, help='intermediate dimensions single site/proxy pca', default=100)
+    # parser.add_argument('-p', metavar='powdim', type=int, help='# eigenvectors poweriteration / reported dimensions', default=20)
+    # parser.add_argument('--center', action='store_true')
+    # parser.add_argument('--log2', action='store_true')
+    # parser.add_argument('--balcan', action='store_true')
+    # parser.add_argument('--weighted', action='store_true')
+    # parser.add_argument('--unweighted', action='store_true')
+    # parser.add_argument('--power', action='store_true')
+    # args = parser.parse_args()
+    #
+    # inputfile = args.f
+    # outfile = args.o
+    # clusterfile = args.c
+    # header = args.n
+    # rownames = args.r
+    # sep = args.s
+    # cluster_sep = args.S
+    # exp_var = args.v
+    # mult_dims_ret = args.m
+    # dims  = args.d
+    # p = args.p
+    # center = args.center
+    # log = args.log2
+    # weighted = args.weighted
+    # balcan = args.balcan
+    # unweighted = args.unweighted
+    # powerit = args.power
+    # header_clu=args.N
 
-    inputfile = args.f
-    outfile = args.o
-    clusterfile = args.c
-    header = args.n
-    rownames = args.r
-    sep = args.s
-    cluster_sep = args.S
-    exp_var = args.v
-    mult_dims_ret = args.m
-    dims  = args.d
-    p = args.p
-    center = args.center
-    log = args.log2
-    weighted = args.weighted
-    balcan = args.balcan
-    unweighted = args.unweighted
-    powerit = args.power
-    header_clu=args.N
 
 
-
-    # cluster_sep = '\t'
-    # exp_var = 0.5
-    # sep = '\t'
-    # mult_dims_ret = '0.75,5,10'
-    # dims = 100
-    # header = 0
-    # center = True
-    # log = True
-    # rownames = None
-    # p = 10
-    # inputfile = '/home/anne/Documents/featurecloud/data/tcga/data_clean/CPTAC-2/coding_trunc.tsv'
-    # outfile = '/home/anne/Documents/featurecloud/results/sandbox2/'
-    # clusterfile = '/home/anne/Documents/featurecloud/results/pca_plots/cluster/CPTAC-2_10_clusters.tsv'
-    # weighted = False
-    # balcan = False
-    # powerit = False
-    # unweighted = False
-    # header_clu=None
+    cluster_sep = '\t'
+    exp_var = 0.5
+    sep = '\t'
+    mult_dims_ret = '0.75,5,10'
+    dims = 100
+    header = 0
+    center = True
+    log = True
+    rownames = None
+    p = 10
+    inputfile = '/home/anne/Documents/featurecloud/results/sandbox2/TCGA-KIRC_TCGA-LIHC.sub.tsv'
+    outfile = '/home/anne/Documents/featurecloud/results/sandbox2/'
+    clusterfile = '/home/anne/Documents/featurecloud/results/sandbox2/TCGA-KIRC_TCGA-LIHC_clusters.tsv'
+    weighted = False
+    balcan = False
+    powerit = False
+    unweighted = False
+    header_clu=0
 
     mult_dims_ret = parse_array(mult_dims_ret)
     summaryfile = cv.make_eigenvector_path(outfile, path.join(path.basename(path.dirname(inputfile)), str(exp_var)))
