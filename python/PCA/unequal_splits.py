@@ -200,7 +200,7 @@ def write_single_site(dw, de, reported_angles, outfile):
     write_eigenvectors_single_site(de, reported_angles, outfile=outfile)
 
 
-def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, cluster_sep='\t', study_id='',reported_angles=20, exp_var=0.5, mult_dims_ret=[0.5, 1, 2], balcan=False, unweighted = False, weighted = False, power=False):
+def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, cluster_sep='\t', study_id='',reported_angles=20, exp_var=0.5, mult_dims_ret=[0.5, 1, 2], balcan=False, unweighted = False, weighted = False, power=False, header_clu=None):
     signal.signal(signal.SIGALRM, timeout)
     n = data.shape[0]
     dims = min(dims, n)
@@ -208,12 +208,11 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
 
     dw, de = single_site(data, study_id, p=p, dims=dims, outfile=outfile)
     write_single_site(dw, de, reported_angles, outfile=outfile)
-
+    start = time.monotonic()
     if balcan or unweighted or weighted or power:
         for ar in range(len(interval_end)):
             for i in range(10):
                 print('Current split ' + str(interval_end[ar]))
-                start = time.monotonic()
                 if unweighted or balcan or weighted:
                     if not weighted:
                         perc = None
@@ -326,6 +325,7 @@ if __name__ == "__main__":
     parser.add_argument('-r', metavar='rownames', type=int, help='has data row names?', default = None)
     parser.add_argument('-s', metavar='sep', type=str, help='field delimiter input file', default = '\t')
     parser.add_argument('-S', metavar='cluster_sep', type=str, help='field delimiter cluster file', default='\t')
+    parser.add_argument('-N', metavar='header', type=int, help='has clusterfile column names?', default=None)
     parser.add_argument('-v', metavar='explained_var', type=float, help='explained variance')
     parser.add_argument('-m', metavar='mult_dims_ret', type=str, help='comma separated list of intermediate dimensions',default='1')
     parser.add_argument('-d', metavar='dims', type=int, help='intermediate dimensions single site/proxy pca', default=100)
@@ -355,6 +355,7 @@ if __name__ == "__main__":
     balcan = args.balcan
     unweighted = args.unweighted
     powerit = args.power
+    header_clu=args.N
 
 
 
@@ -371,9 +372,11 @@ if __name__ == "__main__":
     # inputfile = '/home/anne/Documents/featurecloud/data/tcga/data_clean/CPTAC-2/coding_trunc.tsv'
     # outfile = '/home/anne/Documents/featurecloud/results/sandbox2/'
     # clusterfile = '/home/anne/Documents/featurecloud/results/pca_plots/cluster/CPTAC-2_10_clusters.tsv'
-    # weighted = True
-    # balcan = True
-    # unweighted = True
+    # weighted = False
+    # balcan = False
+    # powerit = False
+    # unweighted = False
+    # header_clu=None
 
     mult_dims_ret = parse_array(mult_dims_ret)
     summaryfile = cv.make_eigenvector_path(outfile, path.join(path.basename(path.dirname(inputfile)), str(exp_var)))
@@ -383,5 +386,5 @@ if __name__ == "__main__":
     # import data, center (can be done globally in the distributed case), log2 transform
     data = easy.easy_import(inputfile, header=header, rownames=rownames, center=center, log=log, sep=sep)
 
-    run_and_compare_unequal(data, summaryfile, reported_angles=p, study_id=study_id, exp_var=exp_var,mult_dims_ret=mult_dims_ret, clusterfile=clusterfile, cluster_sep=cluster_sep, dims=dims,p=p, weighted=weighted, unweighted=unweighted, balcan=balcan, power = powerit)
+    run_and_compare_unequal(data, summaryfile, reported_angles=p, study_id=study_id, exp_var=exp_var,mult_dims_ret=mult_dims_ret, clusterfile=clusterfile, cluster_sep=cluster_sep, dims=dims,p=p, weighted=weighted, unweighted=unweighted, balcan=balcan, power = powerit, header_clu=header_clu)
     time_logger("Total time", st, filename=outfile)
