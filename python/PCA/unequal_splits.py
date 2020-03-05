@@ -270,12 +270,12 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
             write_results(eigenvectors_pit=eigenvectors_ueq['weighted'], reference=dw['single_site_bor'],
                               eigenvalues_pit=eigenvalue_ueq['weighted'],
                               study_id=study_id,
-                              reported_angles=reported_angles, it=1, file_id='single_site_bor_cluster_weighted_',
+                              reported_angles=reported_angles, it=1, file_id='prox_cluster_weighted_',
                               outfile=outfile)
             write_results(eigenvectors_pit=eigenvectors_ueq['powerit'], reference=dw['single_site_subspace'],
                               eigenvalues_pit=eigenvalue_ueq['powerit'],
                               study_id=study_id, reported_angles=reported_angles, it=1, nr_it=nr_iter,
-                              file_id='single_site_bor_cluster_weighted_', outfile=outfile)
+                              file_id='power_cluster_weighted_', outfile=outfile)
         except FileNotFoundError:
             print('File does not exist. Are your sure there is a preclustered file for this dataset?')
 
