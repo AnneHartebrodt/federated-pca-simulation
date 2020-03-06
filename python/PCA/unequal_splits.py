@@ -167,17 +167,17 @@ def single_site(data, study_id, dims=100, p=20, outfile=''):
     pca, W2, E2, nriter, params = power_runner.run_standalone(data, p=p)
     start = time_logger('Subspace iteration', start, outfile)
     # single site power iteration with deflation
-    signal.alarm(1000)
+    signal.alarm(2000)
     try:
         W3, E3, nr_iter = power_runner.simulate_deflation(data, dims=p)
+        with open(path.join(outfile, 'nr_iter_powit.tsv'), 'a+') as handle:
+            handle.write(cv.collapse_array_to_string(nr_iter, study_id))
     except TimeException:
         print('TIME EXCEPTION')
         start = time_logger('Time exception', start, outfile)
     signal.alarm(0)
     start = time_logger('Power iteration', start, outfile)
     # save number of iterations
-    with open(path.join(outfile, 'nr_iter_powit.tsv'), 'a+') as handle:
-        handle.write(cv.collapse_array_to_string(nr_iter, study_id))
     # number of variables to achieve certain explanatory power
     with open(path.join(outfile, 'nr_vars_explain_aor.tsv'), 'a+') as handle:
         for var in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
