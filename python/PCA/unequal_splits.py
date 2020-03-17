@@ -292,11 +292,10 @@ def write_results_prox(outfile, eigenvectors_prox, eigenvalues_prox, reference, 
             with open(path.join(outfile, 'proxy_angles_unequal_splits_' + key + '_' + str(mult_dims_ret[w]) + '.tsv'),
                       'a+') as handle:
                 handle.write(cv.collapse_array_to_string(angles, study_id=study_id))
-            with open(path.join(outfile, 'proxy_eigenvalues_' + key + '_' + str(mult_dims_ret[w]) + '_'+name+'.tsv'),
-                      'a+') as handle:
+            with open(path.join(outfile, 'proxy_eigenvalues_' + key + '_' + str(mult_dims_ret[w]) +'.tsv'),'a+') as handle:
                 handle.write(cv.collapse_array_to_string(eigenvalues_prox[key][0:reported_angles], str(it)))
             if dump:
-                pd.DataFrame(eigenvectors_prox[key][w]).to_csv(path_or_buf=path.join(outfile, 'proxy_eigenvectors_' + key + '_' + str(mult_dims_ret[w]) + '.tsv'))
+                pd.DataFrame(eigenvectors_prox[key][w]).to_csv(path_or_buf=path.join(outfile, 'proxy_eigenvectors_' + key + '_' + str(mult_dims_ret[w]) + + '_'+name+'.tsv'))
 
 
 def write_results(outfile, eigenvectors_pit, reference, eigenvalues_pit, study_id, reported_angles, it, nr_it=-1, file_id='', dump=False, name=''):
@@ -309,7 +308,7 @@ def write_results(outfile, eigenvectors_pit, reference, eigenvalues_pit, study_i
         with open(path.join(outfile, file_id + 'iterations_until_convergence.tsv'), 'a+') as handle:
             handle.write(study_id + '\t' + str(it) + '\t' + str(nr_it))
     if dump:
-        pd.DataFrame(eigenvectors_pit[:, 0:reported_angles]).to_csv(path.join(outfile, file_id + '_'+name+ 'eigenvectors.tsv'))
+        pd.DataFrame(eigenvectors_pit[:, 0:reported_angles]).to_csv(path.join(outfile, file_id + 'eigenvectors'+'_'+name+ '.tsv'))
 
 
 def make_test_intervals(n):
