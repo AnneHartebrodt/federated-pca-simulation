@@ -232,12 +232,13 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
         for ar in range(len(interval_end)):
             for i in range(nrit):
                 print('Current split ' + str(interval_end[ar]))
+                na = '_'.join([str(i) for i in interval_end[ar]])
                 if unweighted or balcan or weighted:
                     if not weighted:
                         perc = None
 
                     signal.alarm(1000)
-                    na = '_'.join([str(i) for i in interval_end[ar]])
+
                     try:
                         eigenvectors_prox, eigenvalues_prox = unqeal_split_proxy_covariance(data, interval_end[ar], ndims=dims,mult_dims_ret=mult_dims_ret,exp_var=exp_var, weights=perc[ar],balacan=balcan, unweighted=unweighted, dump = dump, outfile=outfile)
                         start = time_logger('Unequal split proxy', start, outfile)
@@ -251,7 +252,8 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
                     signal.alarm(0)
 
 
-                if p!=-1:
+                if power:
+                    print('Distributed power iteration')
                     eigenvectors_pit, eigenvalues_pit, count_pit = unqeal_split_power_iteration(data, interval_end[ar], p, dump=dump, outfile=outfile)
                     start = time_logger('Unequal split subspace iteration', start, outfile)
                     write_results(eigenvectors_pit=eigenvectors_pit, reference=dw['single_site_subspace'],
