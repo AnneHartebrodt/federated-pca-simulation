@@ -1,7 +1,11 @@
 require(data.table)
 require(ggplot2)
 
-setwd('/home/anne/Documents/featurecloud/results/sand/splits/')
+### This script visualises the execution times for single and multisite runs from the log files generated
+###
+
+
+setwd('/home/anne/Documents/featurecloud/results/splits/')
 
 
 single<-c('Power iteration', 'Single site PCA', 'Subspace iteration')

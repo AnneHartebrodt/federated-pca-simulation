@@ -295,7 +295,7 @@ def write_results_prox(outfile, eigenvectors_prox, eigenvalues_prox, reference, 
             with open(path.join(outfile, 'proxy_eigenvalues_' + key + '_' + str(mult_dims_ret[w]) +'.tsv'),'a+') as handle:
                 handle.write(cv.collapse_array_to_string(eigenvalues_prox[key][0:reported_angles], str(it)))
             if dump:
-                pd.DataFrame(eigenvectors_prox[key][w]).to_csv(path_or_buf=path.join(outfile, 'proxy_eigenvectors_' + key + '_' + str(mult_dims_ret[w]) + + '_'+name+'.tsv'))
+                pd.DataFrame(eigenvectors_prox[key][w]).to_csv(path_or_buf=path.join(outfile, 'proxy_eigenvectors_' + key + '_' + str(mult_dims_ret[w])+ '_'+name+'.tsv'))
 
 
 def write_results(outfile, eigenvectors_pit, reference, eigenvalues_pit, study_id, reported_angles, it, nr_it=-1, file_id='', dump=False, name=''):
