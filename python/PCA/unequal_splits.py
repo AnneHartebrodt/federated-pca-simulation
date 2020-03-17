@@ -242,7 +242,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
                         start = time_logger('Unequal split proxy', start, outfile)
                         write_results_prox(eigenvectors_prox=eigenvectors_prox, eigenvalues_prox=eigenvalues_prox,
                                            reference=dw['single_site_bor'], mult_dims_ret=mult_dims_ret,
-                                           reported_angles=reported_angles, study_id=study_id, it=i, outfile=outfile)
+                                           reported_angles=reported_angles, study_id=study_id, it=i, outfile=outfile, dump=dump)
                     except TimeException:
                         print('TIME EXCEPTION')
                         start = time_logger('Time excpetion proxy', start, outfile)
@@ -254,7 +254,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
                     start = time_logger('Unequal split subspace iteration', start, outfile)
                     write_results(eigenvectors_pit=eigenvectors_pit, reference=dw['single_site_subspace'],
                               eigenvalues_pit=eigenvalues_pit, study_id=study_id, reported_angles=reported_angles,
-                              it=i, file_id='dpit_subspace_', outfile=outfile)
+                              it=i, file_id='dpit_subspace_', outfile=outfile, dump=dump)
 
                 # create and write metadata
                 meta = [i] + [len(interval_end[ar])] + interval_end[ar]
@@ -282,8 +282,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
 
 
 
-def write_results_prox(outfile, eigenvectors_prox, eigenvalues_prox, reference, mult_dims_ret, reported_angles,
-                       study_id, it):
+def write_results_prox(outfile, eigenvectors_prox, eigenvalues_prox, reference, mult_dims_ret, reported_angles,study_id, it, dump=False):
     for key in eigenvectors_prox.keys():
         # list of eigenvector matrices of length mult_dims_ret
         for w in range(len(eigenvectors_prox[key])):
@@ -294,10 +293,11 @@ def write_results_prox(outfile, eigenvectors_prox, eigenvalues_prox, reference, 
             with open(path.join(outfile, 'prox_eigenvalues_' + key + '_' + str(mult_dims_ret[w]) + '.tsv'),
                       'a+') as handle:
                 handle.write(cv.collapse_array_to_string(eigenvalues_prox[key][0:reported_angles], str(it)))
+            if dump:
+                pd.DataFrame(eigenvectors_prox[key][w]).to_csv(path_or_buf=path.join(outfile, 'prox_eigenvalues_' + key + '_' + str(mult_dims_ret[w]) + '.tsv'))
 
 
-def write_results(outfile, eigenvectors_pit, reference, eigenvalues_pit, study_id, reported_angles, it, nr_it=-1,
-                  file_id=''):
+def write_results(outfile, eigenvectors_pit, reference, eigenvalues_pit, study_id, reported_angles, it, nr_it=-1, file_id='', dump=False):
     co.compute_save_angles(eigenvectors_pit, reference, study_id=study_id,
                            filename=file_id + 'angles_unequal_splits.tsv',
                            outfile=outfile, reported_angles=reported_angles)
@@ -306,6 +306,8 @@ def write_results(outfile, eigenvectors_pit, reference, eigenvalues_pit, study_i
     if nr_it != -1:
         with open(path.join(outfile, file_id + 'iterations_until_convergence.tsv'), 'a+') as handle:
             handle.write(study_id + '\t' + str(it) + '\t' + str(nr_it))
+    if dump:
+        pd.DataFrame(eigenvectors_pit[:, 0:reported_angles]).to_csv(path.join(outfile, file_id + 'eigenvectors.tsv'))
 
 
 def make_test_intervals(n):
