@@ -173,6 +173,8 @@ def single_site(data, study_id, dims=100, p=20, outfile=''):
         with open(path.join(outfile, 'nr_iter_powit.tsv'), 'a+') as handle:
             handle.write(cv.collapse_array_to_string(nr_iter, study_id))
     except TimeException:
+        W3 = None
+        E3 = None
         print('TIME EXCEPTION')
         start = time_logger('Time exception', start, outfile)
     signal.alarm(0)
@@ -187,8 +189,12 @@ def single_site(data, study_id, dims=100, p=20, outfile=''):
         handle.write(study_id + '\t' + str(nriter) + '\n')
 
     start = time_logger('Writing files', start, outfile)
-    dw = {'single_site_bor': W0, 'single_site_aor': W1, 'single_site_subspace': W2, 'single_site_deflation': W3}
-    de = {'single_site_bor': E0, 'single_site_aor': E1, 'single_site_subspace': E2, 'single_site_deflation': E3}
+    if W3 is not None:
+        dw = {'single_site_bor': W0, 'single_site_aor': W1, 'single_site_subspace': W2, 'single_site_deflation': W3}
+        de = {'single_site_bor': E0, 'single_site_aor': E1, 'single_site_subspace': E2, 'single_site_deflation': E3}
+    else:
+        dw = {'single_site_bor': W0, 'single_site_aor': W1, 'single_site_subspace': W2}
+        de = {'single_site_bor': E0, 'single_site_aor': E1, 'single_site_subspace': E2}
     return dw, de
 
 
