@@ -429,5 +429,5 @@ if __name__ == "__main__":
     else:
         data = easy.easy_import(inputfile, header=header, rownames=rownames, center=center, log=log, sep=sep)
 
-    run_and_compare_unequal(data, summaryfile, reported_angles=p, study_id=study_id, exp_var=exp_var,mult_dims_ret=mult_dims_ret, clusterfile=clusterfile, cluster_sep=cluster_sep, dims=dims,p=p, weighted=weighted, unweighted=unweighted, balcan=balcan, power = powerit, header_clu=header_clu, dump = dump, nrit=1)
+    run_and_compare_unequal(data, summaryfile, reported_angles=p, study_id=study_id, exp_var=exp_var,mult_dims_ret=mult_dims_ret, clusterfile=clusterfile, cluster_sep=cluster_sep, dims=dims,p=p, weighted=weighted, unweighted=unweighted, balcan=balcan, power = powerit, header_clu=header_clu, dump = dump, nrit=nrit)
     time_logger("Total time", st, filename=outfile)
