@@ -237,7 +237,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
                     if not weighted:
                         perc = None
 
-                    signal.alarm(1000)
+                    signal.alarm(1200)
 
                     try:
                         eigenvectors_prox, eigenvalues_prox = unqeal_split_proxy_covariance(data, interval_end[ar], ndims=dims,mult_dims_ret=mult_dims_ret,exp_var=exp_var, weights=perc[ar],balacan=balcan, unweighted=unweighted, dump = dump, outfile=outfile)
@@ -264,6 +264,9 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
                 meta = [i] + [len(interval_end[ar])] + interval_end[ar]
                 with open(path.join(outfile, 'meta_splits.tsv'), 'a+') as handle:
                     handle.write(cv.collapse_array_to_string(meta, study_id))
+                with open(path.join(outfile, 'meta_splits_perc.tsv'), 'a+') as handle:
+                    handle.write(cv.collapse_array_to_string(interval_end[ar], study_id))
+
 
     if clusterfile is not None:
         try:
@@ -414,7 +417,10 @@ if __name__ == "__main__":
 
     st = time.monotonic()
     # import data, center (can be done globally in the distributed case), log2 transform
-    data = easy.easy_import(inputfile, header=header, rownames=rownames, center=center, log=log, sep=sep)
+    if dump:
+        data = easy.easy_import(inputfile, header=header, rownames=rownames, center=center, log=log, sep=sep,outfile=summaryfile)
+    else:
+        data = easy.easy_import(inputfile, header=header, rownames=rownames, center=center, log=log, sep=sep)
 
     run_and_compare_unequal(data, summaryfile, reported_angles=p, study_id=study_id, exp_var=exp_var,mult_dims_ret=mult_dims_ret, clusterfile=clusterfile, cluster_sep=cluster_sep, dims=dims,p=p, weighted=weighted, unweighted=unweighted, balcan=balcan, power = powerit, header_clu=header_clu, dump = dump, nrit=1)
     time_logger("Total time", st, filename=outfile)
