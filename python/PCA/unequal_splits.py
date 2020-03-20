@@ -268,7 +268,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
 
                 # create and write metadata
                 meta = [i] + [len(interval_end[ar])] + interval_end[ar]
-                per =  [i] + [len(perc[ar])] + interval_end[ar]
+                per =  [i] + [len(perc[ar])] + perc[ar]
                 with open(path.join(outfile, 'meta_splits.tsv'), 'a+') as handle:
                     handle.write(cv.collapse_array_to_string(meta, study_id))
                 with open(path.join(outfile, 'meta_splits_perc.tsv'), 'a+') as handle:
