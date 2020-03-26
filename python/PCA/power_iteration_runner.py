@@ -44,7 +44,7 @@ def run_standalone(data, outfile=None, p=10, header=None, rownames=None, center=
     return pca, W, s, nr_iter, params
 
 
-def simulate_distributed(local, p=8, tolerance=0.000001):
+def simulate_distributed(local, p=8, weights=None, tolerance=0.000001):
     """
     Simulate a distributed subspace iteration on a list of
     covariance matrices
@@ -68,7 +68,40 @@ def simulate_distributed(local, p=8, tolerance=0.000001):
         locals = []
         for l in local:
             locals.append(powerit.local_step(X, l))
-        X, E, converged = powerit.pooling_step(locals, X)
+        X, E, converged = powerit.pooling_step(locals, X, weights=weights)
+    ord = np.argsort(E)
+    X = np.flip(X[:, ord], axis=1)
+    E = np.flip(np.sort(E))
+    return X, E, count
+
+
+def simulate_distributed_multi_local(local, p=8, weights=None, nr_local_rounds = 5, tolerance=0.000001):
+    """
+    Simulate a distributed subspace iteration on a list of
+    covariance matrices
+    Args:
+        local: list of covariance matrices
+        p: number of eigenvectors
+        tolerance: Error tolerance for convergence criterion
+
+    Returns: The eigenvectors, eigenvalues and the number of iterations until convergence
+
+    """
+    d = local[0].shape[0]
+    X = powerit.generate_random_gaussian(d, p, sigma=1)
+    X, R = lsa.qr(X, mode='economic')
+    # order eigenvectors from largest to smallest, to achive
+    # ordered eigenvectors
+    converged = False
+    count = 0
+    while not converged:
+        count = count + 1
+        locals = []
+        for l in local:
+            # run a few iterations locally before sending the result to the aggrgator
+            for i in range(nr_local_rounds):
+                locals.append(powerit.local_step(X, l))
+        X, E, converged = powerit.pooling_step(locals, X, weights=weights)
     ord = np.argsort(E)
     X = np.flip(X[:, ord], axis=1)
     E = np.flip(np.sort(E))

@@ -17,7 +17,7 @@ class TimeException(Exception):
     def __init__(self, message):
         self.message = message
 
-def unqeal_split_power_iteration(data, interval_end, p=10, tolerance=0.000001, dump=False, outfile=None):
+def unqeal_split_power_iteration(data, interval_end, p=10, tolerance=0.000001, weights=None,dump=False, outfile=None, nr_local_rounds = 1):
     # Shuffling data to create random samples
     np.random.shuffle(data)
     start = 0
@@ -32,7 +32,10 @@ def unqeal_split_power_iteration(data, interval_end, p=10, tolerance=0.000001, d
         noisy_cov = dpca.compute_noisy_cov(data_sub, epsilon0=1, delta0=1, noise=False)
         start = int(interval_end[i])
         localdata.append(noisy_cov)
-    W, E, count = power_runner.simulate_distributed(localdata, p)
+    if nr_local_rounds == 1:
+        W, E, count = power_runner.simulate_distributed(localdata, p, weights=weights, tolerance=tolerance)
+    else:
+        W, E, count = power_runner.simulate_distributed_multi_local(localdata, p, weights=weights, tolerance=tolerance, nr_local_rounds=nr_local_rounds)
     return W, E, count
 
 
@@ -225,7 +228,7 @@ def write_single_site(dw, de, reported_angles, outfile, dump=False):
         write_eigenvectors_single_site(dw, reported_angles, outfile=outfile)
 
 
-def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, cluster_sep='\t', study_id='',reported_angles=20, exp_var=0.5, mult_dims_ret=[0.5, 1, 2], balcan=False, unweighted = False, weighted = False, power=False, header_clu=None, dump = False, nrit=10):
+def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, cluster_sep='\t', study_id='',reported_angles=20, exp_var=0.5, mult_dims_ret=[0.5, 1, 2], balcan=False, unweighted = False, weighted = False, power=False, weighted_power=False, header_clu=None, dump = False, nrit=10, nr_local_rounds = 1):
     signal.signal(signal.SIGALRM, timeout)
     n = data.shape[0]
     dims = min(dims, n)
@@ -260,11 +263,19 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
 
                 if power:
                     print('Distributed power iteration')
-                    eigenvectors_pit, eigenvalues_pit, count_pit = unqeal_split_power_iteration(data, interval_end[ar], p, dump=dump, outfile=outfile)
+                    eigenvectors_pit, eigenvalues_pit, count_pit = unqeal_split_power_iteration(data, interval_end[ar], p, dump=dump, outfile=outfile, nr_local_rounds=nr_local_rounds)
                     start = time_logger('Unequal split subspace iteration', start, outfile)
                     write_results(eigenvectors_pit=eigenvectors_pit, reference=dw['single_site_subspace'],
                               eigenvalues_pit=eigenvalues_pit, study_id=study_id, reported_angles=reported_angles,
                               it=i, file_id='power_subspace_', outfile=outfile, dump=dump, name=na)
+                if weighted_power:
+                    print('Distributed weighted power iteration')
+                    eigenvectors_pit, eigenvalues_pit, count_pit = unqeal_split_power_iteration(data,interval_end[ar], p, weights= perc[ar], dump=dump,outfile=outfile, nr_local_rounds=nr_local_rounds)
+                    start = time_logger('Unequal split weighted subspace iteration', start, outfile)
+                    write_results(eigenvectors_pit=eigenvectors_pit, reference=dw['single_site_subspace'],
+                                  eigenvalues_pit=eigenvalues_pit, study_id=study_id,
+                                  reported_angles=reported_angles,
+                                  it=i, file_id='power_subspace_weighted_', outfile=outfile, dump=dump, name=na)
 
                 # create and write metadata
                 meta = [i] + [len(interval_end[ar])] + interval_end[ar]
@@ -365,12 +376,14 @@ if __name__ == "__main__":
     parser.add_argument('-d', metavar='dims', type=int, help='intermediate dimensions single site/proxy pca', default=100)
     parser.add_argument('-p', metavar='powdim', type=int, help='# eigenvectors poweriteration / reported dimensions', default=20)
     parser.add_argument('-i', metavar='runs', type=int, help='number of repeats per split',default=1)
+    parser.add_argument('-l', metavar='local rounds', type=int, help='number of repeats per split', default=1)
     parser.add_argument('--center', action='store_true')
     parser.add_argument('--log2', action='store_true')
     parser.add_argument('--balcan', action='store_true')
     parser.add_argument('--weighted', action='store_true')
     parser.add_argument('--unweighted', action='store_true')
     parser.add_argument('--power', action='store_true')
+    parser.add_argument('--power_weighted', action='store_true')
     parser.add_argument('--dump', action='store_true')
     args = parser.parse_args()
 
@@ -391,9 +404,11 @@ if __name__ == "__main__":
     balcan = args.balcan
     unweighted = args.unweighted
     powerit = args.power
+    power_weighted = args.power_weighted
     header_clu=args.N
     dump = args.dump
     nrit = args.i
+    nr_local_rounds = args.l
 
 
 
@@ -429,5 +444,5 @@ if __name__ == "__main__":
     else:
         data = easy.easy_import(inputfile, header=header, rownames=rownames, center=center, log=log, sep=sep)
 
-    run_and_compare_unequal(data, summaryfile, reported_angles=p, study_id=study_id, exp_var=exp_var,mult_dims_ret=mult_dims_ret, clusterfile=clusterfile, cluster_sep=cluster_sep, dims=dims,p=p, weighted=weighted, unweighted=unweighted, balcan=balcan, power = powerit, header_clu=header_clu, dump = dump, nrit=nrit)
+    run_and_compare_unequal(data, summaryfile, reported_angles=p, study_id=study_id, exp_var=exp_var,mult_dims_ret=mult_dims_ret, clusterfile=clusterfile, cluster_sep=cluster_sep, dims=dims,p=p, weighted=weighted, unweighted=unweighted, balcan=balcan, power = powerit, weighted_power=power_weighted, header_clu=header_clu, dump = dump, nrit=nrit, nr_local_rounds = nr_local_rounds)
     time_logger("Total time", st, filename=outfile)

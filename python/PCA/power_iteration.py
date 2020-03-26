@@ -113,11 +113,17 @@ def local_step(Xi, data):
     return Yi
 
 
-def pooling_step(Yis, current):
+def pooling_step(Yis, current, weights=None):
     converged = False
-    Yi = Yis[0]
-    for i in range(1, len(Yis)):
-        Yi = Yi + Yis[i]
+
+    if weights is not None:
+        Yi = Yis[0]*weights[0]
+        for i in range(1, len(Yis)):
+            Yi = Yi + Yis[i]*weights[i]
+    else:
+        Yi = Yis[0]
+        for i in range(1, len(Yis)):
+            Yi = Yi + Yis[i]
     # eigenvalues are the column norms of the unnormalised matrix
     E = la.norm(Yi, axis=0)
     Xi, R = la.qr(Yi, mode='economic')
