@@ -237,7 +237,7 @@ def run_and_compare_unequal(data, outfile, dims=100, p=-1, clusterfile=None, clu
     dw, de = single_site(data, study_id, p=p, dims=dims, outfile=outfile)
     write_single_site(dw, de, reported_angles, outfile=outfile, dump=dump)
     start = time.monotonic()
-    if balcan or unweighted or weighted or power:
+    if balcan or unweighted or weighted or power or power_weighted:
         for ar in range(len(interval_end)):
             for i in range(nrit):
                 print('Current split ' + str(interval_end[ar]))
