@@ -18,6 +18,9 @@ for(d in 1: length(dirs)){
 if(file.exists(file.path(dirs[d],'coding_only.tsv'))){  
 nr_lines<-nrow(fread(file.path(dirs[d],'coding_only.tsv')))
   for(dd in (d+1):length(dirs)){
+    if(sample(c(0,0,0,0,0,0,0,0,0,1),1)==0){
+      next
+    }
 if(file.exists(file.path(dirs[dd],'coding_only.tsv'))){    
 nr_lines.2<-nrow(fread(file.path(dirs[dd],'coding_only.tsv')))
     system(paste0("cat ", dirs[d], '/coding_only.tsv', ' > ', paste0(opt$o,'/', basename(dirs[d]), '_', basename(dirs[dd]), '.tsv')))

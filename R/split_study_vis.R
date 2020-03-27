@@ -120,7 +120,7 @@ for(set in list.dirs(recursive = F)){
   meta$sp<-apply(meta[,.(split_1, split_2, split_3, split_4, split_5)],1, function(x) paste(na.omit(x), collapse=' '))
   ang1<-fread(file.path(set, '0.5','power_subspace_angles_unequal_splits.tsv'), fill = T)
   ang1<-ang1[, which(unlist(apply(ang1, 2, function(x) !all(is.na(x))))), with=F]
-  ang1<-ang1[, 1:(v+1), with=F]
+  #ang1<-ang1[, 1:(v+1), with=F]
   print(nrow(ang1))
   ang1<-cbind(ang1, meta)
   ang[[set]]<-ang1
@@ -132,7 +132,7 @@ ang1$rank<-as.factor(as.numeric(gsub("V", "", ang1$rank))-1)
 ang1$angle<-as.numeric(ang1$angle)
 ang1<-ang1[!is.na(ang1$angle)]
 ang1<-ang1[!is.na(ang1$rank)]
-col<-c(brewer.pal(name='Blues', n = 9),brewer.pal(name='Blues', n = 3))
+col<-c(brewer.pal(name='Blues', n = 9),brewer.pal(name='Blues', n = 9),brewer.pal(name='Blues', n = 3))
 powerp<-ggplot(ang1, aes(x= sp, y=angle, fill=rank))+
   geom_boxplot()+scale_fill_manual("Rank", values = col)+ 
   ggtitle('Angles between leading eigenvectors for different splits (Subspace Iteration)')+
