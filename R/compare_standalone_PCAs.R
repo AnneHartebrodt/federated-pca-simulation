@@ -4,6 +4,7 @@ require(ggplot2)
 
 setwd('/home/anne/Documents/featurecloud/results_final/split/')
 alist<-list()
+plotdir <- '/home/anne/Documents/featurecloud/results_final/plots/'
 
 study_sizes<-fread('/home/anne/Documents/featurecloud/results/usability_study/ordered_decr.tsv', header = F)
 
@@ -40,5 +41,5 @@ g<-ggplot(all[angle<6], aes(y = angle, x = '', fill = rank))+geom_boxplot()+
         legend.text=element_text(size=20))+facet_wrap(~comp)+ylab('Angle [degree]')+
   scale_fill_manual('Rank', values = col )
 g
-ggsave(g, file = '/home/anne/Documents/paper_fed_PCA/figures/angles_single_site_all_vs_all.pdf', dpi = 'print',
+ggsave(g, file = file.path(plotdir, 'angles_single_site_all_vs_all.pdf'), dpi = 'print',
        width = 15, height = 10)
