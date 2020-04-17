@@ -1,8 +1,12 @@
 require(data.table)
 require(ggplot2)
+require(dplyr)
+require(tidyr)
+require(RColorBrewer)
+require(cowplot)
 
 
-setwd('/home/anne/Documents/featurecloud/results_final/split/')
+setwd('/home/anne/Documents/featurecloud/results_final/splits_proxyWB_powerU/')
 alist<-list()
 plotdir <- '/home/anne/Documents/featurecloud/results_final/plots/'
 
@@ -41,5 +45,7 @@ g<-ggplot(all[angle<6], aes(y = angle, x = '', fill = rank))+geom_boxplot()+
         legend.text=element_text(size=20))+facet_wrap(~comp)+ylab('Angle [degree]')+
   scale_fill_manual('Rank', values = col )
 g
-ggsave(g, file = file.path(plotdir, 'angles_single_site_all_vs_all.pdf'), dpi = 'print',
+ggsave(g, file = file.path(plotdir, 'angles_single_site_all_vs_all.eps'), dpi = 'print',
+       width = 15, height = 10)
+ggsave(g, file = file.path(plotdir, 'angles_single_site_all_vs_all.png'), dpi = 350,
        width = 15, height = 10)

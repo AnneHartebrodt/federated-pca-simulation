@@ -3,6 +3,8 @@ require(ggplot2)
 #require(cowplot)
 
 setwd('/home/anne/Documents/featurecloud/')
+plotdir <-'/home/anne/Documents/featurecloud/results_final/plots/'
+
 variance<-fread('results/pca_plots/all/var_explained_aor.txt')
 colnames(variance)<-as.character(seq(0.1, 1, by=0.1))
 studies<-read.table('results/pca_plots/all/study_names.tsv')
@@ -29,8 +31,8 @@ g<-ggplot(variance[variable %in% c('0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.
   geom_boxplot()+
   ylab('#PCs / total #PCs')+
   xlab('% explained variance')
-ggsave('/home/anne/Documents/paper_fed_PCA/figures/explained_variance.pdf', g, units='cm', height=10, width = 10, dpi = 'print')
-
+ggsave(file.path(plotdir, 'explained_variance.pdf'), g, units='cm', height=10, width = 10)
+ggsave(file.path(plotdir, 'explained_variance.eps'), g, units='cm', height=10, width = 10, dpi = 1200)
 ggplot(variance, aes(x = variable,y = perc))+
   geom_boxplot()+
   ylab('#PCs/#PCs to explain 100% of variance')+

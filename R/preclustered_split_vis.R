@@ -8,26 +8,32 @@ require(RColorBrewer)
 
 plotdir <-'/home/anne/Documents/featurecloud/results_final/plots/'
 
-#setwd('/home/anne/Documents/featurecloud/results_final/splits_fake/')
-#study<-'fake'
-
-setwd('/home/anne/Documents/featurecloud/results_final/splits_preclustered/')
-study<-'preclustered'
-
-
-files<-c('proxy_angles_unequal_splits_weighted_1.0.tsv', 
-         'proxy_angles_unequal_splits_balcan_1.0.tsv',
+setwd('/home/anne/Documents/featurecloud/results_final/splits_clu/')
+study<-'fake'
+subtitle <- 'Randomly selected datasets'
+files<-c('proxy_angles_unequal_splits_weighted_2.0.tsv', 
+         #'proxy_angles_unequal_splits_balcan_1.0.tsv',
          'proxy_cluster_weighted_angles_unequal_splits.tsv',
          'power_cluster_weighted_angles_unequal_splits.tsv',
-         'power_subspace_angles_unequal_splits.tsv',
+         #'power_subspace_angles_unequal_splits.tsv',
          'power_subspace_weighted_angles_unequal_splits.tsv')
 
-run <-c('Proxy unequal weighted', 
-        'Proxy unequal balcan', 
-        'Proxy cluster weighted',
-        'Power cluster weighted', 
-        'Power unequal', 
-        'Power unequal weighted')
+#setwd('/home/anne/Documents/featurecloud/results_final/splits_preclustered/')
+#study<-'preclustered'
+#subtitle <- 'Preclustered datasets'
+#files<-c('proxy_angles_unequal_splits_weighted_1.0.tsv', 
+#         #'proxy_angles_unequal_splits_balcan_1.0.tsv',
+#         'proxy_cluster_weighted_angles_unequal_splits.tsv',
+#         'power_cluster_weighted_angles_unequal_splits.tsv',
+#         #'power_subspace_angles_unequal_splits.tsv',
+#         'power_subspace_weighted_angles_unequal_splits.tsv')
+
+run <-c('Proxy covariance\nequal split\nweighted', 
+        #'Proxy unequal balcan', 
+        'Proxy covariance\npreclustered\nweighted',
+        'Power iteration\npreclustered\nweighted', 
+        #'Power unequal', 
+        'Power iteration\nequal split\nweighted')
 
 angs<-list()
 i = 1
@@ -71,14 +77,13 @@ col<-c(brewer.pal(name='Blues', n = 9),brewer.pal(name='Blues', n = 9),brewer.pa
   
 #subti <- ifelse(w =='weighted', 'Weighted Proxy Covariance Matrix', 'Stacked Principal Components')
   
-p<-ggplot(ang[rank %in% c(1,2,3,4,5,6,7,8,9,10)  & sp == '0.5 0.5'], aes(run, angle, fill=rank))+
+p<-ggplot(ang[rank %in% c(1,2,3,4,5,6)  & sp %in% c('0.5 0.5', '0.2 0.2 0.2 0.2 0.2')], aes(run, angle, fill=rank))+
     geom_boxplot()+
     theme(plot.title = element_text(size = 25, hjust = 0.5), 
           legend.key.size = unit(1, "cm"),
           legend.title = element_text(size = 25),
           strip.text = element_text(size = 35), 
           axis.text = element_text(size=20),
-          axis.text.x = element_text(angle = 90),
           axis.title = element_text(size=35),
           plot.subtitle = element_text(size = 25, hjust = 0.5),
           legend.text=element_text(size=20),
@@ -87,9 +92,9 @@ p<-ggplot(ang[rank %in% c(1,2,3,4,5,6,7,8,9,10)  & sp == '0.5 0.5'], aes(run, an
     scale_fill_manual('Rank', values = col)+ 
     guides(fill=guide_legend(nrow=1, byrow=TRUE))+
     ylab('Angle [degree]')+
-  ggtitle('Angles between leading eigenvectors for different split')
+  ggtitle('Angles between leading eigenvectors for biased splits')+labs(subtitle = subtitle)
 
 
-ggsave(file=file.path(plotdir, paste0(study, '_angles_eigenvectors.pdf')), p, dpi = 'print', width = 20, height = 15)
-
+ggsave(file=file.path(plotdir, paste0(study, '_angles_eigenvectors.eps')), p, width = 20, height = 15)
+ggsave(file=file.path(plotdir, paste0(study, '_angles_eigenvectors.png')), p, dpi = 350, width = 15, height = 10)
 

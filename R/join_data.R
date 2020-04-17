@@ -22,10 +22,11 @@ if(file.exists(file.path(d, 'coding_only.tsv'))){
 }
 dirs <- as.character(unlist(dd))
 for (k in c(2,5)){
-  cl = 1
+
   for(i in 1:3){
     fil <-sample(dirs, k, replace = FALSE)
     dal <- list()
+    cl = 1
     for(f in fil){
       nr_lines<-nrow(fread(input = file.path(f,'coding_only.tsv')))
       if(cl ==1){
@@ -39,4 +40,5 @@ for (k in c(2,5)){
     dal <-rbindlist(dal)
     fwrite(dal, file = paste0(opt$o, '/clusters/', k, '_', i, '_clusters.tsv'), sep='\t')
   }
+  
 }

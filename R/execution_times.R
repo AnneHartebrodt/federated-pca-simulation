@@ -1,12 +1,13 @@
 require(data.table)
 require(ggplot2)
+require(cowplot)
 
 ### This script visualises the execution times for single and multisite runs from the log files generated
 ###
 
 
-setwd('/home/anne/Documents/featurecloud/results_final/split/')
-
+setwd('/home/anne/Documents/featurecloud/results_final/splits_proxyWB_powerU//')
+plotdir <-'/home/anne/Documents/featurecloud/results_final/plots/'
 
 single<-c('Power iteration', 'Single site PCA', 'Subspace iteration')
 multi<-c('Unequal split proxy', 'Unequal split subspace iteration')
@@ -36,8 +37,8 @@ multi_site<-ggplot(time[V1 %in% multi & V2<1000], aes(V1, V2))+
   scale_x_discrete(labels=c('Unequal split proxy' = 'Single round', 'Unequal split subspace iteration' = 'Subspace iteration'))
 
 
-ggsave(single_site, file='/home/anne/Documents/paper_fed_PCA/figures/execution_times_single_site.pdf')
-ggsave(multi_site, file='/home/anne/Documents/paper_fed_PCA/figures/execution_times_multi_site.pdf')  
+ggsave(single_site, file=file.path(plotdir,'execution_times_single_site.pdf'))
+ggsave(multi_site, file=file.path(plotdir, 'execution_times_multi_site.pdf'))  
 
 time$group<-as.numeric(as.factor(time$V1))
 time$group<-ifelse(time$group %in% c(1,2,3,4), 'Global', 'Pooled')
@@ -85,5 +86,6 @@ it <-ggplot(nit, aes(algo, nr_iter))+geom_boxplot()+
   labs(subtitle = 'Total # iterations required to retrieve all eigenvectors')+
   scale_fill_brewer('Model type', palette = 'Blues')
 it
-ggsave(it, file = '/home/anne/Documents/paper_fed_PCA/figures/number_iterations.pdf', height = 10, width = 9)
+ggsave(it, file = file.path(plotdir, 'number_iterations.eps'), height = 10, width = 9, dpi = 1200)
+ggsave(it, file = file.path(plotdir, 'number_iterations.png'), height = 10, width = 9, dpi = 1200)
 it
