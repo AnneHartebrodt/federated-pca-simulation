@@ -4,8 +4,8 @@ source('./code/federated_dp_pca/R/PCA_bor_aor_plot.R')
 
 
 #Extract clusters with k-means
-cluster_split<-function(x, opt, pca.outlier.free){
-  k <- as.numeric(opt$number.clusters)
+k <- as.numeric(opt$number.clusters)
+clusters<-kmeans(pca.outlier.free$x[,1:k], centers = k, iter = 10000)
 if(k>3){
 clusters<-kmeans(pca.outlier.free$c[,1:k], centers=k, iter = 10000)
 }else{
