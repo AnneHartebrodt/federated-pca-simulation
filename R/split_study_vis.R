@@ -16,13 +16,14 @@ option_list = list(
               help="The directory for plot")
 )
 opt = parse_args(OptionParser(option_list=option_list))
-
+theme_set(theme_cowplot())
 plotdir <-opt$p
 setwd(opt$r)
 
 
 myplots<-list()
-meta<-fread('TCGA-COAD/0.5/meta_splits_perc.tsv', fill = T)
+metafile<-grep(x = list.files(recursive = T), pattern = 'meta_splits_perc.tsv', value = T)[1]
+meta<-fread(metafile, fill = T)
 meta<-meta[, -9]
 colnames(meta)<-c('dataset', "i", "nr_splits", paste0('split_', 1:5))
 meta$sp<-apply(meta[,.(split_1, split_2, split_3, split_4, split_5)],1, function(x) paste(na.omit(x), collapse=' '))

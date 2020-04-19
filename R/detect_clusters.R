@@ -1,5 +1,5 @@
 # Run the PCA, outllier removal, PCA again
-source('./code/federated_dp_pca/R/PCA_bor_aor_plot.R')
+source(file.path('./code/federated-pca-lib/R/PCA_bor_aor_plot.R'))
 
 
 

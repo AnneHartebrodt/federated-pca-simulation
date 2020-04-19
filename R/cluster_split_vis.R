@@ -1,5 +1,18 @@
+require(data.table)
+require(ggplot2)
+require(cowplot)
 
-setwd('/home/anne/Documents/featurecloud/results/splits_clu/data_fake/')
+option_list = list(
+  make_option(c("-r", "--resultfolder"), action="store", default=NA, type='character',
+              help="annoation file in gtf format"),
+  make_option(c("-p", "--plotdir"), action="store", default=NA, type='character',
+              help="The directory for plot")
+)
+opt = parse_args(OptionParser(option_list=option_list))
+theme_set(theme_cowplot())
+plotdir <-opt$p
+setwd(opt$r)
+
 ang<-list()
 for(set in list.dirs(recursive = F)){
   if(!file.exists(file.path(set,'meta_splits.tsv'))){
