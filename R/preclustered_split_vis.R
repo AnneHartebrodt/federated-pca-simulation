@@ -6,27 +6,33 @@ require(cowplot)
 require(gridExtra)
 require(RColorBrewer)
 
-plotdir <-'/home/anne/Documents/featurecloud/results_final/plots/'
+require(optparse)
 
-setwd('/home/anne/Documents/featurecloud/results_final/splits_clu/')
-study<-'fake'
-subtitle <- 'Randomly selected datasets'
+
+
+option_list = list(
+  make_option(c("-r", "--resultfolder"), action="store", default=NA, type='character',
+              help="annoation file in gtf format"),
+  make_option(c("-s", "--study.name"), action="store", default=NA, type='character',
+              help="annoation file in gtf format"),
+  make_option(c("-t", "--sub.title"), action="store", default=NA, type='character',
+              help="annoation file in gtf format"),
+  make_option(c("-p", "--plotdir"), action="store", default=NA, type='character',
+              help="The directory for plot")
+)
+opt = parse_args(OptionParser(option_list=option_list))
+
+plotdir <-opt$p
+setwd(opt$resultfolder)
+
+
+study<-opt$study.name
+subtitle <- opt$sub.title
+
 files<-c('proxy_angles_unequal_splits_weighted_2.0.tsv', 
-         #'proxy_angles_unequal_splits_balcan_1.0.tsv',
          'proxy_cluster_weighted_angles_unequal_splits.tsv',
          'power_cluster_weighted_angles_unequal_splits.tsv',
-         #'power_subspace_angles_unequal_splits.tsv',
          'power_subspace_weighted_angles_unequal_splits.tsv')
-
-#setwd('/home/anne/Documents/featurecloud/results_final/splits_preclustered/')
-#study<-'preclustered'
-#subtitle <- 'Preclustered datasets'
-#files<-c('proxy_angles_unequal_splits_weighted_1.0.tsv', 
-#         #'proxy_angles_unequal_splits_balcan_1.0.tsv',
-#         'proxy_cluster_weighted_angles_unequal_splits.tsv',
-#         'power_cluster_weighted_angles_unequal_splits.tsv',
-#         #'power_subspace_angles_unequal_splits.tsv',
-#         'power_subspace_weighted_angles_unequal_splits.tsv')
 
 run <-c('Proxy covariance\nequal split\nweighted', 
         #'Proxy unequal balcan', 
