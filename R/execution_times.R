@@ -8,7 +8,7 @@ require(cowplot)
 
 setwd('/home/anne/Documents/featurecloud/results_final/splits_proxyWB_powerU//')
 plotdir <-'/home/anne/Documents/featurecloud/results_final/plots/'
-
+theme_set(theme_cowplot())
 single<-c('Power iteration', 'Single site PCA', 'Subspace iteration')
 multi<-c('Unequal split proxy', 'Unequal split subspace iteration')
  

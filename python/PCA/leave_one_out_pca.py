@@ -86,8 +86,7 @@ def run_dropout(data_scaled, outdir, tempdir, nr_dropped, study_id, outliers=[],
         nd = min(min(n - nr_dropped, data_scaled.shape[0] - 1), ndims)
         pca, U, E = runner.run_standalone(data_scaled, outdir, dims=ndims, header=header, rownames=rownames,
                                           center=center, scale_var=scale_var, scale01=scale01,
-                                          scale_unit=scale_unit, transpose=transpose, sep=sep, log=True,
-                                          exp_var=1.0)
+                                          scale_unit=scale_unit, transpose=transpose, sep=sep, log=True)
         E = E[0:20]
         U = U[:, 0:20]
 
@@ -114,7 +113,7 @@ def run_standalone(data, outdir=None, dims=100, header=None, rownames=None, cent
                    scale_unit=False, transpose=False, sep='\t', reported_angles=20, exp_var=1, study_id='ID1'):
     pca, W1, E1 = runner.run_standalone(data, outdir, dims=dims, header=header, rownames=rownames,
                                         center=center, scale_var=scale_var, scale01=scale01,
-                                        scale_unit=scale_unit, transpose=transpose, sep=sep, log=True, exp_var=exp_var)
+                                        scale_unit=scale_unit, transpose=transpose, sep=sep, log=True)
 
     res_eigen = cv.collapse_array_to_string_nrdropped(E1[0:reported_angles], study_id, '0')
     with open(path.join(outfile, 'eigenvalues_with_outliers.tsv'), 'a+') as handle:
@@ -134,8 +133,7 @@ def run_standalone(data, outdir=None, dims=100, header=None, rownames=None, cent
     print('Standalone PCA after outlier removal')
     pca, W1, E1 = runner.run_standalone(data, outdir, dims=dims, header=header, rownames=rownames,
                                         center=center, scale_var=scale_var, scale01=scale01,
-                                        scale_unit=scale_unit, transpose=transpose, sep=sep, log=True,
-                                        exp_var=exp_var)
+                                        scale_unit=scale_unit, transpose=transpose, sep=sep, log=True)
 
     res_eigen = cv.collapse_array_to_string_nrdropped(E1[0:reported_angles], study_id, '0')
 
@@ -200,28 +198,22 @@ def compute_angles(tempdir, outdir, nr_dropped):
 if __name__ == "__main__":
     print('run eigengap script')
 
-    # parser = ap.ArgumentParser(description='Eigengap calculation')
-    # parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
-    # parser.add_argument('-o', metavar='outfile', type=str, help='output file')
-    # parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default=100)
-    # parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
-    # parser.add_argument('-n', metavar='nr_dropped', type=int, help='number of rows dropped')
-    # parser.add_argument('-m', metavar='mode', type=str, help='cheat or outflier_free')
-    # args = parser.parse_args()
+    parser = ap.ArgumentParser(description='Eigengap calculation')
+    parser.add_argument('-f', metavar='file', type=str, help='filename of data file; file should be tab separated')
+    parser.add_argument('-o', metavar='outfile', type=str, help='output file')
+    parser.add_argument('-d', metavar='dims', type=int, help='field delimiter', default=100)
+    parser.add_argument('-s', metavar='sep', type=str, help='field delimiter')
+    parser.add_argument('-n', metavar='nr_dropped', type=int, help='number of rows dropped')
+    parser.add_argument('-m', metavar='mode', type=str, help='cheat or outflier_free')
+    args = parser.parse_args()
     #
-    # inputfile = args.f
-    # outfile = args.o
-    # dims = args.d
-    # sep = args.s
-    # nr_dropped = args.n
-    # mode = args.m
+    inputfile = args.f
+    outfile = args.o
+    dims = args.d
+    sep = args.s
+    nr_dropped = args.n
+    mode = args.m
 
-    inputfile ='/home/anne/Documents/featurecloud/data/tcga/data_clean/BEATAML1/coding_trunc.tsv'
-    outfile = '/home/anne/Documents/featurecloud/results/gexp_stats/leaveoone1out/'
-    dims = 100
-    sep = ','
-    nr_dropped = 1
-    mode = 'outlier_free'
 
     dname = path.join(path.basename(path.dirname(inputfile)), mode + '_' + str(nr_dropped))
     summaryfile = cv.make_eigenvector_path(outfile, dname)

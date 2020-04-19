@@ -6,6 +6,8 @@ option_list = list(
   make_option(c("-f", "--inputfile"), action="store", default=NA, type='character',
               help="annoation file in gtf format"),
   make_option(c("-o", "--outputfile"), action="store", default=NA, type='character',
+              help="The directory for plot"),
+  make_option(c("-r", "--outputfile.ordered"), action="store", default=NA, type='character',
               help="The directory for plot")
 )
 opt = parse_args(OptionParser(option_list=option_list))
@@ -21,3 +23,7 @@ f<-as.data.table(tidyr::unnest(f))
 tcga<-f[,.N, by=project.project_id]
 tcga$database<-'TCGA'
 fwrite(tcga, file = opt$outputfile, sep = '\t')
+
+tcga_o<-tcga[N>=100]
+tcga_o<-tcga_o[order(tcga_o$N, decreasing=T)]
+fwrite(tcga_o, file = opt$outputfile.ordered, sep = '\t')

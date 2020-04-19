@@ -12,7 +12,7 @@ option_list = list(
               help="The directory for plot")
 )
 opt = parse_args(OptionParser(option_list=option_list))
-
+theme_set(theme_cowplot())
 plotdir <-opt$plotdir
 
 eigenvector.path <-file.path(opt$plotdir, 'leave1out', 'eigenvectors')
@@ -38,7 +38,7 @@ make_angle_plot<-function(angles, dataset){
 
 
 make_eigen_boxplot<-function(filename, nr_dropped){
-  dirs<-list.dirs('/home/anne/Documents/featurecloud/results/leave1out', recursive = F)
+  dirs<-list.dirs(opt$result, recursive = F)
   summaries<-list()
   max.inds<-list()
   eigs<-list()
@@ -61,6 +61,7 @@ make_eigen_boxplot<-function(filename, nr_dropped){
   }
   
   eig<-rbindlist(eigs, fill = T)
+    print(colnames(eig))
   eig<-melt(eig, id.vars = c('V1', "V2", "rn", "nr.dropped"), variable.name = 'eigenvalue.rank', value.name = 'eigenvalue')
   eig<-eig[, .(V1, rn, nr.dropped, eigenvalue.rank, eigenvalue)]
   eig$eigenvalue.rank<-sapply(eig$eigenvalue.rank, function(x) gsub('V', '', x))
@@ -83,9 +84,9 @@ make_eigen_boxplot<-function(filename, nr_dropped){
   }
 }
   
-pp1<-make_eigen_boxplot(filenames, drops)
+#pp1<-make_eigen_boxplot(filenames, drops)
 
-study_sizes<-fread('/home/anne/Documents/featurecloud/results/usability_study/ordered_decr.tsv', header = F)
+study_sizes<-fread(opt$study.sizes, header = T)
 
 
 dirs<-list.dirs(opt$resultfolder, recursive = F)
@@ -97,7 +98,7 @@ indxd <-c('1', '5', '10', '10')
 
 id <- c('1', '5', '10', 'O')
 for(d in dirs){
-  if(!(basename(d) %in% study_sizes$V1)){
+  if(!(basename(d) %in% study_sizes$project.project_id)){
   next
   }
   alist<-list()
@@ -127,7 +128,7 @@ for(d in dirs){
 }
 
 summaries<-rbindlist(summaries)
-
+print(colnames(summaries))
 summaries<-melt(summaries, id.vars = c('eigenvector.rank', 'nr.dropped', 'study.id'), variable.factor = T)
 summaries$nr.dropped<-as.factor(summaries$nr.dropped)
 summaries$nr.dropped<-ordered(summaries$nr.dropped, levels=c('1', '5', '10', 'O'))

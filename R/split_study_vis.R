@@ -19,7 +19,7 @@ opt = parse_args(OptionParser(option_list=option_list))
 
 plotdir <-opt$plotdir
 setwd(opt$resultfolder)
-
+theme_set(theme_cowplot())
 
 myplots<-list()
 metafile<-grep(x = list.files(recursive = T), pattern = 'meta_splits_perc.tsv', value = T)[1]

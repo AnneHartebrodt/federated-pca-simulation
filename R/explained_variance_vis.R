@@ -1,7 +1,7 @@
 require(data.table)
 require(ggplot2)
 #require(cowplot)
-
+theme_set(theme_cowplot())
 setwd('/home/anne/Documents/featurecloud/')
 plotdir <-'/home/anne/Documents/featurecloud/results_final/plots/'
 

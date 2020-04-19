@@ -21,7 +21,7 @@ option_list = list(
               help="The directory for plot")
 )
 opt = parse_args(OptionParser(option_list=option_list))
-
+theme_set(theme_cowplot())
 plotdir <-opt$p
 setwd(opt$resultfolder)
 
@@ -62,6 +62,7 @@ for(set in list.dirs(recursive = F)){
       ang1<-fread(file.path(d, files[fi]), fill = T)
       ang1<-ang1[, which(unlist(apply(ang1, 2, function(x) !all(is.na(x))))), with=F]
       if(nrow(ang1)<7 & nrow(ang1)>1){
+          print('jumped')
         next
       }
       colnames(ang1)<-c('dataset', paste('', 1:(ncol(ang1)-1), sep = ''))

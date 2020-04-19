@@ -5,7 +5,8 @@ require(data.table)
 require(ggplot2)
 require(ggbiplot)
 require(bigutilsr)
-
+require(cowplot)
+theme_set(theme_cowplot())
 
 option_list = list(
   make_option(c("-f", "--file"), action="store", default=NA, type='character',
@@ -13,7 +14,9 @@ option_list = list(
   make_option(c("-o", "--output.folder"), action="store", default=NA, type='character',
               help="The output file"),
   make_option(c("-k", "--number.clusters"), action="store", default=NA, type='numeric',
-              help="The number of clusters for cluster detection")
+              help="The number of clusters for cluster detection"),
+  make_option(c("-c", "--codedir"), action="store", default=NA, type='character',
+              help="annoation file in gtf format")
 )
 opt = parse_args(OptionParser(option_list=option_list))
 

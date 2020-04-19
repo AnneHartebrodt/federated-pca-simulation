@@ -4,13 +4,25 @@ require(dplyr)
 require(tidyr)
 require(RColorBrewer)
 require(cowplot)
+theme_set(theme_cowplot())
 
+option_list = list(
+  make_option(c("-r", "--resultfolder"), action="store", default=NA, type='character',
+              help="annoation file in gtf format"),
+  make_option(c("-p", "--plotdir"), action="store", default=NA, type='character',
+              help="The directory for plot"),
+    make_option(c("-s", "--study.sizes"), action="store", default=NA, type='character',
+              help="The directory for plot")
+)
+opt = parse_args(OptionParser(option_list=option_list))
+plotdir <-opt$p
+setwd(opt$r)
 
-setwd('/home/anne/Documents/featurecloud/results_final/splits_proxyWB_powerU/')
+setwd(opt$resultfolder)
 alist<-list()
-plotdir <- '/home/anne/Documents/featurecloud/results_final/plots/'
 
-study_sizes<-fread('/home/anne/Documents/featurecloud/results/usability_study/ordered_decr.tsv', header = F)
+
+study_sizes<-fread(opt$study.sizes, header = F)
 
 for(set in list.dirs(recursive = F)){
   if(!(basename(set) %in% study_sizes$V1)){
