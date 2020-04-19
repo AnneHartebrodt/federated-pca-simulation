@@ -1,18 +1,33 @@
 require(data.table)
 require(ggplot2)
 #require(cowplot)
-theme_set(theme_cowplot())
-setwd('/home/anne/Documents/featurecloud/')
-plotdir <-'/home/anne/Documents/featurecloud/results_final/plots/'
 
-variance<-fread('results/pca_plots/all/var_explained_aor.txt')
+theme_set(theme_cowplot())
+
+option_list = list(
+  make_option(c("-r", "--resultfolder"), action="store", default=NA, type='character',
+              help="annoation file in gtf format"),
+  make_option(c("-p", "--plotdir"), action="store", default=NA, type='character',
+              help="The directory for plot"),
+    make_option(c("-s", "--study.sizes"), action="store", default=NA, type='character',
+              help="The directory for plot")
+)
+opt = parse_args(OptionParser(option_list=option_list))
+
+setwd(opt$resultfolder)
+plotdir <-opt$plotdir
+theme_set(theme_cowplot())
+
+
+variance<-fread(file.path(opt$resultsfolder, '/all/var_explained_aor.txt'))
 colnames(variance)<-as.character(seq(0.1, 1, by=0.1))
-studies<-read.table('results/pca_plots/all/study_names.tsv')
+studies<-read.table(file.path(opt$resultsfolder, '/all/study_names.tsv'))
+
 variance$study.id<-studies$V1
 variance<-melt(variance, value.name = 'nr.vars', id.vars = 'study.id')
 
 
-study.sizes<-fread('/home/anne/Documents/featurecloud/results/usability_study/TCGA_study_sizes.tsv')
+study.sizes<-fread(opt$study.sizes)
 colnames(study.sizes)<-c('study.id', 'nr.samples', 'database')
 study.sizes[study.id=='BEATAML1.0-COHORT', 1]<-'BEATAML1'
 

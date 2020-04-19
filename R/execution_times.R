@@ -5,10 +5,18 @@ require(cowplot)
 ### This script visualises the execution times for single and multisite runs from the log files generated
 ###
 
-
-setwd('/home/anne/Documents/featurecloud/results_final/splits_proxyWB_powerU//')
-plotdir <-'/home/anne/Documents/featurecloud/results_final/plots/'
 theme_set(theme_cowplot())
+
+option_list = list(
+  make_option(c("-r", "--resultfolder"), action="store", default=NA, type='character',
+              help="annoation file in gtf format"),
+  make_option(c("-p", "--plotdir"), action="store", default=NA, type='character',
+              help="The directory for plot")
+)
+opt = parse_args(OptionParser(option_list=option_list))
+setwd(opt$resultfolder)
+plotdir <-opt$plotdir
+
 single<-c('Power iteration', 'Single site PCA', 'Subspace iteration')
 multi<-c('Unequal split proxy', 'Unequal split subspace iteration')
  

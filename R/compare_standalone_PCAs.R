@@ -15,12 +15,9 @@ option_list = list(
               help="The directory for plot")
 )
 opt = parse_args(OptionParser(option_list=option_list))
-plotdir <-opt$p
-setwd(opt$r)
-
+plotdir <-opt$plotdir
 setwd(opt$resultfolder)
 alist<-list()
-
 
 study_sizes<-fread(opt$study.sizes, header = F)
 
