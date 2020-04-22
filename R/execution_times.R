@@ -1,6 +1,7 @@
 require(data.table)
 require(ggplot2)
 require(cowplot)
+require(optparse)
 
 ### This script visualises the execution times for single and multisite runs from the log files generated
 ###

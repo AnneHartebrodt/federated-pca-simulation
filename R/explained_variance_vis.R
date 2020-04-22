@@ -1,7 +1,7 @@
 require(data.table)
 require(ggplot2)
-#require(cowplot)
-
+require(cowplot)
+require(optparse)
 theme_set(theme_cowplot())
 
 option_list = list(
@@ -19,9 +19,9 @@ plotdir <-opt$plotdir
 theme_set(theme_cowplot())
 
 
-variance<-fread(file.path(opt$resultsfolder, '/all/var_explained_aor.txt'))
+variance<-fread(file.path(opt$resultfolder, '/cluster/var_explained_aor.txt'))
 colnames(variance)<-as.character(seq(0.1, 1, by=0.1))
-studies<-read.table(file.path(opt$resultsfolder, '/all/study_names.tsv'))
+studies<-read.table(file.path(opt$resultfolder, 'study_names.tsv'))
 
 variance$study.id<-studies$V1
 variance<-melt(variance, value.name = 'nr.vars', id.vars = 'study.id')
@@ -38,8 +38,6 @@ ggplot(variance[variable %in% c('0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7',
   geom_boxplot()+
   ylab('#PCs/total #PCs')+
   xlab('Explained variance')
-
-require(cowplot)
 # remove 1 outlier for better visibility
 #variance[variable %in% c('0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7')][42]
 g<-ggplot(variance[variable %in% c('0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7')][-42], aes(x = variable,y =nr.vars))+

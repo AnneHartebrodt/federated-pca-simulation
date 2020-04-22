@@ -181,7 +181,7 @@ ggsave(pp, file = file.path(plotdir, 'angles_all_methods.eps'), width = 20,heigh
 ggsave(pp, file = file.path(plotdir, 'angles_all_methods.png'), width = 20,height = 15, dpi = 350)
 
 
-
+col <-c(brewer.pal(9, 'Blues'),brewer.pal(9, 'Blues'))
 
 # Supplement 0.5 and 1.0 intermediated
 p<-ggplot(all[rank %in% c(1,2,3,4,5,6, 7,8,9,10) & var %in% c(0.5) & intermediated %in% c('0.5', '1.0', '2.0')], aes(sp, angle, fill=rank))+

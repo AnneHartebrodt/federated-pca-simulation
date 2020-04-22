@@ -4,6 +4,7 @@ require(dplyr)
 require(tidyr)
 require(RColorBrewer)
 require(cowplot)
+require(optparse)
 theme_set(theme_cowplot())
 
 option_list = list(
@@ -19,22 +20,24 @@ plotdir <-opt$plotdir
 setwd(opt$resultfolder)
 alist<-list()
 
-study_sizes<-fread(opt$study.sizes, header = F)
+study_sizes<-fread(opt$study.sizes, header = T)
 
+print(head(study_sizes))
 for(set in list.dirs(recursive = F)){
-  if(!(basename(set) %in% study_sizes$V1)){
+  if(!(basename(set) %in% study_sizes$project.project_id)){
     next
   }
-  a1<-fread(file.path(set, '0.5','single_site_bor_single_site_deflation_angles.tsv'))
+  a1<-fread(file.path(set, '0.5','single_site_bor_single_site_deflation_angles.tsv'), header=F)
   a1$comp <-'Eigendecompostion\n vs. Power Iteration (Deflation)'
-  a2<-fread(file.path(set, '0.5','single_site_bor_single_site_subspace_angles.tsv'))
+  a2<-fread(file.path(set, '0.5','single_site_bor_single_site_subspace_angles.tsv'), header=F)
   a2$comp <-'Eigendecompostion\n vs. Subspace Iteration'
-  a3<-fread(file.path(set, '0.5','single_site_subspace_single_site_deflation_angles.tsv'))
+  a3<-fread(file.path(set, '0.5','single_site_subspace_single_site_deflation_angles.tsv'), header=F)
   a3$comp <-'Power Iteration (Deflation)\n vs. Subspace Iteration'
-  a<-rbind(a1,a2,a3)
+  a<-rbind(a1,a2,a3, fill=T)
   alist[[set]]<-a
 }
-all<-rbindlist(alist)
+all<-rbindlist(alist, fill=T)
+print(colnames(all))
 all<- all %>% pivot_longer(-c(V1, comp),names_to = 'rank', values_to = 'angle')
 all<-as.data.table(all)
 all<-all[!is.na(all$rank)]
