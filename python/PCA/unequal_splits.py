@@ -411,29 +411,55 @@ if __name__ == "__main__":
     nr_local_rounds = args.l
 
 
+    def printParam(string, val):
+        print(string + " " + str(val))
+    # cluster_sep = None
+    printParam("clusterset", cluster_sep)
+    # exp_var = 0.5
+    printParam('expvar', exp_var)
 
-    #cluster_sep = '\t'
-    #exp_var = 0.5
-    #sep = '\t'
-    #mult_dims_ret = '0.75,5,10'
-    #dims = 100
-    #header = 0
-    #center = True
-    #log = True
-    #rownames = None
-   # p = 10
-    #inputfile = '/home/anne/Documents/featurecloud/results/sandbox2/TCGA-KIRC_TCGA-LIHC.sub.tsv'
-    #outfile = '/home/anne/Documents/featurecloud/results/sandbox2'
-    #clusterfile = '/home/anne/Documents/featurecloud/results/sandbox2/TCGA-KIRC_TCGA-LIHC_clusters.tsv'
-    #weighted = False
-    #balcan = False
-    #powerit = False
-    #unweighted = False
-    #header_clu=0
-    #dump = False
-    #nrit=1
-    #power_weighted = True
-    #nr_local_rounds = 1
+    # sep = '\t'
+    printParam("sep", sep)
+
+    # mult_dims_ret = '1,2,5'
+    printParam("multdimsret", mult_dims_ret)
+    # dims = 50
+    printParam("dims", dims)
+    # header = 0
+    printParam("header", header)
+    # center = True
+    printParam("ceneter", center)
+    # log = True
+    printParam("log", log)
+    # rownames = None
+    printParam("rownames", rownames)
+    # p = 10
+    printParam("p", p)
+    # inputfile = '/home/anne/Documents/featurecloud/sandbox2/clean/BEATAML1/coding_only.tsv'
+    printParam("inputfile", inputfile)
+    # outfile = '/home/anne/Documents/featurecloud/sandbox2/BEATAML1'
+    printParam("outfile", outfile)
+    # clusterfile = None
+    printParam("clusterfile", clusterfile)
+    # weighted = False
+    printParam('Weighted', weighted)
+    # balcan = False
+    printParam('balcan', balcan)
+    # powerit = False
+    printParam("powerwiegtehr", power_weighted)
+    # unweighted = False
+    printParam("unweighted", unweighted)
+
+    # header_clu=0
+    printParam("header clus", header_clu)
+    # dump = False
+    printParam('dump', dump)
+    # nrit=1
+    printParam("nrit", nrit)
+    # power_weighted = True
+    printParam("nr_local_round", nr_local_rounds)
+    # nr_local_rounds = 1
+
 
     mult_dims_ret = parse_array(mult_dims_ret)
     summaryfile = cv.make_eigenvector_path(outfile, path.join(path.basename(path.dirname(inputfile)), str(exp_var)))
