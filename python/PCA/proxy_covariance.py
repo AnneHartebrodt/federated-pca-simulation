@@ -143,7 +143,7 @@ def aggregate_partial_SVDs_balacan(svd_list, intermediate_dims=None, ndim=100, w
     if intermediate_dims is None:
         intermediate_dims = svd_list[0].shape[1]
     #print(intermediate_dims)
-
+    # TODO check this again
     Ac = svd_list[0][0:intermediate_dims, :]
     for svd in range(1, len(svd_list)):
         Ac = np.concatenate((Ac, svd_list[svd][0:intermediate_dims, :]), axis=0)

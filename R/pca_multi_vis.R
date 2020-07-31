@@ -231,6 +231,7 @@ complete<-fread('data_new.tsv')
 ### Proxy covariance weighted
 file_id_data<-'proxy'
 file_id_ev<-'proxy_eigenvectors_weighted_2.0'
+if(file.exists('proxy_angles_unequal_splits_weighted_2.0.tsv')){
 angles <-fread('proxy_angles_unequal_splits_weighted_2.0.tsv')
 spl<-import_splits(file_id_ev = file_id_ev, file_id_data = file_id_data, meta)
 sd_list<-spl[[1]]
@@ -252,11 +253,12 @@ ggsave(ps[[i]], filename = na, width = 15, height = 10, dpi = 'print')
 i=i+1
 }
 plot(ps[[1]])
-
+}
 
 #### proxy balcan
 file_id_data<-'proxy'
 file_id_ev<-'proxy_eigenvectors_balcan_2.0'
+if(file.exists('proxy_angles_unequal_splits_balcan_2.0.tsv')){
 angles <-fread('proxy_angles_unequal_splits_balcan_2.0.tsv')
 spl<-import_splits(file_id_ev = file_id_ev, file_id_data = file_id_data, meta)
 sd_list<-spl[[1]]
@@ -276,7 +278,7 @@ for(l in 1:length(sd_list)){
   i=i+1
 }
 
-
+}
 ### proxy data sub
 file_id_data<-'power_datasub'
 file_id_ev<-'power_subspace_eigenvectors'

@@ -142,6 +142,7 @@ def power_method(data, sigma, p, noise=False):
     converged = False
     current = X_0
     while not converged:
+        print(nr_iterations)
         # U1, E, UT1 = lsa.svds(X_0,1000)
         nr_iterations = nr_iterations + 1
         if noise:
@@ -209,6 +210,7 @@ def convergence_checker(current, previous, tolerance=0.000001, required=None):
         # is 1, which means the vectors are 'parallel'
         if np.abs(np.sum(np.dot(np.transpose(current[:, col]), previous[:, col])) - 1) < tolerance:
             nr_converged = nr_converged + 1
+            print(nr_converged)
         else:
             break
         if nr_converged >= required:

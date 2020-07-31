@@ -13,6 +13,12 @@ option_list = list(
   make_option(c("-r", "--resultfolder"), action="store", default=NA, type='character',
               help="annoation file in gtf format"),
   make_option(c("-p", "--plotdir"), action="store", default=NA, type='character',
+              help="The directory for plot"),
+  make_option(c("-s", "--subspace"), action="store", default=NA, type='character',
+              help="The directory for plot"),
+  make_option(c("-d", "--dir"), action="store", default=NA, type='numeric',
+              help="The directory for plot"),
+  make_option(c("-u", "--unweighted"), action="store", default=NA, type='numeric',
               help="The directory for plot")
 )
 opt = parse_args(OptionParser(option_list=option_list))
@@ -28,6 +34,7 @@ meta<-meta[, -9]
 colnames(meta)<-c('dataset', "i", "nr_splits", paste0('split_', 1:5))
 meta$sp<-apply(meta[,.(split_1, split_2, split_3, split_4, split_5)],1, function(x) paste(na.omit(x), collapse=' '))
 
+print('1')
 res<-list()
 mm<-melt(meta, c('dataset', 'i', 'nr_splits', 'sp'))
 mm<-mm[!is.na(value)]
@@ -51,7 +58,10 @@ annot<-ggplot(mm, aes(sp, value))+
   scale_fill_grey(start=0.2, end=0.8)+
   scale_y_reverse()+ylab('%Samples')
 
+print('2')
 
+if(!is.na(opt$s)){
+  print('3')
 angs <- list()
 i  <- 1
 for(w in c('weighted', 'balcan')){
@@ -90,22 +100,28 @@ ang$rank<-as.factor(ang$rank)
 }
 
 aaa <- ang
+}
 
 #### Subspace
-i = 1
 ang<-list()
+i = 1
+if (! is.na(opt$u )){
+print(opt$dir)
+
+
+print('3')
 for(set in list.dirs(recursive = F)){
-  if(!file.exists(file.path(set, '0.5', 'meta_splits_perc.tsv'))){
+  if(!file.exists(file.path(set, opt$dir, 'meta_splits_perc.tsv'))){
     print(set)
   }else{
-    var_exp <- fread(file.path(set, var, 'nr_vars_explain_aor.tsv'))
+    var_exp <- fread(file.path(set, opt$dir, 'nr_vars_explain_aor.tsv'))
     v = var_exp[V1==0.6]$V2
     print(set)
-    meta<-fread(file.path(set, var, 'meta_splits_perc.tsv'), fill = T)
+    meta<-fread(file.path(set, opt$dir, 'meta_splits_perc.tsv'), fill = T)
     meta<-meta[, -9]
     colnames(meta)<-c('dataset', "i", "nr_splits", paste0('split_', 1:5))
     meta$sp<-apply(meta[,.(split_1, split_2, split_3, split_4, split_5)],1, function(x) paste(na.omit(x), collapse=' '))
-    ang1<-fread(file.path(set, '0.5','power_subspace_angles_unequal_splits.tsv'), fill = T)
+    ang1<-fread(file.path(set, opt$d,'power_subspace_angles_unequal_splits.tsv'), fill = T)
     ang1<-ang1[, which(unlist(apply(ang1, 2, function(x) !all(is.na(x))))), with=F]
     #ang1<-ang1[, 1:(v+1), with=F]
     print(nrow(ang1))
@@ -115,8 +131,11 @@ for(set in list.dirs(recursive = F)){
     i = i+1
   }
 }
+}
 
+print('4')
 for(set in list.dirs(recursive = F)){
+  print(set)
   for(d in list.dirs(path = set, recursive = F)){
     print(d)
   if(!file.exists(file.path(d, 'meta_splits_perc.tsv'))){
@@ -126,10 +145,10 @@ for(set in list.dirs(recursive = F)){
     v = var_exp[V1==0.6]$V2
     print(set)
     meta<-fread(file.path(d, 'meta_splits_perc.tsv'), fill = T)
-    if(nrow(meta)!=70){
-      print('flase')
-      next
-    }
+    #if(nrow(meta)!=70){
+   #   print('flase')
+    #  next
+    #}
     meta<-meta[, -9]
     colnames(meta)<-c('dataset', "i", "nr_splits", paste0('split_', 1:5))
     meta$sp<-apply(meta[,.(split_1, split_2, split_3, split_4, split_5)],1, function(x) paste(na.omit(x), collapse=' '))
@@ -143,7 +162,9 @@ for(set in list.dirs(recursive = F)){
   }
 }
 }
+print('5')
 ang1<-rbindlist(ang)
+head(ang1)
 ang1<-melt(ang1, variable.name = 'rank', value.name = 'angle', id.vars = c('V1', 'i', 'nr_splits', 'sp', 'method'))
 ang1$rank<-as.factor(as.numeric(gsub("V", "", ang1$rank))-1)
 ang1$angle<-as.numeric(ang1$angle)
@@ -151,12 +172,22 @@ ang1<-ang1[!is.na(ang1$angle)]
 ang1<-ang1[!is.na(ang1$rank)]
 colnames(ang1) <-c('dataset', 'i', 'nr_splits', 'sp', 'method', 'rank', 'angle')
 
-all <- rbind(aaa, ang1, fill = T)
-all$method <-factor(all$method, levels = c("Proxy covariance weighted", "Power iteration weighted","Proxy covariance stacked","Power iteration regular"))
-
+if(!is.na(opt$subspace)){
+  all <- rbind(aaa, ang1, fill = T)
+  all$method <-factor(all$method, levels = c("Proxy covariance weighted", "Power iteration weighted","Proxy covariance stacked","Power iteration regular"))
+  
+}else{
+  all <-ang1
+  all$method <-factor(all$method, levels = c("Power iteration weighted","Power iteration regular"))
+  
+}
+print('6')
 col <-brewer.pal(6, 'Blues')
 
-p<-ggplot(all[rank %in% c(1,2,3,4,5,6) & var %in% c(0.5, NA) & intermediated %in% c('2.0', NA)], aes(sp, angle, fill=rank))+
+head (all)
+#p<-ggplot(all[rank %in% c(1,2,3,4,5,6) & var %in% c(0.5, NA) & intermediated %in% c('2.0', NA)], aes(sp, angle, fill=rank))+
+
+p<-ggplot(all[rank %in% c(1,2,3,4,5,6) ], aes(sp, angle, fill=rank))+
   geom_boxplot()+facet_wrap(c('method'), ncol = 2)+
   theme(plot.title = element_text(size = 35, hjust = 0.5), 
         legend.key.size = unit(0.75, "cm"),
@@ -174,6 +205,7 @@ p<-ggplot(all[rank %in% c(1,2,3,4,5,6) & var %in% c(0.5, NA) & intermediated %in
   scale_fill_manual('Rank', values = col)+ 
   guides(fill=guide_legend(nrow=2, byrow=TRUE))
 
+print('7')
 p
 pp<-plot_grid(p, annot, rel_heights = c(0.9, 0.1), align = 'v', nrow = 2, axis = 'l')
 pp
