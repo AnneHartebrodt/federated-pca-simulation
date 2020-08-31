@@ -2,7 +2,7 @@ import os as os
 import os.path as path
 import shutil as sh
 import time as time
-
+import pandas as pd
 import numpy as np
 
 
@@ -57,21 +57,7 @@ def delete(eigenvector_path):
     sh.rmtree(eigenvector_path)
 
 
-def extract_eigenvals(eigenvalues):
-    """
-    eigenvaluesigendecomposition from scipy.linalg.sparse returns eigenvalues ordered in
-    increasing order, followed by eigenvalues which are 0.
-    Eigenvalues are returned in decreasing order ommiting th 0s alltogether
-    Args:
-        eigenvalues: Eigenvalues from a sparse singular value decomposition.
 
-    Returns: Eigenvalue vector in decreasing order, without 0s.
-
-    """
-    indz = np.where(eigenvalues == 0)
-    eigenvalues = np.flip(eigenvalues)
-    eigenvalues = eigenvalues[eigenvalues != 0]
-    return eigenvalues, indz
 
 
 def parse_array(value_str):
@@ -96,3 +82,11 @@ def write_summary(res, header, outfile):
 
     with open(outfile, 'a+') as handle:
         handle.write(res + '\n')
+
+def save_PCA(pca, W, s, outfile):
+    if pca is not None:
+        pd.DataFrame(pca).to_csv(outfile + '.projection', sep='\t', header=None, index=False)
+    if W is not None:
+        pd.DataFrame(W).to_csv(outfile + '.eigenvectors', sep='\t', header=None, index=False)
+    if s is not None:
+        pd.DataFrame(s).to_csv(outfile + '.eigenvalues', sep='\t', header=None, index=False)

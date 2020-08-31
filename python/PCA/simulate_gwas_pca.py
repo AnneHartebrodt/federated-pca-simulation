@@ -1,7 +1,7 @@
 import numpy as np
 import scipy as sc
-import fast_power as powerit
-import fast_power_runner as runner
+import halko_galinsky as powerit
+import halko_galinsky_runner as runner
 import sklearn.decomposition as decomp
 import import_export.easy_import as easy
 

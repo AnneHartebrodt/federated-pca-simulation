@@ -1,5 +1,7 @@
 import numpy as np
 import scipy as sc
+import shared_functions as sh
+import scipy.linalg as la
 
 
 def local1(data, G_i):
@@ -12,35 +14,87 @@ def pooling(H_all):
     H_pooled = H_all[0]
     for h in H_all[1:len(H_all)]:
         H_pooled = H_pooled + h
-    H_pooled = H_pooled / len(H_all)
+    #H_pooled = H_pooled / len(H_all)
     H_pooled = H_pooled / np.linalg.norm(H_pooled)
     return H_pooled
 
-def generate_random_gaussian(n, m):
-    draws = n * m
-    noise = sc.random.normal(0, 1, draws)
-    print('Generated random intial matrix: finished sampling')
-    # make a matrix out of the noise
-    noise.shape = (n, m)
-    # transform matrix into s
-    return noise
 
-def standalone(data):
-    G_i = generate_random_gaussian(data.shape[1], 1) # phi1
+
+def standalone(data, k=10):
+    G_i = sh.generate_random_gaussian(data.shape[1], k) # phi1
+    G_i, Q = la.qr(G_i, mode='economic')
     converged = False
     previous = G_i
+    previous_h = sh.generate_random_gaussian(data.shape[0], k)
+    iterations = 0
     while not converged:
+        iterations = iterations+1
+        print(iterations)
         H_i = np.dot(data, G_i) # YiPhii , gamma if standalone
         G_i =  np.dot(data.T, H_i)  + previous
-        G_i = G_i/np.linalg.norm(G_i)
-        converged = convergence_checker(G_i, previous)
+        G_i, Q = la.qr(G_i, mode='economic')
+        converged = convergence_checker(H_i, previous_h)
+        previous_h = H_i
         previous = G_i
     return G_i
 
-def convergence_checker(current, previous, epsilon=0.0001):
-    ra = np.dot(current.T, current)/sc.linalg.norm(current)
-    rap = np.dot(previous.T, previous)/sc.linalg.norm(previous)
-    if np.abs(ra-rap)<epsilon:
+def convergence_checker_d(current, previous, epsilon=0.000001):
+    '''
+    Checks the convergence
+    Args:
+        H_i:
+        N_list:
+        previous:
+        epsilon:
+
+    Returns: -1 if concer
+
+    '''
+    sum = 0
+    for i in range(current.shape[1]):
+        ra = np.dot(current[:, i].T, current[:, i]) / sc.linalg.norm(current[:, i])
+        sum = np.abs(ra)
+    if np.abs(sum-previous) < epsilon:
+        return -1
+    else:
+        return ra
+
+
+
+def convergence_checker(current, previous, epsilon=0.000001):
+    sum = 0
+    for i in range(current.shape[1]):
+        ra = np.dot(current[:,i].T, current[:,i])/sc.linalg.norm(current[:,i])
+        rap = np.dot(previous[:,i].T, previous[:,i])/sc.linalg.norm(previous[:,i])
+        sum = np.abs(ra-rap)
+    if sum < epsilon:
         return True
     else:
         return False
+
+def standalone2(data, first):
+    import comparison as co
+    import numpy.linalg as la
+    G_i = sh.generate_random_gaussian(data.shape[1], 1)
+    G_i = G_i - np.dot(np.inner(G_i, first.T) , first.T)
+    print(np.asarray(G_i).T)
+    print(first)
+    print(co.angle(np.asarray(G_i).T, np.asarray(first).T))
+    Q, R = la.qr(np.asarray(np.concatenate([ first.T,G_i], axis = 1)))
+    print(Q[:,0])
+    G_i = Q[:,1]
+    converged = False
+    previous = G_i
+    previous_h = sh.generate_random_gaussian(data.shape[0], 1)
+    iterations = 0
+    while not converged:
+        iterations = iterations+1
+        print(iterations)
+        H_i = np.dot(data, G_i) # YiPhii , gamma if standalone
+        G_i =  np.dot(data.T, H_i)  + previous
+        Q, R = la.qr(np.asarray(np.stack([first.flatten(),G_i.T])).T)
+        G_i = Q[:, 1]
+        converged = convergence_checker(H_i, previous_h)
+        previous_h = H_i
+        previous = G_i
+    return G_i
