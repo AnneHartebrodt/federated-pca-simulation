@@ -6,6 +6,9 @@ import import_export.easy_import as easy
 import import_export.import_data as imp
 import scipy.sparse.linalg as lsa
 import comparison as co
+import argparse as ap
+import pandas as pd
+import os.path as path
 
 
 
@@ -13,13 +16,6 @@ def simulate_guo(local_data, k, maxit):
     G_list = []
     iterations = 0
     ra = False
-    #dim = min(local_data[0].shape[1], k)
-    #for d in local_data:
-    #    dim = np.min(min(d.shape[1], dim))
-    #for d in local_data:
-    #    G_i = sh.generate_random_gaussian(d.shape[1], dim)  # phi1
-    #    G_i, Q = la.qr(G_i, mode='economic')
-    #    G_list.append(G_i)
     total_len = 0
     for d in local_data:
         total_len = total_len + d.shape[1]
@@ -53,72 +49,40 @@ def simulate_guo(local_data, k, maxit):
         ra = gv.convergence_checker(H_i, H_i_prev)
         H_i_prev = H_i
     G_i = np.concatenate(G_list)
-    return G_i, G_list
-
-def simulate_guo_2(local_data):
-    G_list = []
-    iterations = 0
-    ra = False
-    for d in local_data:
-        G_i = sh.generate_random_gaussian(d.shape[1], 1)  # phi1
-        G_i = G_i / np.linalg.norm(G_i)
-        G_list.append(G_i)
-    H_i_prev = np.ones((local_data[0].shape[0],1))
-    while not ra:
-        iterations = iterations + 1
-        print(iterations)
-        H_i = np.zeros((local_data[0].shape[0],1))
-        for d, g in zip(local_data, G_list):
-            H_local  = np.dot(d, g)
-            H_i = H_i + H_local
-        G_list_n = []
-        for d, g in zip(local_data, G_list):
-            G_i = np.dot(d.T, H_i) + g
-            G_i = G_i/np.linalg.norm(G_i)
-            G_list_n.append(G_i)
-        ra = gv.convergence_checker(H_i, H_i_prev)
-        H_i_prev = H_i
-        G_list = G_list_n
-    G_i = np.concatenate(G_list)
-    return G_i, G_list
-
+    return G_i
 
 if __name__ == '__main__':
+    parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
+    parser.add_argument('-f', metavar='infile', type=str, help='filename of data file; default tab separated')
+    parser.add_argument('-o', metavar='outfile', type=str, help='filename of data file; default tab separated')
+    parser.add_argument('-g', metavar='grm', type=str, default=None)
+    parser.add_argument('-k', metavar='dim', default=10, type=int, help='Number of PCs to calculate')
+    parser.add_argument('-s', metavar='sites', default=10, type=int, help='Number of sites simulated')
+    parser.add_argument('-i', metavar='iteration', default=2000, type=int, help='Maximum number of iterations')
+    parser.add_argument('-p', metavar='outpath', type=str, help='Output directory for result files')
+    args = parser.parse_args()
 
-    file = '/home/anne/Documents/data/mnist/flat.csv'
-    outfile = '/home/anne/Documents/featurecloud/gwas/chr10'
-    header = 0
-    rownames = None
-    center = False
-    scale = False
-    scale_var = False
-    scale01 = False
-    scale_unit = False
-    p = 23
-    transpose = False
-    sep = ','
-    #
-    import pandas as pd
+    args.f =  '/home/anne/Documents/featurecloud/gwas/data/hapmap/thin.rec.raw.T.scaled.man'
+    args.p = '/home/anne/Documents/featurecloud/gwas/results/hapmap'
+    # import scaled SNP file
+    data = easy.easy_import(args.f, header=None, rownames=None, center=False, scale_var=False,sep='\t')
 
-    data = easy.easy_import(file, header=header, rownames=rownames, center=center, scale_var=scale_var,
-                            scale01=scale01, scale_unit=scale_unit,
-                            outfile=outfile, transpose=transpose, sep=sep)
-    #data = imp.CustomDataImporter().scale_center_data(data, center=True)
-    #data = data[:,0:(data.shape[1]-1)]
+    g = gv.standalone(data, k=args.k)
 
-    g = gv.standalone(data, k=2)
+    u, s, v = lsa.svds(data.T,k=args.k)
+    u = np.flip(u, axis = 1)
+    s = np.flip(s)
+    v = np.flip(v.T, axis=1)
 
-    u, s, v = lsa.svds(data.T,k=2)
-    u = np.flip(u, axis=1)
 
-    co.compute_angles(g, u)
+    data_list = sh.partition_data_vertically(data,args.s)
+    ug = simulate_guo(data_list,args.k+2, maxit=2000)
 
-    data_list = sh.partition_data_vertically(data,2)
 
-    r, l = simulate_guo_2(data_list)
-    co.angle(r.flatten(), u[:,0])
+    pd.DataFrame(g).to_csv(path.join(args.p,'guo_single_site_eigenvector.tsv'), sep = '\t', header=False, index=False)
+    pd.DataFrame(u).to_csv(path.join(args.p,'scipy_single_site_eigenvector.tsv'), sep='\t', header=False, index=False)
+    pd.DataFrame(ug).to_csv(path.join(args.p,'guo_multi_site_eigenvector.tsv'), sep='\t', header = False, index=False)
 
-    r, l = simulate_guo(data_list,1)
-    co.compute_angles(r, u)
+
 
 
