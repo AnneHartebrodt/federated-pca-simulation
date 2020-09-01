@@ -62,8 +62,8 @@ if __name__ == '__main__':
     parser.add_argument('-p', metavar='outpath', type=str, help='Output directory for result files')
     args = parser.parse_args()
 
-    args.f =  '/home/anne/Documents/featurecloud/gwas/data/hapmap/thin.rec.raw.T.scaled.man'
-    args.p = '/home/anne/Documents/featurecloud/gwas/results/hapmap'
+    #args.f =  '/home/anne/Documents/featurecloud/gwas/data/hapmap/thin.rec.raw.T.scaled.man'
+    #args.p = '/home/anne/Documents/featurecloud/gwas/results/hapmap'
     # import scaled SNP file
     data = easy.easy_import(args.f, header=None, rownames=None, center=False, scale_var=False,sep='\t')
 
