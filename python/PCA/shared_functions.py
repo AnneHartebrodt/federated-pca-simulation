@@ -3,6 +3,7 @@ import scipy as sc
 import scipy.sparse.linalg as lsa
 import pandas
 
+
 def svd_sub(cov, ndims):
     # the sparse matrix version of svd has better memory requirements, while being a little
     # slower
@@ -29,6 +30,7 @@ def compute_cov(original):
     cov = (1 / (n - 1)) * np.dot(original.transpose(), original)
     return cov
 
+
 def variance_explained(eigenvalues, perc=0.5):
     total_variance = sum(eigenvalues)
     percentages = eigenvalues / total_variance
@@ -39,6 +41,7 @@ def variance_explained(eigenvalues, perc=0.5):
         p = p + 1
     return p
 
+
 def generate_random_gaussian(n, m):
     draws = n * m
     noise = sc.random.normal(0, 1, draws)
@@ -47,6 +50,7 @@ def generate_random_gaussian(n, m):
     noise.shape = (n, m)
     # transform matrix into s
     return noise
+
 
 def extract_eigenvals(eigenvalues):
     """
@@ -64,16 +68,18 @@ def extract_eigenvals(eigenvalues):
     eigenvalues = eigenvalues[eigenvalues != 0]
     return eigenvalues, indz
 
+
 def projection(scaled, sim, ndims):
     projection = sc.dot(scaled, sim[:, 0:ndims])
     return projection
 
-def partition_data_horizontally(data, splits = 2, equal=True):
+
+def partition_data_horizontally(data, splits=2, equal=True):
     n = data.shape[0]
     interval_end = []
     if equal:
-        for s in range(splits-1):
-            interval_end.append(int(np.floor((s+1)*n/splits)))
+        for s in range(splits - 1):
+            interval_end.append(int(np.floor((s + 1) * n / splits)))
         # last one should include all the elements!
         interval_end.append(n)
 
@@ -89,24 +95,41 @@ def partition_data_horizontally(data, splits = 2, equal=True):
         localdata.append(data_sub)
     return localdata
 
-def partition_data_vertically(data, splits = 2, equal=True, randomize=False):
+
+def partition_data_vertically(data, splits=2, equal=True, randomize=False):
     n = data.shape[1]
     interval_end = []
     if equal:
-        for s in range(splits-1):
-            interval_end.append(int(np.floor((s+1)*n/splits)))
+        for s in range(splits - 1):
+            interval_end.append(int(np.floor((s + 1) * n / splits)))
         # last one should include all the elements!
         interval_end.append(n)
-
+    print(n)
+    print(n)
     if randomize:
-        np.random.shuffle(data)
+        # generate a permutation of the indices and return the permuted data
+        choice = np.random.choice(n, n, replace=False)
+        data = data[:, choice]
+    else:
+        choice = range(n)
     start = 0
     localdata = []
     for i in range(len(interval_end)):
         end = int(interval_end[i])
         # slice matrix
         data_sub = data[:, start:end]
-        # calculate covariance matrix
         start = int(interval_end[i])
         localdata.append(data_sub)
-    return localdata
+    return localdata, choice
+
+
+def eigenvalue(A, v):
+    Av = A.dot(v)
+    return v.dot(Av)
+
+
+def eigenvalues(eigenvectors, cov):
+    eigenvals = []
+    for v in range(eigenvectors.shape[1]):
+        eigenvals.append(eigenvalue(cov, eigenvectors[:, v]))
+    return eigenvals

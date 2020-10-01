@@ -1,0 +1,3 @@
+[submodule "python/import_export"]
+	path = python/import_export
+	url = git@gitlab.com:hartebrodt/import_export.git
