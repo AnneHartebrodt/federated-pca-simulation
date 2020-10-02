@@ -37,11 +37,14 @@ from scipy.sparse import coo_matrix
 import os
 import gzip
 import numpy as np
+import python.import_export.spreadsheet_import as si
+import python.import_export.gwas_import as gi
+import python.import_export.mnist_import as mi
 
 # Copied from fashion mnist
 
 
-def simulate_guo_benchmark(local_data, k, maxit, filename, scipy):
+def simulate_guo_benchmark(local_data, k, maxit, filename, scipy, choices):
     '''
     Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.
 
@@ -92,7 +95,7 @@ def simulate_guo_benchmark(local_data, k, maxit, filename, scipy):
 
         ra = gv.convergence_checker(H_i, H_i_prev)
         H_i_prev = H_i
-        log_current_accuracy(scipy, G_i, eigenvals, current_iteration=iterations, filename=filename)
+        log_current_accuracy(scipy, G_i, eigenvals, current_iteration=iterations, filename=filename, choices=choices)
 
     G_i = np.concatenate(G_list)
     return G_i, eigenvals
@@ -142,7 +145,7 @@ def start_logging(outdir, file_ending, dataset_name, maxit, counter, nr_samples,
     return fn
 
 
-def log_current_accuracy(scipy, G_i, eigenvals, current_iteration, filename):
+def log_current_accuracy(scipy, G_i, eigenvals, current_iteration, filename, choices):
     '''
     Log the current iterations angle to the canonical
     Args:
@@ -155,12 +158,12 @@ def log_current_accuracy(scipy, G_i, eigenvals, current_iteration, filename):
 
     '''
     with open(filename+'.angles', 'a') as handle:
-        angles = co.compute_angles(scipy, G_i)
+        angles = co.compute_angles(scipy[choices, :], G_i)
         info = cv.collapse_array_to_string(angles, str(current_iteration))
         handle.write(info)
 
     with open(filename+'.cor', 'a') as handle:
-        correlations = co.compute_correlations(scipy, G_i)
+        correlations = co.compute_correlations(scipy[choices, :], G_i)
         info = cv.collapse_array_to_string(correlations, str(current_iteration))
         handle.write(info)
 
@@ -182,7 +185,28 @@ def log_choices(logfile, filename, choices):
     with open(logfile, 'a') as handle:
         handle.write(cv.collapse_array_to_string(choices, filename))
 
-def the_epic_loop(data, dataset_name, maxit, nr_repeats, scipy, k, splits, outdir):
+def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir):
+    '''
+    run the simulation of a federated run of vertical power iteration
+    Args:
+        data:
+        dataset_name:
+        maxit:
+        nr_repeats:
+        k:
+        splits:
+        outdir:
+
+    Returns:
+
+    '''
+    #g = gv.standalone(data, k)
+
+    u, s, v = lsa.svds(data.T, k=k)
+    u = np.flip(u, axis=1)
+    s = np.flip(s)
+    v = np.flip(v.T, axis=1)
+
     convergence_eps = 0.00000001
     print(splits)
     for c in range(nr_repeats):
@@ -195,46 +219,55 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, scipy, k, splits, outdi
                           splits=s)
 
             # split the data
-            data_list, choice = sh.partition_data_vertically(data, s)
+            data_list, choice = sh.partition_data_vertically(data, s, randomize=True)
             logf = path.join(outdir, 'log_choices.log')
             log_choices(logf, filename, choice)
 
             # simulate the run
-            simulate_guo_benchmark(data_list, k + 2, maxit=maxit, scipy=scipy, filename=filename)
+            simulate_guo_benchmark(data_list, k + 2, maxit=maxit, scipy=u, filename=filename, choices=choice)
+
 
 if __name__ == '__main__':
     parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
-    parser.add_argument('-f', metavar='infile', type=str, help='filename of data file; default tab separated')
-    parser.add_argument('-o', metavar='outfile', type=str, help='filename of data file; default tab separated')
-    parser.add_argument('-g', metavar='grm', type=str, default=None)
+    parser.add_argument('-f', metavar='file', type=str, help='filename of data file; default tab separated')
+    parser.add_argument('--filetype', metavar='filetype', type=str, help='Type of the dataset')
+    parser.add_argument('--sep', metavar='sep', type=str, help='spreadsheet separator, default tab', default='\t')
+    parser.add_argument('-o', metavar='outfile', type=str, help='output directory')
+    parser.add_argument('-r', metavar='repeats', type=int, default=20, help = 'Number of times to repeat experiment')
     parser.add_argument('-k', metavar='dim', default=10, type=int, help='Number of PCs to calculate')
-    parser.add_argument('-s', metavar='sites', default=10, type=int, help='Number of sites simulated')
+    parser.add_argument('-s', metavar='sites', default='2,3,5,10', type=str, help='comma separated list of number of sites to simulate, parsed as string')
     parser.add_argument('-i', metavar='iteration', default=2000, type=int, help='Maximum number of iterations')
-    parser.add_argument('-p', metavar='outpath', type=str, help='Output directory for result files')
     args = parser.parse_args()
 
     # import scaled SNP file
     #data = easy.easy_import(args.f, header=None, rownames=None, center=False, scale_var=False,sep='\t')
-    data, test_lables = imnist.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
-    data = coo_matrix.asfptype(data)
+    #data, test_lables = imnist.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
+    #data = coo_matrix.asfptype(data)
 
-    k  = 10
-    dataset_name = 'MNIST'
-    maxit = 2000
-    nr_repeats = 10
+    path = args.file
+    filetype = args.filetype
+    sep = args.sep
+    k = args.k
+    dataset_name = os.path.basename(args.file)
+    s = args.s
+    splits = s.strip().split(',')
+    maxit = args.i
+    nr_repeats = args.r
+    outdir = args.o
+
+    if filetype == 'delim':
+        data = si.data_import(path, sep=sep)
+    elif filetype == 'mnist':
+        data, test_lables = mi.load_mnist(path, 'train')
+    elif filetype == 'gwas':
+        data = gi.import_bed(path, True)
+    else:
+        raise Exception("Filetype not supported")
+
     nr_samples = data.shape[0]
     nr_features = data.shape[1]
-    splits = [2, 3, 5, 10]
 
-    outdir = '/home/anne/Documents/featurecloud/pca/vertical-pca/results/'
-    g = gv.standalone(data, k)
-    u, s, v = lsa.svds(data.T,k=k)
-    u = np.flip(u, axis = 1)
-    s = np.flip(s)
-    v = np.flip(v.T, axis=1)
-
-
-    the_epic_loop(data=data, dataset_name=dataset_name, maxit=maxit, scipy=u, nr_repeats=nr_repeats, k=k, splits=splits, outdir=outdir)
+    the_epic_loop(data=data, dataset_name=dataset_name, maxit=maxit, nr_repeats=nr_repeats, k=k, splits=splits, outdir=outdir)
 
 
 
