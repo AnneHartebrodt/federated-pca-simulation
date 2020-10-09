@@ -1,9 +1,9 @@
 ## Transform vcf format to bed format and filter for linkage disequilibrium
 # use plink1 to do so
 
-gwaspath='/home/anne/Documents/featurecloud/pca/vertical-pca/'
-plink1path='/home/anne/Software/plink'
-plink2path='/home/anne/Software/plink2'
+gwaspath=$1
+plink1path=$2
+plink2path=$3
 
 datapath=$gwaspath/data/1000g/raw
 resultpath=$gwaspath/results/1000g
@@ -16,11 +16,8 @@ for e in {1..22} ; do
 mkdir -p $resultpath/chr${e}
 
 cd $datapath
-
-
-
-#wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
-#wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz.tbi
+wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
+wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz.tbi
 mkdir -p chr${e}
 mv ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz chr${e}
 # you are in data chromosome now
