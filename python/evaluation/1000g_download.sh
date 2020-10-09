@@ -7,15 +7,24 @@ plink2path='/home/anne/Software/plink2'
 
 datapath=$gwaspath/data/1000g/raw
 resultpath=$gwaspath/results/1000g
-mkdir -p $datapathdata/1000g
+mkdir -p $datapath
 mkdir -p $resultpath
 
 cd $datapath
 for e in {1..22} ; do
 # make chromosome result folder
 mkdir -p $resultpath/chr${e}
-cd chr${e}
+
+cd $datapath
+
+
+
+#wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
+#wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz.tbi
+mkdir -p chr${e}
 mv ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz chr${e}
+# you are in data chromosome now
+cd chr${e}
 $plink1path --vcf ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz --make-bed -out chr${e};
 # LD pruning with plink default values
 $plink2path --bfile chr${e} -indep-pairwise 50 5 0.5 --out chr${e}.ld.indep;
@@ -32,7 +41,6 @@ cut -d$'\t' -f1-6 --complement chr${e}.thin.traw > chr${e}.thin.traw.values
 # we are not interested in biologically sensible results so --nonfounder should be fine
 # maf 0.01 recommended
 $plink2path --bfile chr${e}.thin --pca approx --nonfounders --maf 0.01 --out $resultpath/chr${e}/chr${e}.thin
-
 cd ..
 done
 

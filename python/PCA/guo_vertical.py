@@ -120,3 +120,23 @@ def standalone2(data, first):
         previous_h = H_i
         previous = G_i
     return G_i
+
+
+def get_initial_eigenvector_k(V):
+    '''
+
+     ap = a -sum over k-1 <a, ai>ai
+    Args:
+        V:
+
+    Returns:
+
+
+    '''
+
+    a = sh.generate_random_gaussian(1, V.shape[0])
+    sum = np.zeros(V.shape[0])
+    for v in range(V.shape[1]):
+        sum = sum + np.dot(np.dot(a, v), v)
+    ap = a - sum
+    return ap

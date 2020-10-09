@@ -60,11 +60,13 @@ def simulate_guo_benchmark(local_data, k, maxit, filename, scipy, choices):
     iterations = 0
     ra = False
     total_len = 0
+    # generate an intitial  orthogonal noise matrix
     for d in local_data:
         total_len = total_len + d.shape[1]
     start = 0
     G_i = sh.generate_random_gaussian(total_len, k)
     G_i, R = la.qr(G_i, mode='economic')
+    # send parts to local sites
     for d in local_data:
         G_list.append(G_i[start:start + d.shape[1], :])
         start = start + d.shape[1]
@@ -278,6 +280,8 @@ if __name__ == '__main__':
     parser.add_argument('--rownames', metavar='iteration', default=None, type=int, help='rownames')
     parser.add_argument('--names', metavar='iteration', default=None, type=str, help='names')
     parser.add_argument('--compare_pca', metavar='compare', default=None, type=str, help='filename of precomputed pca to be compared to')
+    parser.add_argument('--orthovector', metavar='compare', default=None, type=str,
+                        help='filename of orthogonal file')
     args = parser.parse_args()
 
     # import scaled SNP file
@@ -298,6 +302,7 @@ if __name__ == '__main__':
     outdir = args.o
     scale = args.variance
     center = args.center
+    orthovector = '/home/anne/Documents/featurecloud/pca/vertical-pca/results/angles_ortho.tsv'
 
     nr_samples = 0
     nr_features = 0
@@ -346,5 +351,35 @@ if __name__ == '__main__':
 
 
     the_epic_loop(data=data, dataset_name=dataset_name, maxit=maxit, nr_repeats=nr_repeats, k=k, splits=splits, outdir=outdir, precomputed_pca=precomputed_pca)
+
+
+    # produce k-1 eigenvectors
+
+    if filetype == 'delim' and args.orthovector is not None:
+        data, test_lables = imnist.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw','train')
+        data_list, choices = sh.partition_data_vertically(data, 2)
+        ug, ev = runner.simulate_guo(data_list, 12, maxit=200)
+
+
+        ortho = []
+        aps = []
+        for i in range(100):
+            ap = gv.get_initial_eigenvector_k(ug)
+            aps.append(ap)
+            loca = []
+            for v in range(ug.shape[1]):
+                loca.append(co.angle(ug[:,v], ap.T))
+            ortho.append(loca)
+
+        ap_angles = []
+        for a in range(len(aps)-1):
+            print(a)
+            for a1 in range(a+1, len(aps)):
+                print(co.angle(ap[a], ap[a1].T))
+                ap_angles.append(co.angle(ap[a], ap[a1]))
+
+        ortho = np.asarray(ortho)
+
+        pd.DataFrame(ortho).to_csv(orthovector, header=False)
 
 
