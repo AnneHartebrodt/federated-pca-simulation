@@ -1,5 +1,5 @@
-wget http://s3.amazonaws.com/plink2-assets/plink2_linux_x86_64_20200706.zip
-unzip plink2_linux_x86_64_20200706.zip
+wget http://s3.amazonaws.com/plink2-assets/plink2_linux_x86_64_20200923.zip
+unzip plink2_linux_x86_64_20200923.zip
 wget http://s3.amazonaws.com/plink1-assets/plink_linux_x86_64_20200616.zip
 unzip plink_linux_x86_64_20200616.zip
 
