@@ -112,3 +112,4 @@ dependencies:
   - zlib=1.2.11=h516909a_1006
   - zstandard=0.14.0=py38h950e882_1
   - zstd=1.4.5=h6597ccf_2
+  - pandas-plink
