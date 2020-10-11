@@ -44,7 +44,7 @@ import python.import_export.mnist_import as mi
 # Copied from fashion mnist
 
 
-def simulate_guo_benchmark(local_data, k, maxit, filename, scipy, choices):
+def simulate_guo_benchmark(local_data, k, maxit, filename, scipy, choices, precomputed_pca=None):
     '''
     Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.
 
@@ -95,14 +95,14 @@ def simulate_guo_benchmark(local_data, k, maxit, filename, scipy, choices):
             G_list.append(G_i[start:start + d.shape[1], :])
             start = start + d.shape[1]
 
-        ra = gv.convergence_checker(H_i, H_i_prev)
+        ra, conv = gv.convergence_checker(H_i, H_i_prev)
         H_i_prev = H_i
-        log_current_accuracy(scipy, G_i, eigenvals, current_iteration=iterations, filename=filename, choices=choices)
+        log_current_accuracy(scipy, G_i, eigenvals, conv, current_iteration=iterations, filename=filename, choices=choices, precomputed_pca=precomputed_pca)
 
     G_i = np.concatenate(G_list)
     return G_i, eigenvals
 
-def filename(dataset_name, splits, counter, k, maxit):
+def filename(dataset_name, splits, counter, k, maxit, time):
     '''
     Make a file name
     Args:
@@ -115,10 +115,10 @@ def filename(dataset_name, splits, counter, k, maxit):
     Returns: A concatenated filename with filestamp
 
     '''
-    fn = dataset_name + '_' + str(splits) + '_' + str(counter) + '_' + str(k) + '_' + str(maxit) + '_' + time.monotonic()
+    fn = dataset_name + '_' + str(splits) + '_' + str(counter) + '_' + str(k) + '_' + str(maxit) + '_' + str(time)
     return fn
 
-def start_logging(outdir, file_ending, dataset_name, maxit, counter, nr_samples, nr_features, k, convergence_eps, splits):
+def start_logging(outdir, file_ending, dataset_name, maxit, counter, nr_samples, nr_features, k, convergence_eps, splits, time):
     '''
 
     Args:
@@ -133,7 +133,7 @@ def start_logging(outdir, file_ending, dataset_name, maxit, counter, nr_samples,
     Returns: The filename of the file without ending
 
     '''
-    fn = filename(dataset_name, splits, counter, k, maxit)
+    fn = filename(dataset_name, splits, counter, k, maxit, time)
     fn = op.join(outdir, fn)
     fn_end = fn+file_ending
     with open(fn_end, 'a') as handle:
@@ -153,12 +153,12 @@ def start_logging(outdir, file_ending, dataset_name, maxit, counter, nr_samples,
         handle.write(info)
         info = '# !data set splits\t' + str(splits) + '\n'
         handle.write(info)
-        info = '# !start time\t' + str(time.monotonic())+'\n'
+        info = '# !start time\t' + str(time)+'\n'
         handle.write(info)
     return fn
 
 
-def log_current_accuracy(scipy, G_i, eigenvals, current_iteration, filename, choices, precomputed_pca=None):
+def log_current_accuracy(scipy, G_i, eigenvals, conv, current_iteration, filename, choices, precomputed_pca=None):
     '''
     Log the current iterations angle to the canonical
     Args:
@@ -182,6 +182,10 @@ def log_current_accuracy(scipy, G_i, eigenvals, current_iteration, filename, cho
 
     with open(filename+'.eigenval', 'a') as handle:
         info = cv.collapse_array_to_string(eigenvals, str(current_iteration))
+        handle.write(info)
+
+    with open(filename+'.conv', 'a') as handle:
+        info = str(current_iteration)+'\t'+str(conv)+'\n'
         handle.write(info)
 
     if precomputed_pca is not None:
@@ -241,10 +245,13 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, prec
     for c in range(nr_repeats):
         for s in splits:
             # filename will be the same for angle log file and correlation log file
-            filename = start_logging(outdir=outdir, file_ending='.angles', dataset_name=dataset_name, maxit=maxit, counter=c, nr_samples=nr_samples, nr_features=nr_features, k=k, convergence_eps=convergence_eps, splits=s)
-            start_logging(outdir, '.cor', dataset_name, maxit, c, nr_samples, nr_features, k, convergence_eps, splits=s)
+            timer = time.monotonic()
+            filename = start_logging(outdir=outdir, file_ending='.angles', dataset_name=dataset_name, maxit=maxit, counter=c, nr_samples=nr_samples, nr_features=nr_features, k=k, convergence_eps=convergence_eps, splits=s, time = timer)
+            start_logging(outdir, '.cor', dataset_name, maxit, c, nr_samples, nr_features, k, convergence_eps, splits=s, time = timer)
             start_logging(outdir, '.eigenval', dataset_name, maxit, c, nr_samples, nr_features, k, convergence_eps,
-                          splits=s)
+                          splits=s,  time = timer)
+            start_logging(outdir, '.conv', dataset_name, maxit, c, nr_samples, nr_features, k, convergence_eps,
+                          splits=s, time = timer)
             if precomputed_pca is not None:
                 filename = start_logging(outdir=outdir, file_ending='.angles_precomp', dataset_name=dataset_name, maxit=maxit,
                                          counter=c, nr_samples=nr_samples, nr_features=nr_features, k=k,
@@ -337,7 +344,7 @@ if __name__ == '__main__':
 
     elif filetype == 'gwas':
         bim = path+'.bim'
-        traw = path+'.traw'
+        traw = path+'.traw.values'
         traw_nosex = gi.remove_non_autosomes(bim, traw)
         data = gi.read_scale_write(infile=traw_nosex, outfile=None, maf=0.01)
         nr_samples = data.shape[0]
@@ -346,8 +353,10 @@ if __name__ == '__main__':
         raise Exception("Filetype not supported")
 
     if args.compare_pca is not None:
-        precomputed_pca = pd.read_table(args.compare_pca)
+        precomputed_pca = pd.read_table(args.compare_pca, header=0, sep='\t')
         precomputed_pca = precomputed_pca.values
+    else:
+        precomputed_pca=None
 
 
     the_epic_loop(data=data, dataset_name=dataset_name, maxit=maxit, nr_repeats=nr_repeats, k=k, splits=splits, outdir=outdir, precomputed_pca=precomputed_pca)
@@ -356,7 +365,7 @@ if __name__ == '__main__':
     # produce k-1 eigenvectors
 
     if filetype == 'delim' and args.orthovector is not None:
-        data, test_lables = imnist.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw','train')
+        #data, test_lables = imnist.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw','train')
         data_list, choices = sh.partition_data_vertically(data, 2)
         ug, ev = runner.simulate_guo(data_list, 12, maxit=200)
 
