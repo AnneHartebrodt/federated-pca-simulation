@@ -1,9 +1,9 @@
 #mkdir -p '/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist'
-export PYTHONPATH=$PYTHONPATH:/home/anne/Documents/featurecloud/pca/federated_dp_pca
+#export PYTHONPATH=$PYTHONPATH:/home/anne/Documents/featurecloud/pca/federated_dp_pca
 #python3 /home/anne/Documents/featurecloud/pca/federated_dp_pca/python/PCA/guo_vertical_runner_benchmark_edition.py -f \
 #'/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw' \
 #--filetype 'mnist' --center -o '/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist' -r 20 -k 10 \
-# -i 2000
+# -i 2000 --orthovector='/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist/orthogonal_vectors.angles'
 
 #mkdir -p '/home/anne/Documents/featurecloud/pca/vertical-pca/results/mfeat'
 #python3 /home/anne/Documents/featurecloud/pca/federated_dp_pca/python/PCA/guo_vertical_runner_benchmark_edition.py -f \
@@ -25,5 +25,5 @@ for e in {1..22} ; do
 python3 /home/anne/Documents/featurecloud/pca/federated_dp_pca/python/PCA/guo_vertical_runner_benchmark_edition.py -f \
 $datapath/chr${e}/chr${e}.thin \
 --filetype 'gwas' --center -o $resultpath/chr${e} -r 10 -k 10 \
- -i 2000 --sep '\t' --header 0 --rownames 0 --names chr${e} --scale --compare_pca $resultpath/chr${e}/chr${e}.thin.eigenvec
+ -i 2000 --sep '\t' --header 0 --rownames 0 --names chr${e} --scale --compare_pca $resultpath/chr${e}/chr${e}.thin.eigenvec.values
 done

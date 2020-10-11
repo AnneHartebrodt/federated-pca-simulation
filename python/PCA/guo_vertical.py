@@ -24,6 +24,8 @@ import numpy as np
 import scipy as sc
 import python.PCA.shared_functions as sh
 import scipy.linalg as la
+import python.PCA.comparison as co
+
 
 
 def local1(data, G_i):
@@ -90,13 +92,12 @@ def convergence_checker(current, previous, epsilon=0.000001):
         rap = np.dot(previous[:,i].T, previous[:,i])/sc.linalg.norm(previous[:,i])
         sum = np.abs(ra-rap)
     if sum < epsilon:
-        return True
+        return True, sum
     else:
-        return False
+        return False, sum
 
 def standalone2(data, first):
-    import comparison as co
-    import numpy.linalg as la
+
     G_i = sh.generate_random_gaussian(data.shape[1], 1)
     G_i = G_i - np.dot(np.inner(G_i, first.T) , first.T)
     print(np.asarray(G_i).T)
