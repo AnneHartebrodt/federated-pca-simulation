@@ -281,6 +281,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', metavar='outfile', type=str, help='output directory')
     parser.add_argument('-r', metavar='repeats', type=int, default=20, help = 'Number of times to repeat experiment')
     parser.add_argument('-k', metavar='dim', default=10, type=int, help='Number of PCs to calculate')
+    parser.add_argument('-t', metavar='tolerance', default=1e-6, type=float, help='Convergence tolerance')
     parser.add_argument('-s', metavar='sites', default='2,3,5,10', type=str, help='comma separated list of number of sites to simulate, parsed as string')
     parser.add_argument('-i', metavar='iteration', default=2000, type=int, help='Maximum number of iterations')
     parser.add_argument('--header', metavar='iteration', default=None, type=int, help='header lines')
@@ -304,6 +305,8 @@ if __name__ == '__main__':
     s = args.s
     splits = s.strip().split(',')
     splits = np.int8(splits)
+
+
     maxit = args.i
     nr_repeats = args.r
     outdir = args.o

@@ -87,14 +87,14 @@ def convergence_checker_d(current, previous, epsilon=0.000001):
 
 def convergence_checker(current, previous, epsilon=0.000001):
     sum = 0
+    converged = True
     for i in range(current.shape[1]):
         ra = np.dot(current[:,i].T, current[:,i])/sc.linalg.norm(current[:,i])
         rap = np.dot(previous[:,i].T, previous[:,i])/sc.linalg.norm(previous[:,i])
-        sum = np.abs(ra-rap)
-    if sum < epsilon:
-        return True, sum
-    else:
-        return False, sum
+        sum = sum + np.abs(ra-rap)
+        if np.abs(ra-rap) > epsilon:
+            converged=False
+    return converged, sum
 
 def standalone2(data, first):
 
