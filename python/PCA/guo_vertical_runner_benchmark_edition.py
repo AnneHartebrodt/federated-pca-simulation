@@ -309,7 +309,9 @@ if __name__ == '__main__':
     outdir = args.o
     scale = args.variance
     center = args.center
-    orthovector = '/home/anne/Documents/featurecloud/pca/vertical-pca/results/angles_ortho.tsv'
+    #orthovector = '/home/anne/Documents/featurecloud/pca/vertical-pca/results/angles_ortho.tsv'
+
+    print(outdir)
 
     nr_samples = 0
     nr_features = 0
@@ -344,9 +346,9 @@ if __name__ == '__main__':
 
     elif filetype == 'gwas':
         bim = path+'.bim'
-        traw = path+'.traw.values'
+        traw = path+'.traw'
         traw_nosex = gi.remove_non_autosomes(bim, traw)
-        data = gi.read_scale_write(infile=traw_nosex, outfile=None, maf=0.01)
+        data = gi.read_scale_write(infile=traw_nosex, outfile=path+'.traw.scaled', maf=0.01)
         nr_samples = data.shape[0]
         nr_features = data.shape[1]
     else:
