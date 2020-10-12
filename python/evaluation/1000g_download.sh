@@ -12,7 +12,7 @@ mkdir -p $resultpath
 
 echo $resultpath
 cd $datapath
-for e in {1..1} ; do
+for e in {1..22} ; do
 # make chromosome result folder
 mkdir -p $resultpath/chr${e}/plink
 #wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz

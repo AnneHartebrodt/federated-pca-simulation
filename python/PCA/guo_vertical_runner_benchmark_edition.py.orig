@@ -255,9 +255,9 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, prec
             if precomputed_pca is not None:
                 filename = start_logging(outdir=outdir, file_ending='.angles_precomp', dataset_name=dataset_name, maxit=maxit,
                                          counter=c, nr_samples=nr_samples, nr_features=nr_features, k=k,
-                                         convergence_eps=convergence_eps, splits=s, time=timer)
+                                         convergence_eps=convergence_eps, splits=s)
                 start_logging(outdir, '.cor_precomp', dataset_name, maxit, c, nr_samples, nr_features, k, convergence_eps,
-                              splits=s, time=timer)
+                              splits=s)
 
 
             # split the data
@@ -289,7 +289,6 @@ if __name__ == '__main__':
     parser.add_argument('--compare_pca', metavar='compare', default=None, type=str, help='filename of precomputed pca to be compared to')
     parser.add_argument('--orthovector', metavar='compare', default=None, type=str,
                         help='filename of orthogonal file')
-    parser.add_argument('--scaled', action='store_true',help='data is prescaled')
     args = parser.parse_args()
 
     # import scaled SNP file
@@ -311,8 +310,12 @@ if __name__ == '__main__':
     scale = args.variance
     center = args.center
     #orthovector = '/home/anne/Documents/featurecloud/pca/vertical-pca/results/angles_ortho.tsv'
+<<<<<<< HEAD
+=======
 
     print(outdir)
+>>>>>>> 585b8dd8d5273f411c97aae9ccda8797c28ff3b9
+
     nr_samples = 0
     nr_features = 0
     if filetype =='delim-list':
@@ -347,15 +350,8 @@ if __name__ == '__main__':
     elif filetype == 'gwas':
         bim = path+'.bim'
         traw = path+'.traw'
-        
-        if not args.scaled:
-            traw_nosex = gi.remove_non_autosomes(bim, traw)
-        
-            data = gi.read_scale_write(infile=traw_nosex, outfile=path+'.traw.scaled', maf=0.01)
-            data = data.values        
-        else:
-            data = pd.read_table(path+'.traw.scaled', header=None, sep='\t')
-            data = data.values
+        traw_nosex = gi.remove_non_autosomes(bim, traw)
+        data = gi.read_scale_write(infile=traw_nosex, outfile=path+'.traw.scaled', maf=0.01)
         nr_samples = data.shape[0]
         nr_features = data.shape[1]
     else:

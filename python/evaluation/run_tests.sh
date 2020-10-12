@@ -19,14 +19,14 @@
 # -i 2000 --sep '\t' --header 0 --rownames 0 --names 'MMRF-COMMPASS' --scale
 
 
-gwaspath=/home/anne/Documents/featurecloud/pca/
+gwaspath=$1
 export PYTHONPATH=$PYTHONPATH:$gwaspath/federated_dp_pca
 echo $PYTHONPATH
-datapath=$gwaspath/vertical-pca/data/1000g/raw
-resultpath=$gwaspath/vertical-pca/results/1000g
-for e in {1..1} ; do
+datapath=$gwaspath/data/1000g/raw
+resultpath=$gwaspath/results/1000g
+for e in {1..22} ; do
 python3 $gwaspath/federated_dp_pca/python/PCA/guo_vertical_runner_benchmark_edition.py -f \
 $datapath/chr${e}/chr${e}.thin \
 --filetype 'gwas' --center -o $resultpath/chr${e} -r 10 -k 10 \
- -i 2000 --sep '\t' --header 0 --rownames 0 --names chr${e} --variance --compare_pca $resultpath/chr${e}/chr${e}.thin.eigenvec.values
+ -i 2000 --sep '\t' --header 0 --rownames 0 --names chr${e} --variance --compare_pca $resultpath/chr${e}/plink/chr${e}.thin.eigenvec.values
 done
