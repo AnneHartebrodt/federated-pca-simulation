@@ -309,7 +309,7 @@ if __name__ == '__main__':
     outdir = args.o
     scale = args.variance
     center = args.center
-    orthovector = '/home/anne/Documents/featurecloud/pca/vertical-pca/results/angles_ortho.tsv'
+    #orthovector = '/home/anne/Documents/featurecloud/pca/vertical-pca/results/angles_ortho.tsv'
 
     nr_samples = 0
     nr_features = 0
@@ -389,6 +389,6 @@ if __name__ == '__main__':
 
         ortho = np.asarray(ortho)
 
-        pd.DataFrame(ortho).to_csv(orthovector, header=False)
+        pd.DataFrame(ortho).to_csv(args.orthovector, header=False)
 
 
