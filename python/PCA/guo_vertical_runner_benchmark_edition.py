@@ -240,7 +240,7 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, prec
     s = np.flip(s)
     v = np.flip(v.T, axis=1)
 
-    convergence_eps = 0.00000001
+    convergence_eps = 0.000001
 
     for c in range(nr_repeats):
         for s in splits:
