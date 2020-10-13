@@ -30,3 +30,10 @@ $datapath/chr${e}/chr${e}.thin  --scaled \
 --filetype 'gwas' --center -o $resultpath/chr${e} -r 10 -k 10 \
  -i 2000 --sep '\t' --header 0 --rownames 0 --names chr${e} --variance --compare_pca $resultpath/chr${e}/plink/chr${e}.thin.eigenvec.values
 done
+
+for e in {1..1} ; do
+python3 /home/anne/Documents/featurecloud/pca/federated_dp_pca/python/PCA/guo_vertical_runner_benchmark_edition.py -f \
+$datapath/chr${e}/chr${e}.thin  --scaled \
+--filetype 'gwas' --center -o $resultpath/chr${e} -r 10 -k 10 \
+ -i 2000 --sep '\t' --header 0 --rownames 0 --names chr${e} --variance --compare_pca $resultpath/chr${e}/plink/chr${e}.thin.eigenvec.values
+done

@@ -355,6 +355,7 @@ if __name__ == '__main__':
             traw_nosex = gi.remove_non_autosomes(bim, traw)
         
             data = gi.read_scale_write(infile=traw_nosex, outfile=path+'.traw.scaled', maf=0.01)
+            print(data)
         else:
             data = pd.read_table(path+'.traw.scaled', header=None, sep='\t')
             data = data.values
