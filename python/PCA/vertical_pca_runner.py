@@ -20,7 +20,7 @@
 '''
 
 import numpy as np
-import python.PCA.guo_vertical as gv
+import python.PCA.vertical_pca_library as gv
 import python.PCA.shared_functions as sh
 import scipy.linalg as la
 #import import_export.easy_import as easy
@@ -82,7 +82,7 @@ def simulate_guo(local_data, k, maxit):
         for d in local_data:
             G_list.append(G_i[start:start + d.shape[1], :])
             start = start + d.shape[1]
-        ra = gv.convergence_checker(H_i, H_i_prev)
+        ra, sum = gv.convergence_checker(H_i, H_i_prev)
         H_i_prev = H_i
 
     G_i = np.concatenate(G_list)
@@ -113,8 +113,11 @@ if __name__ == '__main__':
 
 
     data_list, choices = sh.partition_data_vertically(data,2)
-    ug, ev = simulate_guo(data_list, 12, maxit=200)
-
+    import time
+    start = time.monotonic()
+    ug, ev = simulate_guo(data_list, 12, maxit=1000)
+    end = time.monotonic()
+    end-start
     co.compute_angles(ug, u)
 
     pd.DataFrame(g).to_csv(path.join(args.p,'guo_single_site_eigenvector.tsv'), sep = '\t', header=False, index=False)

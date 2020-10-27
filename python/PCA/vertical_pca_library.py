@@ -1,5 +1,4 @@
 '''
-<<<<<<< HEAD
     Copyright (C) 2020 Anne Hartebrodt
 
     This program is free software; you can redistribute it and/or modify
@@ -18,32 +17,15 @@
 
     Authors: Anne Hartebrodt
 
+
 '''
 
-=======
-Copyright (C) 2019 Anne Hartebrodt
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-'''
-
-
->>>>>>> 942a7b4b7093379816425ab4e2940e6246073221
 import numpy as np
 import scipy as sc
 import python.PCA.shared_functions as sh
 import scipy.linalg as la
+import python.PCA.comparison as co
+
 
 
 def local1(data, G_i):
@@ -74,8 +56,8 @@ def standalone(data, k=10):
         print(iterations)
         H_i = np.dot(data, G_i) # YiPhii , gamma if standalone
         G_i =  np.dot(data.T, H_i)  + previous
-        G_i, Q = la.qr(G_i, mode='economic')
-        converged = convergence_checker(H_i, previous_h)
+        G_i, Q = la.qr(G_i, mode='economic') # 'compute residuals'
+        converged, sum = convergence_checker(H_i, previous_h, epsilon=0.0000001)
         previous_h = H_i
         previous = G_i
     return G_i
@@ -103,20 +85,26 @@ def convergence_checker_d(current, previous, epsilon=0.000001):
 
 
 
-def convergence_checker(current, previous, epsilon=0.000001):
+def convergence_checker(current, previous, epsilon=0.000001, return_converged=False):
     sum = 0
+    converged = True
+    converged_eigenvectors = []
+    deltas = []
     for i in range(current.shape[1]):
         ra = np.dot(current[:,i].T, current[:,i])/sc.linalg.norm(current[:,i])
         rap = np.dot(previous[:,i].T, previous[:,i])/sc.linalg.norm(previous[:,i])
-        sum = np.abs(ra-rap)
-    if sum < epsilon:
-        return True
+        sum = sum + np.abs(ra-rap)
+        deltas.append(np.abs(ra-rap))
+        if np.abs(ra-rap) > epsilon:
+            converged=False
+        else:
+            converged_eigenvectors.append(i)
+    if return_converged:
+        return converged, sum,  converged_eigenvectors, deltas
     else:
-        return False
-
+        return converged, sum
 def standalone2(data, first):
-    import comparison as co
-    import numpy.linalg as la
+
     G_i = sh.generate_random_gaussian(data.shape[1], 1)
     G_i = G_i - np.dot(np.inner(G_i, first.T) , first.T)
     print(np.asarray(G_i).T)
@@ -140,3 +128,23 @@ def standalone2(data, first):
         previous_h = H_i
         previous = G_i
     return G_i
+
+
+def get_initial_eigenvector_k(V):
+    '''
+
+     ap = a -sum over k-1 <a, ai>ai
+    Args:
+        V:
+
+    Returns:
+
+
+    '''
+
+    a = sh.generate_random_gaussian(1, V.shape[0])
+    sum = np.zeros(V.shape[0])
+    for v in range(V.shape[1]):
+        sum = sum + np.dot(np.dot(a, v), v)
+    ap = a - sum
+    return ap
