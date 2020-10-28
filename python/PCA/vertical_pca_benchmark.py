@@ -1,4 +1,4 @@
-'''
+"""
     Copyright (C) 2020 Anne Hartebrodt
 
     This program is free software; you can redistribute it and/or modify
@@ -17,30 +17,28 @@
 
     Authors: Anne Hartebrodt
 
-'''
+"""
 
-import python.PCA.vertical_pca_library as gv
-import python.PCA.shared_functions as sh
-import scipy.linalg as la
 # import import_export.easy_import as easy
-import scipy.sparse.linalg as lsa
 import argparse as ap
-import pandas as pd
-import os.path as op
-import python.PCA.comparison as co
-import python.PCA.convenience as cv
-import time as time
-import python.import_export.mnist_import as imnist
-import python.PCA.vertical_pca_runner as runner
-import os.path as path
-from scipy.sparse import coo_matrix
 import os
-import gzip
+import os.path as op
+import time
 import numpy as np
-import python.import_export.spreadsheet_import as si
+import pandas as pd
+import scipy.linalg as la
+import scipy.sparse.linalg as lsa
+from scipy.sparse import coo_matrix
+import sys
+
+import python.PCA.comparison  as co
+import python.PCA.convenience as cv
+import python.PCA.shared_functions as sh
+import python.PCA.vertical_pca_library as gv
+import python.PCA.vertical_pca_runner as runner
 import python.import_export.gwas_import as gi
 import python.import_export.mnist_import as mi
-import sys
+import python.import_export.spreadsheet_import as si
 
 
 ####### LOGGING FUNCTIONS #######
@@ -103,7 +101,7 @@ def start_logging(outdir, file_ending, dataset_name, maxit, counter, nr_samples,
 
 
 def log_current_accuracy(scipy, G_i, eigenvals, conv, current_iteration, filename, choices, precomputed_pca=None,
-                         current_ev=None, transmission_logger=None):
+                         current_ev=None):
     '''
     Log the current iterations angle to the canonical
     Args:
@@ -128,7 +126,7 @@ def log_current_accuracy(scipy, G_i, eigenvals, conv, current_iteration, filenam
 
     with open(filename + '.cor', 'a') as handle:
         correlations = co.compute_correlations(scipy[choices, :], G_i)
-        if correlations is not None and len(correlations)>0:
+        if correlations is not None and len(correlations) > 0:
             info = cv.collapse_array_to_string(correlations, info_string)
             handle.write(info)
 
@@ -150,14 +148,6 @@ def log_current_accuracy(scipy, G_i, eigenvals, conv, current_iteration, filenam
             correlations = co.compute_correlations(precomputed_pca[choices, :], G_i)
             info = cv.collapse_array_to_string(correlations, info_string)
             handle.write(info)
-
-    if transmission_logger is not None:
-        with open(filename + '.transmission', 'a') as handle:
-            for a in transmission_logger:
-                handle.write(str(current_ev)+'\t')
-                for b in a:
-                    handle.write(str(b) + '\t')
-                handle.write('\n')
 
 
 def log_choices(logfile, filename, choices):
@@ -217,11 +207,12 @@ def init_benchmark(outdir, dataset_name, maxit, counter,
                       counter=counter, nr_samples=nr_samples, nr_features=nr_features, k=k,
                       convergence_eps=convergence_eps, splits=splits, time=timer)
     return filename
+
+
 ####### END LOGGING FUNCTIONS #######
 
-
 ####### MATRIX POWER ITERATION SCHEME #######
-def simulate_guo_benchmark(local_data, k, maxit, filename, scipy, choices, precomputed_pca=None):
+def simulate_guo_benchmark(local_data, k, maxit, filename=None, scipy=None, choices=None, precomputed_pca=None, fractev=1.0):
     '''
     Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.
 
@@ -235,7 +226,7 @@ def simulate_guo_benchmark(local_data, k, maxit, filename, scipy, choices, preco
     '''
     G_list = []
     iterations = 0
-    ra = False
+    converged = False
     total_len = 0
     # generate an intitial  orthogonal noise matrix
     for d in local_data:
@@ -244,62 +235,54 @@ def simulate_guo_benchmark(local_data, k, maxit, filename, scipy, choices, preco
     G_i = sh.generate_random_gaussian(total_len, k)
     G_i, R = la.qr(G_i, mode='economic')
     # send parts to local sites
-    transmission_logger = []
-    di = 0
-    for d in local_data:
-        transmission_logger.append(
-            ["G_i=SC", iterations, di, sys.getsizeof(G_i[start:start + d.shape[1], :].tobytes())])
-        G_list.append(G_i[start:start + d.shape[1], :])
-        start = start + d.shape[1]
-        di = di + 1
+    for i in range(len(local_data)):
+        G_list.append(G_i[start:start + local_data[i].shape[1], :])
+        log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
+        start = start + local_data[i].shape[1]
     H_i_prev = sh.generate_random_gaussian(local_data[0].shape[0], k)
 
     converged_eigenvals = []
-    while not ra and iterations < maxit:
+    while not converged and iterations < maxit and len(converged_eigenvals)<k*fractev:
         iterations = iterations + 1
         H_i = np.zeros((local_data[0].shape[0], k))
-        di = 0
-        for d, g in zip(local_data, G_list):
-            H_local = np.dot(d, g)
-            transmission_logger.append(["H_local=CS", iterations, di, sys.getsizeof(H_local.tobytes())])
+        for i in range(len(local_data)):
+            H_local = np.dot(local_data[i], G_list[i])
+            log_transmission(filename, "H_local=CS", iterations, i, H_local)
             H_i = H_i + H_local
-            transmission_logger.append(["H_global=SC", iterations, di, sys.getsizeof(H_i.tobytes())])
-            di = di + 1
-        G_list_n = []
-        di = 0
-        for d, g in zip(local_data, G_list):
-            G_i = np.dot(d.T, H_i) + g
-            transmission_logger.append(["Gi_local=CS", iterations, di, sys.getsizeof(G_i.tobytes())])
-            G_list_n.append(G_i)
-            di = di + 1
-        start = 0
-        G_i = np.concatenate(G_list_n, axis=0)
+        log_transmission(filename, "H_global=SC", iterations, 1, H_i)
+
+        for i in range(len(G_list)):
+            G_list[i] = np.dot(local_data[i].T, H_i) + G_list[i]
+            log_transmission(filename, "Gi_local=CS", iterations, i, G_list[i])
+
+        G_i = np.concatenate(G_list, axis=0)
+
         eigenvals = []
         for col in range(G_i.shape[1]):
             eigenvals.append(np.linalg.norm(G_i[:, col]))
         eigenvals = np.sqrt(eigenvals)
+
         G_i, R = la.qr(G_i, mode='economic')
-        G_list = []
-        di = 0
-        for d in local_data:
-            G_list.append(G_i[start:start + d.shape[1], :])
-            transmission_logger.append(
-                ["G_i=SC", iterations, di, sys.getsizeof(G_i[start:start + d.shape[1], :].tobytes())])
-            start = start + d.shape[1]
-            di = di+1
-        ra, conv, converged_eigenvals, delta = gv.convergence_checker(H_i, H_i_prev, return_converged=True)
+        start = 0
+        for i in range(len(G_list)):
+            G_list[i] = G_i[start:start + local_data[i].shape[1], :]
+            log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
+            start = start + local_data[i].shape[1]
+
+        converged, conv, converged_eigenvals, delta = gv.convergence_checker(H_i, H_i_prev, return_converged=True)
         H_i_prev = H_i
-        log_current_accuracy(scipy=scipy, G_i=G_i, eigenvals=eigenvals, conv=delta, current_iteration=iterations, filename=filename,
-                             choices=choices, precomputed_pca=precomputed_pca, transmission_logger=transmission_logger)
-        transmission_logger = []
+        log_current_accuracy(scipy=scipy, G_i=G_i, eigenvals=eigenvals, conv=delta, current_iteration=iterations,
+                             filename=filename,
+                             choices=choices, precomputed_pca=precomputed_pca)
     G_i = np.concatenate(G_list)
+    print(iterations)
     return G_i, eigenvals, converged_eigenvals
 
 
 ####### END MATRIX POWER ITERATION SCHEME #######
 
 def assure_consecutive(arr):
-    if len(arr)==0:
+    if len(arr) == 0:
         return -1
     i = 0
     while i < (len(arr) - 1) and arr[i] + 1 == arr[i + 1]:
@@ -308,203 +291,6 @@ def assure_consecutive(arr):
 
 
 ####### ORIGINAL POWER ITERATION SCHEME #######
-def simulate_guo_1(local_data, maxit, filename, scipy, choices, precomputed_pca=None):
-    '''
-    Retrieve the first eigenvector
-    Args:
-        local_data: List of numpy arrays containing the data. The data has to be scaled already.
-        k: The number of dimensions to retrieve
-        maxit: Maximal number of iterations
-
-    Returns: A column vector array containing the global eigenvectors
-
-    '''
-    G_list = []  # this are the parital eigevenctors
-    iterations = 0
-    ra = False
-    total_len = 0
-    transmission_logger = []
-    for d in local_data:
-        total_len = total_len + d.shape[1]
-    start = 0
-    G_i = sh.generate_random_gaussian(total_len, 1)
-    G_i = G_i / np.linalg.norm(G_i)  # normalize
-    di = 0
-    for d in local_data:
-        transmission_logger.append(
-            ["G_i=SC", iterations, di, sys.getsizeof(G_i[start:start + d.shape[1], :].tobytes())])
-        G_list.append(G_i[start:start + d.shape[1], :])
-        start = start + d.shape[1]
-        di = di+1
-    H_i_prev = sh.generate_random_gaussian(local_data[0].shape[0], 1)
-
-    while not ra and iterations < maxit:
-        iterations = iterations + 1
-
-        H_i = np.zeros((local_data[0].shape[0], 1))
-        di = 0
-        for d, g in zip(local_data, G_list):
-            H_local = np.dot(d, g)
-            transmission_logger.append(
-                ["H_local=CS", iterations, di, sys.getsizeof(H_local.tobytes())])
-            H_i = H_i + H_local
-            di = di+1
-        transmission_logger.append(
-            ["H_global=SC", iterations, di, sys.getsizeof(H_i.tobytes())])
-        G_list_n = []
-        di = 0
-        gi_norm = 0
-        for d, g in zip(local_data, G_list):
-            G_i = np.dot(d.T, H_i) + g
-            gi_norm = gi_norm+np.sum(np.square(G_i))
-            transmission_logger.append(
-                ["local_norm=CS", iterations, di, sys.getsizeof(np.sum(np.square(G_i)).tobytes())])
-            G_list_n.append(G_i)
-            di =di+1
-        gi_norm= np.sqrt(gi_norm)
-        transmission_logger.append(
-            ["global_norm=SC", iterations, di, sys.getsizeof(gi_norm.tobytes())])
-        G_i = np.concatenate(G_list_n, axis=0)
-        eigenvals = []
-        for col in range(G_i.shape[1]):
-            eigenvals.append(np.linalg.norm(G_i[:, col]))
-        eigenvals = np.sqrt(eigenvals)
-        G_i = G_i / gi_norm
-
-        G_list = []
-        start = 0
-        di = 0
-        # not strictly required.
-        for d in local_data:
-            G_list.append(G_i[start:start + d.shape[1], :])
-            start = start + d.shape[1]
-            di = di+1
-        ra, sum, conv, delta = gv.convergence_checker(H_i, H_i_prev, return_converged=True)
-        H_i_prev = H_i
-        log_current_accuracy(scipy, G_i, eigenvals, conv=delta, current_iteration=iterations, filename=filename,
-                             choices=choices, precomputed_pca=precomputed_pca, current_ev=1, transmission_logger=transmission_logger)
-        transmission_logger = []
-    G_i = np.concatenate(G_list)
-    return G_i
-
-
-def simulate_guo_k_residuals_local(local_data, maxit, V_k, filename, scipy, choices, starting_vector=None,
-                                   precomputed_pca=None):
-    '''
-    Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.
-
-    Args:
-        local_data: List of numpy arrays containing the data. The data has to be scaled already.
-        k: The number of dimensions to retrieve
-        maxit: Maximal number of iterations
-
-    Returns: A column vector array containing the global eigenvectors
-
-    '''
-    G_list = []  # this are the parital eigevenctors
-    iterations = 0
-    ra = False
-    total_len = 0
-    for d in local_data:
-        total_len = total_len + d.shape[1]
-    start = 0
-    if starting_vector is None:
-        # if there is no starting vector we generate an orthogonal
-        # vector and start iterating
-        G_i = residuals(V_k).T
-    else:
-        # the vector is already preiterated and is orthonormal, we
-        # just have to assure it is a 2d array.
-        G_i = np.reshape(starting_vector, (total_len, 1))
-    Vk_list = []
-    transmission_logger = []
-    di = 0
-    for d in local_data:
-        G_list.append(G_i[start:start + d.shape[1], :])
-        transmission_logger.append(
-            ["G_i=SC", iterations, di, sys.getsizeof(G_i[start:start + d.shape[1], :].tobytes())])
-        Vk_list.append(V_k[start:start + d.shape[1], :])
-        start = start + d.shape[1]
-        di = di+1
-    H_i_prev = sh.generate_random_gaussian(local_data[0].shape[0], 1)
-
-    while not ra and iterations < maxit:
-        iterations = iterations + 1
-        H_i = np.zeros((local_data[0].shape[0], 1))
-        di =0
-        for d, g in zip(local_data, G_list):
-            H_local = np.dot(d, g)
-            transmission_logger.append(
-                ["H_local=CS", iterations, di, sys.getsizeof(H_local.tobytes())])
-            H_i = H_i + H_local
-            di =di +1
-        transmission_logger.append(
-            ["H_global=SC", iterations, di, sys.getsizeof(H_i.tobytes())])
-        G_list_n = []
-        local_sums = []
-        for d, g, v in zip(local_data, G_list, Vk_list):
-            G_i = np.dot(d.T, H_i) + g
-            G_list_n.append(G_i)
-            sum = []
-            for vi in range(v.shape[1]):
-                sum.append(np.dot(G_i.T, v[:, vi:vi + 1]).flatten())
-            local_sums.append(sum)
-        local_sums = np.asarray(local_sums)
-        # approximate
-        transmission_logger.append(
-            ["local_sums=CS", iterations, di, sys.getsizeof(local_sums.tobytes())/len(local_data)])
-        local_sums = np.sum(local_sums, axis=0).flatten()
-        transmission_logger.append(
-            ["global_sums=SC", iterations, di, sys.getsizeof(local_sums.tobytes())])
-        aps = []
-        for v, g in zip(Vk_list, G_list_n):
-            sum = np.zeros((v.shape[0], 1))
-            for vi in range(v.shape[1]):
-                it = local_sums[vi] * v[:, vi:vi + 1].T
-                it = np.reshape(it, sum.shape)
-                sum = sum + it
-            ap = g - sum
-            aps.append(ap)
-
-        gi_norm = 0
-        di = 0
-        for a in aps:
-            c_n = np.sum(np.square(a))
-            transmission_logger.append(
-                ["local_norm=CS", iterations, di, sys.getsizeof(c_n)])
-            gi_norm = gi_norm+c_n
-            di = di+1
-        gi_norm = np.sqrt(gi_norm)
-        transmission_logger.append(
-            ["global_norm=SC", iterations, di, sys.getsizeof(gi_norm)])
-
-
-
-        # concatenate the locally corrected vectors
-        G_i = np.concatenate(aps, axis=0)
-        eigenvals = []
-        for col in range(G_i.shape[1]):
-            eigenvals.append(np.linalg.norm(G_i[:, col]))
-        eigenvals = np.sqrt(eigenvals)
-        G_i = G_i / gi_norm
-        G_list = []
-        start = 0
-        # this is purely for ease of simulation.  Since we calculated
-        # the norms separately, no need to send the actual vectors.
-        for d in local_data:
-            G_list.append(G_i[start:start + d.shape[1], :])
-            start = start + d.shape[1]
-        ra, sum, conv, delta = gv.convergence_checker(H_i, H_i_prev, return_converged=True)
-        H_i_prev = H_i
-        log_current_accuracy(scipy[:, V_k.shape[1]:], G_i, eigenvals, conv=delta, current_iteration=iterations,
-                             filename=filename, choices=choices, precomputed_pca=precomputed_pca,
-                             current_ev=V_k.shape[1] + 1, transmission_logger = transmission_logger)
-        transmission_logger = []
-    print(iterations)
-    G_i = np.concatenate(G_list)
-    return G_i
-
-
 def residuals(V, a=None, sums=None):
     '''
     '''
@@ -513,7 +299,7 @@ def residuals(V, a=None, sums=None):
     sum = np.zeros(V.shape[0])
     if sums is not None:
         for v in range(V.shape[1]):
-            sum = sum + s[v] * V[:, v].T
+            sum = sum + sums[v] * V[:, v].T
     else:
         for v in range(V.shape[1]):
             sum = sum + np.dot(a, V[:, v:v + 1]) * V[:, v].T
@@ -521,35 +307,160 @@ def residuals(V, a=None, sums=None):
     return ap
 
 
-def all_eigenvalues_residuals_local(data_list, k, maxit, filename, scipy, choices, precomputed_pca=None):
-    ug = simulate_guo_1(data_list, maxit=maxit, filename=filename, scipy=scipy, choices=choices)
+def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=None, scipy=None, choices=None,
+                 precomputed_pca=None):
+    '''
+    Retrieve the first eigenvector
+    Args:
+        local_data: List of numpy arrays containing the data. The data has to be scaled already.
+        k: The number of countermensions to retrieve
+        maxit: Maximal number of iterations
+
+    Returns: A column vector array containing the global eigenvectors
+
+    '''
+
+    iterations = 0  # iteration counter
+    converged = False
+    total_len = 0  # total number of samples/incounterviduals in data
+    for d in local_data:
+        total_len = total_len + d.shape[1]
+    if V_k is not None:
+        id = V_k.shape[1]
+    else:
+        id = 0
+    if starting_vector is None:
+        # if there is no starting vector we generate an orthogonal
+        # vector and start iterating
+        if V_k is not None:
+            # if it is not the first eigenvector use residuals
+            # to orthogonalise
+            G_i = residuals(V_k).T
+        else:
+            # if it is the first eigenvecto just generate
+            # randonly and scale to unit norm
+            G_i = sh.generate_random_gaussian(total_len, 1)
+            G_i = G_i / np.linalg.norm(G_i)  # normalize
+    else:
+        # the vector is already preiterated and is orthonormal, we
+        # just have to assure it is a 2d array.
+        G_i = np.reshape(starting_vector, (total_len, 1))
+
+    start = 0  # running variable to partition G_i
+    G_list = []  # this are the parital eigevenctors
+    Vk_list = []  # these are the partial eigenvectors already iterated
+    for i in range(len(local_data)):
+        G_list.append(G_i[start:start + local_data[i].shape[1], :])
+        log_transmission(filename, "G_i=SC", iterations, i, G_list[i], id+1)
+        if V_k is not None:
+            Vk_list.append(V_k[start:start + local_data[i].shape[1], :])
+        start = start + local_data[i].shape[1]
+    H_i_prev = sh.generate_random_gaussian(local_data[0].shape[0], 1)
+
+    while not converged and iterations < maxit:
+
+        iterations = iterations + 1
+        print(iterations)
+        H_i = np.zeros((local_data[0].shape[0], 1))  # dummy initialise the H_i matrix
+        for i in range(len(local_data)):
+            H_local = np.dot(local_data[i], G_list[i])
+            log_transmission(filename, "H_local=CS", iterations, i, H_local ,id+1)
+            H_i = H_i + H_local
+        log_transmission(filename, "H_global=SC", iterations, 1, H_i ,id+1)
+
+        for i in range(len(local_data)):
+            G_list[i] = np.dot(local_data[i].T, H_i) + G_list[i]
+
+        gi_norm = 0
+        if V_k is None:
+            # compute the norm of the eigenvector and done.
+            for i in range(len(G_list)):
+                local_norm = np.sum(np.square(G_list[i]))
+                gi_norm = gi_norm + np.sum(np.square(G_list[i]))
+                log_transmission(filename, "local_norm=CS", iterations, i, local_norm ,id+1)
+
+        else:
+            local_sums = []
+            for i in range(len(G_list)):
+                sum = []
+                for vi in range(Vk_list[i].shape[1]):
+                    dp = np.dot(G_list[i].T, Vk_list[i][:, vi:vi + 1]).flatten()
+                    sum.append(dp)
+                # cast to numpy array to determine size
+                log_transmission(filename, "local_dot_prod=CS", iterations, i, np.asarray(sum), id+1)
+                local_sums.append(sum)
+            local_sums = np.asarray(local_sums)
+            local_sums = np.sum(local_sums, axis=0).flatten()  # flatten to remove nesting
+            log_transmission(filename, "global_dot_prod=SC", iterations, 1, local_sums, id+1)
+
+            for i in range(len(G_list)):
+                ap = G_list[i]
+                for vi in range(Vk_list[i].shape[1]):
+                    it = local_sums[vi] * Vk_list[i][:, vi:vi + 1].T
+                    it = np.reshape(it, ap.shape)
+                    ap = ap - it
+                G_list[i] = ap
+
+            for i in range(len(G_list)):
+                c_n = np.sum(np.square(G_list[i]))
+                log_transmission(filename, "local_norm=CS", iterations, i, c_n, id+1)
+                gi_norm = gi_norm + c_n
+
+        gi_norm = np.sqrt(gi_norm)
+        for i in range(len(G_list)):
+            G_list[i] = G_list[i] / gi_norm
+            log_transmission(filename, "ALT_G_i_local=CS", iterations, i, G_list[i], id+1)
+            log_transmission(filename, "ALT_G_i=SC", iterations, i, G_list[i], id+1)
+
+        log_transmission(filename, "global_norm=SC", iterations, 1, gi_norm, id+1)
+
+        converged, sum, conv, delta = gv.convergence_checker(H_i, H_i_prev, return_converged=True)
+        H_i_prev = H_i
+
+
+        G_i = np.concatenate(G_list, axis=0)
+        log_current_accuracy(scipy[:,id:id+1], G_i, [gi_norm], conv=delta, current_iteration=iterations,
+                             filename=filename, choices=choices, precomputed_pca=precomputed_pca, current_ev=id+1)
+
+    # return a complete eigenvector
+    return G_i
+
+
+def compute_k_eigenvectors(data_list, k, maxit, filename=None, scipy=None, choices=None, precomputed_pca=None):
+    ug = simulate_guo(data_list, maxit=maxit, filename=filename, scipy=scipy, choices=choices)
     u_all = ug
     for i in range(1, k):
-        ug2 = simulate_guo_k_residuals_local(data_list, maxit=maxit, V_k=u_all, filename=filename, scipy=scipy,
-                                             choices=choices)
+        ug2 = simulate_guo(data_list, maxit=maxit, V_k=u_all, filename=filename, scipy=scipy, choices=choices)
         u_all = np.concatenate([u_all, ug2], axis=1)
     return u_all
+
+
+def log_transmission(logfile, log_entry_string, iterations, counter, element, eigenvector=10):
+    with open(logfile + '.transmission', 'a') as handle:
+        handle.write(log_entry_string + '\t' + str(iterations)
+                     + '\t' + str(counter) +'\t' + str(eigenvector)+'\t' + str(sys.getsizeof(element.tobytes()))+'\n')
 
 
 ####### END ORIGINAL POWER ITERATION SCHEME ####
 
 
 ####### HYBRID POWER ITERATION SCHEME #######
-def hybid_scheme(data_list, k, maxit, filename, filename2, scipy, choices, precomputed_pca=None):
-    ug1, eigv, conv = simulate_guo_benchmark(local_data=data_list, k=k, maxit=maxit, filename=filename, choices=choices,
-                                             scipy=scipy, precomputed_pca=precomputed_pca)
-    number_converged = assure_consecutive(conv)
-    ug = None  # dummy init
-    for i in range(number_converged + 1, k - 1):
-        next_eigenvec = simulate_guo_k_residuals_local(data_list, maxit=maxit, V_k=ug1[:, 0:i],
-                                                       starting_vector=ug1[:, i], filename=filename2, scipy=scipy,
-                                                       choices=choices, precomputed_pca=None)
-        ug = np.concatenate((ug1[:, 0:i], next_eigenvec), axis=1)
-    if ug is None:
-        ug = ug1
+def hybrid_scheme(data_list, k, maxit, filename=None, filename2=None, scipy=None, choices=None, precomputed_pca=None):
+    #ug, eigenvalues = better_hybrid_scheme(local_data=data_list, k=k, maxit=maxit, filename=filename, choices=choices,
+                #                           scipy=scipy, precomputed_pca=precomputed_pca)
+
+    ug, ev, eigenvalues = simulate_guo_benchmark(local_data=data_list, k=k, maxit=maxit, filename=filename, choices=choices, scipy=scipy, precomputed_pca=precomputed_pca, fractev=0.75)
+    ug1 = ug.copy()
+    restart = assure_consecutive(eigenvalues)
+    print(restart)
+    for i in range(restart, k - 1):
+        next_eigenvec = simulate_guo(data_list, maxit=maxit, V_k=ug1[:, 0:i+1], starting_vector=ug1[:, i+1],
+                                     filename=filename2, scipy=scipy, choices=choices, precomputed_pca=None)
+        ug = np.concatenate((ug1[:, 0:i+1], next_eigenvec), axis=1)
     return ug
 
-def better_hybrid_scheme(local_data, k, maxit):
+
+def better_hybrid_scheme(local_data, k, maxit, filename, scipy, choices, precomputed_pca=None):
     '''
        Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.
 
@@ -563,7 +474,7 @@ def better_hybrid_scheme(local_data, k, maxit):
        '''
     G_list = []
     iterations = 0
-    ra = False
+    converged = False
     total_len = 0
     # generate an intitial  orthogonal noise matrix
     for d in local_data:
@@ -571,93 +482,95 @@ def better_hybrid_scheme(local_data, k, maxit):
     start = 0
     G_i = sh.generate_random_gaussian(total_len, k)
     G_i, R = la.qr(G_i, mode='economic')
+
     # send parts to local sites
-    transmission_logger = []
-    di = 0
-    for d in local_data:
-        transmission_logger.append(
-            ["G_i=SC", iterations, di, sys.getsizeof(G_i[start:start + d.shape[1], :].tobytes())])
-        G_list.append(G_i[start:start + d.shape[1], :])
-        start = start + d.shape[1]
-        di = di + 1
-    H_i_prev = sh.generate_random_gaussian(local_data[0].shape[0], k)
+    for i in range(len(local_data)):
+        G_list.append(G_i[start:start + local_data[i].shape[1], :])
+        log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
 
-    converged_eigenvals = []
-    G_conv = None
-    convii = 0
-    delta_prev = None
-    annormaly_counter = [0]*k
-    while not ra and iterations < maxit:
+        start = start + local_data[i].shape[1]
+
+    H_i_prev = sh.generate_random_gaussian(local_data[0].shape[0], k)  # dummy init
+
+    G_conv = None  # converged eigenvector matrix
+    converged_counter = 0
+    annormaly = [0] * k  # init counter for small eigengaps
+    global_eigenvalues = []
+    global_deltas = []
+    while not converged and iterations < maxit and annormaly[converged_counter] < 10:
         iterations = iterations + 1
-        print(iterations)
-        print(convii)
-        H_i = np.zeros((local_data[0].shape[0], k-convii))
-        di = 0
-        for d, g in zip(local_data, G_list):
-            H_local = np.dot(d, g)
-            transmission_logger.append(["H_local=CS", iterations, di, sys.getsizeof(H_local.tobytes())])
+        H_i = np.zeros((local_data[0].shape[0], k - converged_counter))
+
+        for i in range(len(local_data)):
+            H_local = np.dot(local_data[i], G_list[i])
+            log_transmission(filename, "H_local=CS", iterations, i, H_local)
             H_i = H_i + H_local
-            transmission_logger.append(["H_global=SC", iterations, di, sys.getsizeof(H_i.tobytes())])
-            di = di + 1
-        G_list_n = []
-        ra, conv, converged_eigenvals, delta = gv.convergence_checker(H_i, H_i_prev, return_converged=True)
 
-        if delta_prev is not None and len(delta) == len(delta_prev):
-            for d in range(len(delta)):
-                if delta_prev[d]<delta[d]:
-                    annormaly_counter[d+convii] = annormaly_counter[d+convii]+1
-       # else:
-       #     annormaly_counter = k * [0]
-        print(annormaly_counter)
-        delta_prev = delta
-        di = 0
-        for d, g in zip(local_data, G_list):
-            G_i = np.dot(d.T, H_i) + g
-            transmission_logger.append(["Gi_local=CS", iterations, di, sys.getsizeof(G_i.tobytes())])
-            G_list_n.append(G_i)
-            di = di + 1
-        start = 0
-        G_i = np.concatenate(G_list_n, axis=0)
-        if G_conv is not None and G_conv.shape[1]>0:
-            G_i = np.concatenate([G_conv, G_i], axis = 1)
+        log_transmission(filename, "H_global=SC", iterations, 1, H_i)
 
-        eigenvals = []
+        converged, sum_of_delta, converged_eigenvals, delta = gv.convergence_checker(H_i, H_i_prev, return_converged=True)
+
+        for i in range(len(G_list)):
+            G_list[i] = np.dot(local_data[i].T, H_i) + G_list[i]
+
+        G_i = np.concatenate(G_list, axis=0)
+
+        # get the converged eigenvalues
+        eigenvals = global_eigenvalues.copy()
+        delta = np.append(global_deltas, delta)
         diff = []
+        # iterate over non converged eigenvectors
         for col in range(G_i.shape[1]):
             eigenvals.append(np.sqrt(np.linalg.norm(G_i[:, col])))
-            if col>0:
-                diff.append(eigenvals[col-1]-eigenvals[col])
-        print(convii)
-        print(diff)
+        # compute eigengaps for all eigenvalues
+        for e in range(1, len(eigenvals)):
+            diff.append(np.log(np.abs(eigenvals[e - 1] - eigenvals[e])))
+        # compute mean and standard deviation over all eigengaps
+        mm = np.mean(diff)
+        ssd = np.sqrt(np.var(diff))
+
+        # flag eigenvectors that exhibit a very small eigengap
+        for d in range(len(diff)):
+            if diff[d] < mm - ssd:
+                annormaly[d] = annormaly[d] + 1
+        #print(annormaly)
+
+        # Orthonormalise based on all eigenvectors
+        if G_conv is not None and G_conv.shape[1] > 0:
+            G_i = np.concatenate([G_conv, G_i], axis=1)
         G_i, R = la.qr(G_i, mode='economic')
 
-        if len(converged_eigenvals)>0:
-            convii = convii+len(converged_eigenvals)
+        # current iteration led to some eigenvectors converging
+        if len(converged_eigenvals) > 0:
+            converged_counter = converged_counter + len(converged_eigenvals)
+            # slice H_i and reset annomaly counter
             H_i_prev = H_i[:, len(converged_eigenvals):]
-
+            annormaly = k * [0]
+            # update converged eigenvector array
+            global_eigenvalues = eigenvals[0:converged_counter]
+            global_deltas = delta[0:converged_counter]
         else:
             H_i_prev = H_i
 
-        G_conv = G_i[:, 0:convii]
-        G_i = G_i[:, convii:]
+        log_current_accuracy(scipy=scipy, G_i=G_i, eigenvals=eigenvals, conv=delta, current_iteration=iterations,
+                             filename=filename, choices=choices, precomputed_pca=precomputed_pca)
+        # in any case reslice G_i into converged and
+        # unconverged
+        G_conv = G_i[:, 0:converged_counter]
+        G_i = G_i[:, converged_counter:]
 
-        print(convii)
-        print(G_i.shape)
-        G_list = []
-        di = 0
-        for d in local_data:
-            G_list.append(G_i[start:start + d.shape[1], :])
-            transmission_logger.append(
-                ["G_i=SC", iterations, di, sys.getsizeof(G_i[start:start + d.shape[1], :].tobytes())])
-            start = start + d.shape[1]
-            di = di + 1
+        # redistribute the eigenvector parts
+        start = 0
+        for i in range(len(local_data)):
+            G_list[i] = G_i[start:start + local_data[i].shape[1], :]
+            log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
+            start = start + local_data[i].shape[1]
 
-        #log_current_accuracy(scipy=scipy, G_i=G_i, eigenvals=eigenvals, conv=delta, current_iteration=iterations,
-        #                     filename=filename,
-        #                     choices=choices, precomputed_pca=precomputed_pca, transmission_logger=transmission_logger)
-        transmission_logger = []
-    G_i = np.concatenate(G_list)
-    return G_conv, converged_eigenvals
+
+    print(iterations)
+    if  G_i.shape[1] > 0:
+        G_conv = np.concatenate([G_conv, G_i], axis=1)
+    return G_conv, global_eigenvalues
 
 
 ####### END HYBRID POWER ITERATION SCHEME #######
@@ -681,7 +594,9 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, conv
 
     '''
     # g = gv.standalone(data, k)
+    islist = False
     if isinstance(data, list):
+        islist = True
         data_list = data
         data = np.concatenate(data, axis=1)
         splits = [1]  # data is already split, only counter experiments need to be run.
@@ -703,20 +618,22 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, conv
                                       splits=s, timer=timer, transmission_costs=True)
 
             # split the data
-            if not isinstance(data, list):
+            if not islist:
                 data_list, choice = sh.partition_data_vertically(data, s, randomize=True)
-
+            else:
+                choice = range(data.shape[1])
             logf = op.join(outdir, 'log_choices.log')
             log_choices(logf, filename, choice)
 
             start = time.monotonic()
             logftime = op.join(outdir, 'time.log')
 
-            # simulate the run
-            simulate_guo_benchmark(data_list, k + 2, maxit=maxit, scipy=u, filename=filename, choices=choice, precomputed_pca=precomputed_pca)
+            # # simulate the run
+            simulate_guo_benchmark(data_list, k, maxit=maxit, scipy=u, filename=filename, choices=choice,
+                                   precomputed_pca=precomputed_pca)
             end = time.monotonic()
 
-            log_time(logftime, 'qr_scheme', end-start, s, c)
+            log_time(logftime, 'qr_scheme', end - start, s, c)
 
             filename = init_benchmark(outdir=outdir, dataset_name=dataset_name_guo, maxit=maxit, counter=c,
                                       nr_samples=nr_samples, nr_features=nr_features, k=k,
@@ -724,23 +641,25 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, conv
                                       splits=s, timer=timer, transmission_costs=True)
 
             start = time.monotonic()
-            all_eigenvalues_residuals_local(data_list, k=k + 2, maxit=maxit, scipy=u, filename=filename, choices=choice,
+            compute_k_eigenvectors(data_list, k=k, maxit=maxit, scipy=u, filename=filename, choices=choice,
                                             precomputed_pca=precomputed_pca)
             end = time.monotonic()
             log_time(logftime, 'guo_single', end - start, s, c)
 
-            filename = init_benchmark(outdir=outdir, dataset_name=dataset_name+'_hybrid', maxit=maxit, counter=c,
+            filename = init_benchmark(outdir=outdir, dataset_name=dataset_name + '_hybrid', maxit=maxit, counter=c,
                                       nr_samples=nr_samples, nr_features=nr_features, k=k,
                                       convergence_eps=convergence_eps,
                                       splits=s, timer=timer, transmission_costs=True)
-            filename2 = init_benchmark(outdir=outdir, dataset_name=dataset_name + '_hybrid_reit', maxit=maxit, counter=c,
-                                      nr_samples=nr_samples, nr_features=nr_features, k=k,
-                                      convergence_eps=convergence_eps,
-                                      splits=s, timer=timer, transmission_costs=True)
+            filename2 = init_benchmark(outdir=outdir, dataset_name=dataset_name + '_hybrid_reit', maxit=maxit,
+                                       counter=c,
+                                       nr_samples=nr_samples, nr_features=nr_features, k=k,
+                                       convergence_eps=convergence_eps,
+                                       splits=s, timer=timer, transmission_costs=True)
 
             start = time.monotonic()
-            hybid_scheme(data_list, k=k + 2, maxit=maxit, scipy=u, filename=filename, filename2=filename2, choices=choice,
-                                            precomputed_pca=precomputed_pca)
+            hybrid_scheme(data_list, k=k, maxit=maxit, scipy=u, filename=filename, filename2=filename2,
+                         choices=choice,
+                         precomputed_pca=precomputed_pca)
             end = time.monotonic()
             log_time(logftime, 'hybrid_scheme', end - start, s, c)
 
@@ -748,6 +667,24 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, conv
 ####### BENCHMARK RUNNER #######
 
 if __name__ == '__main__':
+   #  data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
+   #  data = coo_matrix.asfptype(data)
+   #  # args.k = 10
+   #  # g = gv.standalone(data, k=2)
+   #  #
+   #  u, s, v = lsa.svds(data.T,k=10)
+   #  u = np.flip(u, axis = 1)
+   #  s = np.flip(s)
+   #  v = np.flip(v.T, axis=1)
+   #
+   #  data_list, choices = sh.partition_data_vertically(data,2)
+   #  ev = hybrud(data_list, 10, 2000, scipy=u)
+   #  print(co.compute_angles(u, ev))
+   # # print(co.angle(u[:,7], ev[:,9]))
+
+
+
+
     parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
     parser.add_argument('-f', metavar='file', type=str, help='filename of data file; default tab separated')
     parser.add_argument('--filetype', metavar='filetype', type=str, help='Type of the dataset')
@@ -772,6 +709,7 @@ if __name__ == '__main__':
     parser.add_argument('--lvg', action='store_true', help='spreadsheet separator, default tab')
     args = parser.parse_args()
 
+    np.random.seed(95)
     # import scaled SNP file
     path = args.f
     filetype = args.filetype
@@ -799,6 +737,7 @@ if __name__ == '__main__':
         data_list = []
         for f in path.split(','):
             data, sample_ids, variable_names = si.data_import(f, sep=sep)
+            print('tt')
             if scale or center:
                 data = si.scale_center_data_columnwise(data, center=center, scale_variance=scale)
             nr_samples += data.shape[0]
@@ -855,7 +794,7 @@ if __name__ == '__main__':
     if filetype == 'delim' and args.orthovector is not None:
         # data, test_lables = imnist.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw','train')
         data_list, choices = sh.partition_data_vertically(data, 2)
-        ug, ev = runner.simulate_guo(data_list, 12, maxit=maxit)
+        ug, ev = runner.simulate_guo(data_list, k, maxit=maxit)
 
         ortho = []
         aps = []
@@ -878,7 +817,3 @@ if __name__ == '__main__':
 
         pd.DataFrame(ortho).to_csv(args.orthovector, header=False)
 
-db = data.tobytes()
-import sys
-
-sys.getsizeof(db)

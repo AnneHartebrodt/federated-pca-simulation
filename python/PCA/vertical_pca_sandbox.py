@@ -20,7 +20,7 @@
 '''
 
 import numpy as np
-import python.PCA.guo_vertical as gv
+import python.PCA.vertical_pca_library as gv
 import python.PCA.shared_functions as sh
 import scipy.linalg as la
 import scipy.sparse.linalg as lsa
@@ -28,7 +28,6 @@ import python.import_export.mnist_import as imnist
 import python.PCA.comparison  as co
 from scipy.sparse import coo_matrix
 import time
-
 
 def simulate_guo_k(local_data, maxit, V_k):
     '''
@@ -38,6 +37,7 @@ def simulate_guo_k(local_data, maxit, V_k):
     Args:
         local_data: List of numpy arrays containing the data. The data has to be scaled already.
         k: The number of dimensions to retrieve
+        maxit: Maximal number of iterations
         maxit: Maximal number of iterations
 
     Returns: A column vector array containing the global eigenvectors
@@ -132,6 +132,8 @@ def simulate_guo_1(local_data, maxit):
 
     G_i = np.concatenate(G_list)
     return G_i
+
+
 def simulate_guo_k_residuals_local(local_data, maxit, V_k):
     '''
     Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.
@@ -282,6 +284,7 @@ def simulate_guo_k_residuals(local_data, maxit, V_k):
     print(iterations)
     G_i = np.concatenate(G_list)
     return G_i
+
 def simulate_guo_k_residuals_local_delayed_ortho(local_data, maxit, V_k):
     '''
     Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.

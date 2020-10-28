@@ -4,6 +4,7 @@ import math as math
 import python.PCA.convenience as cv
 import os.path as path
 import scipy.spatial.distance as d
+import pandas as pd
 
 
 def angle(v1, v2):
@@ -61,7 +62,7 @@ def calculate_euclidean_distance(V1, V2):
         res.append(d.euclidean(V1[:, line], V2[:, line]))
     return res
 
-def subspace_reconstruction_error(data, eigenvectors):
+def subspace_reconstruction_error_element_wise(data, eigenvectors):
     '''
     returns the average elementwise subspace reconstruction error
     Args:
@@ -76,6 +77,23 @@ def subspace_reconstruction_error(data, eigenvectors):
         proj = np.dot(data, eigenvectors[:, 0:i])
         rec = np.dot(proj, eigenvectors[:, 0:i].T)
         res.append(np.linalg.norm(data - rec) / (data.shape[1] * data.shape[0]))
+    return res
+
+def subspace_reconstruction_error(data, eigenvectors):
+    '''
+    returns the average elementwise subspace reconstruction error
+    Args:
+        data:
+        eigenvectors:
+
+    Returns:
+
+    '''
+    res = []
+    for i in range(eigenvectors.shape[1]):
+        proj = np.dot(data, eigenvectors[:, 0:i])
+        rec = np.dot(proj, eigenvectors[:, 0:i].T)
+        res.append(np.linalg.norm(data - rec))
     return res
 
 def mev(u, truth):
