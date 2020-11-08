@@ -818,7 +818,9 @@ if __name__ == '__main__':
         split_data = pd.read_csv(args.unequal, sep='\t', header=None)
         splits = []
         for i in range(split_data.shape[0]):
-            splits.append(split_data.iloc[i, :].tolist())
+            l =split_data.iloc[i, :].tolist()
+            cleanedList = [x for x in l if not np.isnan(x)]
+            splits.append(cleanedList)
 
     maxit = args.i
     nr_repeats = args.r
