@@ -24,7 +24,8 @@ mkdir -p chr${e}
 cd chr${e}
 #$plink1path --vcf ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz --make-bed --out chr${e};
 # LD pruning with plink default values
-#$plink2path --bfile chr${e} --rm-dup exclude-all --make-bed --out chr${e}.rmdup
+# change maf filtering to here.
+#$plink2path --bfile chr${e} --maf 0.01 --rm-dup exclude-all --make-bed --out chr${e}.rmdup
 #$plink2path --bfile chr${e}.rmdup --indep-pairwise 50 5 0.5 --out chr${e}.ld.indep;
 # downsampling to 100,000 SNPs for reasonable runtime.
 
