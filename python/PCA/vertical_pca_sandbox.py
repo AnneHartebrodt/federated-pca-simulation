@@ -599,7 +599,7 @@ if __name__ == '__main__':
     s = np.flip(s)
     v = np.flip(v.T, axis=1)
 
-    data_list, choices = sh.partition_data_vertically(data,2)
+    data_list, choices = sh.partition_data_vertically(data,2,equal=False, perc=[10,30,60])
 
 
     #ug, ev = simulate_guo_local_rounds(data_list, 10, 2000, scipy = u)

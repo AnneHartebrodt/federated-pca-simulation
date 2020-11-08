@@ -45,7 +45,7 @@ def variance_explained(eigenvalues, perc=0.5):
 def generate_random_gaussian(n, m):
     draws = n * m
     noise = sc.random.normal(0, 1, draws)
-    print('Generated random intial matrix: finished sampling')
+    #print('Generated random initial matrix: finished sampling')
     # make a matrix out of the noise
     noise.shape = (n, m)
     # transform matrix into s
@@ -74,7 +74,7 @@ def projection(scaled, sim, ndims):
     return projection
 
 
-def partition_data_horizontally(data, splits=2, equal=True):
+def partition_data_horizontally(data, splits=2, equal=True, randomize=False):
     n = data.shape[0]
     interval_end = []
     if equal:
@@ -83,7 +83,12 @@ def partition_data_horizontally(data, splits=2, equal=True):
         # last one should include all the elements!
         interval_end.append(n)
 
-    np.random.shuffle(data)
+    if randomize:
+        # generate a permutation of the indices and return the permuted data
+        choice = np.random.choice(n, n, replace=False)
+        data = data[choice, :]
+    else:
+        choice = range(data.shape[0])
     start = 0
     localdata = []
     for i in range(len(interval_end)):
@@ -93,19 +98,26 @@ def partition_data_horizontally(data, splits=2, equal=True):
         # calculate covariance matrix
         start = int(interval_end[i])
         localdata.append(data_sub)
-    return localdata
+    return localdata, choice
 
 
-def partition_data_vertically(data, splits=2, equal=True, randomize=False):
+def partition_data_vertically(data, splits=2, equal=True, randomize=False, perc=[]):
     n = data.shape[1]
+    # save the end of the interval
+    # with 100 samples and 3 sites:[33,66,100]
     interval_end = []
     if equal:
         for s in range(splits - 1):
             interval_end.append(int(np.floor((s + 1) * n / splits)))
         # last one should include all the elements!
         interval_end.append(n)
-    print(n)
-    print(n)
+    else:
+        psum = 0
+        for p in perc:
+            psum = psum+p
+            interval_end.append(int(np.floor(psum*n)))
+        # last one should include all the remaining elements!
+        interval_end.append(n)
     if randomize:
         # generate a permutation of the indices and return the permuted data
         choice = np.random.choice(n, n, replace=False)
@@ -133,3 +145,33 @@ def eigenvalues(eigenvectors, cov):
     for v in range(eigenvectors.shape[1]):
         eigenvals.append(eigenvalue(cov, eigenvectors[:, v]))
     return eigenvals
+
+def eigenvector_convergence_checker(current, previous, tolerance=0.000001, required=None):
+    '''
+
+    Args:
+        current: The current eigenvector estimate
+        previous: The eigenvector estimate from the previous iteration
+        tolerance: The error tolerance for eigenvectors to be equal
+        required: optional parameter for the number of eigenvectors required to have converged
+
+    Returns: True if the required numbers of eigenvectors have converged to the given precision, False otherwise
+
+    '''
+    nr_converged = 0
+    col = 0
+    converged = False
+    deltas = []
+    if required is None:
+        required = current.shape[1]
+    while col < current.shape[1] and not converged:
+        # check if the scalar product of the current and the previous eigenvectors
+        # is 1, which means the vectors are 'parallel'
+        delta = np.abs(np.sum(np.dot(np.transpose(current[:, col]), previous[:, col])) - 1)
+        deltas.append(delta)
+        if delta < tolerance:
+            nr_converged = nr_converged + 1
+        if nr_converged >= required:
+            converged = True
+        col = col + 1
+    return converged, deltas

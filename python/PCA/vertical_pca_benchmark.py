@@ -39,7 +39,7 @@ import python.PCA.vertical_pca_runner as runner
 import python.import_export.gwas_import as gi
 import python.import_export.mnist_import as mi
 import python.import_export.spreadsheet_import as si
-
+import python.PCA.federated_qr as qr
 
 ####### LOGGING FUNCTIONS #######
 def filename(dataset_name, splits, counter, k, maxit, time):
@@ -64,7 +64,7 @@ def start_logging(outdir, file_ending, dataset_name, maxit, counter, nr_samples,
     '''
 
     Args:
-        file_ending: File ending of the log file
+        file_ending: File ending of the#log file
         dataset_name: Name of the current data set file
         maxit: maximum iterations allowed for this run
         counter: Number of the run, when experiment is repeated
@@ -100,8 +100,7 @@ def start_logging(outdir, file_ending, dataset_name, maxit, counter, nr_samples,
     return fn
 
 
-def log_current_accuracy(scipy, G_i, eigenvals, conv, current_iteration, filename, choices, precomputed_pca=None,
-                         current_ev=None):
+def log_current_accuracy(scipy, G_i, eigenvals, conv, current_iteration, filename, choices, precomputed_pca=None, current_ev=None, gi_delta_obj= None):
     '''
     Log the current iterations angle to the canonical
     Args:
@@ -148,6 +147,12 @@ def log_current_accuracy(scipy, G_i, eigenvals, conv, current_iteration, filenam
             correlations = co.compute_correlations(precomputed_pca[choices, :], G_i)
             info = cv.collapse_array_to_string(correlations, info_string)
             handle.write(info)
+    if gi_delta_obj is not None:
+        with open(filename + '.eigenvector_convergence', 'a') as handle:
+            bo = gi_delta_obj[0]
+            gi_delta = gi_delta_obj[1]
+            conv = cv.collapse_array_to_string(gi_delta, info_string+'\t'+str(bo))
+            handle.write(conv)
 
 
 def log_choices(logfile, filename, choices):
@@ -196,6 +201,9 @@ def init_benchmark(outdir, dataset_name, maxit, counter,
     start_logging(outdir, '.conv', dataset_name=dataset_name, maxit=maxit, counter=counter,
                   nr_samples=nr_samples, nr_features=nr_features, k=k, convergence_eps=convergence_eps,
                   splits=splits, time=timer)
+    start_logging(outdir, '.eigenvector_convergence', dataset_name=dataset_name, maxit=maxit, counter=counter,
+                  nr_samples=nr_samples, nr_features=nr_features, k=k, convergence_eps=convergence_eps,
+                  splits=splits, time=timer)
     if precomputed_pca is not False:
         start_logging(outdir=outdir, file_ending='.angles_precomp', dataset_name=dataset_name, maxit=maxit,
                       counter=counter, nr_samples=nr_samples, nr_features=nr_features, k=k,
@@ -212,7 +220,7 @@ def init_benchmark(outdir, dataset_name, maxit, counter,
 ####### END LOGGING FUNCTIONS #######
 
 ####### MATRIX POWER ITERATION SCHEME #######
-def simulate_guo_benchmark(local_data, k, maxit, filename=None, scipy=None, choices=None, precomputed_pca=None, fractev=1.0):
+def simulate_guo_benchmark(local_data, k, maxit, filename=None, scipy=None, choices=None, precomputed_pca=None, fractev=1.0, federated_qr = False):
     '''
     Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.
 
@@ -240,10 +248,11 @@ def simulate_guo_benchmark(local_data, k, maxit, filename=None, scipy=None, choi
         log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
         start = start + local_data[i].shape[1]
     H_i_prev = sh.generate_random_gaussian(local_data[0].shape[0], k)
-
+    G_i_prev = G_i
     converged_eigenvals = []
     while not converged and iterations < maxit and len(converged_eigenvals)<k*fractev:
         iterations = iterations + 1
+        #print(iterations)
         H_i = np.zeros((local_data[0].shape[0], k))
         for i in range(len(local_data)):
             H_local = np.dot(local_data[i], G_list[i])
@@ -255,6 +264,7 @@ def simulate_guo_benchmark(local_data, k, maxit, filename=None, scipy=None, choi
             G_list[i] = np.dot(local_data[i].T, H_i) + G_list[i]
             log_transmission(filename, "Gi_local=CS", iterations, i, G_list[i])
 
+
         G_i = np.concatenate(G_list, axis=0)
 
         eigenvals = []
@@ -262,20 +272,24 @@ def simulate_guo_benchmark(local_data, k, maxit, filename=None, scipy=None, choi
             eigenvals.append(np.linalg.norm(G_i[:, col]))
         eigenvals = np.sqrt(eigenvals)
 
-        G_i, R = la.qr(G_i, mode='economic')
-        start = 0
-        for i in range(len(G_list)):
-            G_list[i] = G_i[start:start + local_data[i].shape[1], :]
-            log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
-            start = start + local_data[i].shape[1]
+        if not federated_qr:
+            G_i, R = la.qr(G_i, mode='economic')
+            start = 0
+            for i in range(len(G_list)):
+                G_list[i] = G_i[start:start + local_data[i].shape[1], :]
+                log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
+                start = start + local_data[i].shape[1]
+        else:
+            G_i, G_list = qr.simulate_federated_qr(G_list, encrypt=False, filename=filename, repeat= iterations )
+
 
         converged, conv, converged_eigenvals, delta = gv.convergence_checker(H_i, H_i_prev, return_converged=True)
+        gi_delta_obj = sh.eigenvector_convergence_checker(G_i, G_i_prev)
         H_i_prev = H_i
-        log_current_accuracy(scipy=scipy, G_i=G_i, eigenvals=eigenvals, conv=delta, current_iteration=iterations,
-                             filename=filename,
-                             choices=choices, precomputed_pca=precomputed_pca)
+        G_i_prev  = G_i
+        log_current_accuracy(scipy=scipy, G_i=G_i, eigenvals=eigenvals, conv=delta, current_iteration=iterations, filename=filename, choices=choices, precomputed_pca=precomputed_pca, gi_delta_obj = gi_delta_obj)
     G_i = np.concatenate(G_list)
-    print(iterations)
+    #print(iterations)
     return G_i, eigenvals, converged_eigenvals
 
 
@@ -308,7 +322,7 @@ def residuals(V, a=None, sums=None):
 
 
 def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=None, scipy=None, choices=None,
-                 precomputed_pca=None):
+                 precomputed_pca=None, federated_qr=False):
     '''
     Retrieve the first eigenvector
     Args:
@@ -356,11 +370,11 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
             Vk_list.append(V_k[start:start + local_data[i].shape[1], :])
         start = start + local_data[i].shape[1]
     H_i_prev = sh.generate_random_gaussian(local_data[0].shape[0], 1)
-
+    G_i_prev = G_i
     while not converged and iterations < maxit:
 
         iterations = iterations + 1
-        print(iterations)
+        #print(iterations)
         H_i = np.zeros((local_data[0].shape[0], 1))  # dummy initialise the H_i matrix
         for i in range(len(local_data)):
             H_local = np.dot(local_data[i], G_list[i])
@@ -378,6 +392,16 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
                 local_norm = np.sum(np.square(G_list[i]))
                 gi_norm = gi_norm + np.sum(np.square(G_list[i]))
                 log_transmission(filename, "local_norm=CS", iterations, i, local_norm ,id+1)
+
+        elif federated_qr:
+            temp = []
+            for i in range(len(G_list)):
+                temp.append(np.concatenate([Vk_list[i], G_list[i]], axis=1))
+
+            G_i, G_list = qr.simulate_federated_qr(temp, encrypt=False)
+
+            for i in range(len(G_list)):
+                G_list[i] = G_list[i][:, id:id+1]
 
         else:
             local_sums = []
@@ -406,11 +430,12 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
                 log_transmission(filename, "local_norm=CS", iterations, i, c_n, id+1)
                 gi_norm = gi_norm + c_n
 
-        gi_norm = np.sqrt(gi_norm)
-        for i in range(len(G_list)):
-            G_list[i] = G_list[i] / gi_norm
-            log_transmission(filename, "ALT_G_i_local=CS", iterations, i, G_list[i], id+1)
-            log_transmission(filename, "ALT_G_i=SC", iterations, i, G_list[i], id+1)
+        if V_k is None or not federated_qr:
+            gi_norm = np.sqrt(gi_norm)
+            for i in range(len(G_list)):
+                G_list[i] = G_list[i] / gi_norm
+                log_transmission(filename, "ALT_G_i_local=CS", iterations, i, G_list[i], id+1)
+                log_transmission(filename, "ALT_G_i=SC", iterations, i, G_list[i], id+1)
 
         log_transmission(filename, "global_norm=SC", iterations, 1, gi_norm, id+1)
 
@@ -419,48 +444,62 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
 
 
         G_i = np.concatenate(G_list, axis=0)
-        log_current_accuracy(scipy[:,id:id+1], G_i, [gi_norm], conv=delta, current_iteration=iterations,
-                             filename=filename, choices=choices, precomputed_pca=precomputed_pca, current_ev=id+1)
+        gi_delta_obj = sh.eigenvector_convergence_checker(G_i, G_i_prev)
+        G_i_prev = G_i
+        log_current_accuracy(scipy[:,id:id+1], G_i, [gi_norm], conv=delta, current_iteration=iterations, filename=filename, choices=choices,precomputed_pca=precomputed_pca, current_ev=id+1, gi_delta_obj=gi_delta_obj)
 
     # return a complete eigenvector
     return G_i
 
 
-def compute_k_eigenvectors(data_list, k, maxit, filename=None, scipy=None, choices=None, precomputed_pca=None):
-    ug = simulate_guo(data_list, maxit=maxit, filename=filename, scipy=scipy, choices=choices)
+def compute_k_eigenvectors(data_list, k, maxit, filename=None, scipy=None, choices=None, precomputed_pca=None, federated_qr=False):
+    ug = simulate_guo(data_list, maxit=maxit, filename=filename, scipy=scipy, choices=choices, federated_qr=federated_qr)
     u_all = ug
     for i in range(1, k):
-        ug2 = simulate_guo(data_list, maxit=maxit, V_k=u_all, filename=filename, scipy=scipy, choices=choices)
+        ug2 = simulate_guo(data_list, maxit=maxit, V_k=u_all, filename=filename, scipy=scipy, choices=choices, federated_qr=federated_qr)
         u_all = np.concatenate([u_all, ug2], axis=1)
     return u_all
 
 
 def log_transmission(logfile, log_entry_string, iterations, counter, element, eigenvector=10):
     with open(logfile + '.transmission', 'a') as handle:
-        handle.write(log_entry_string + '\t' + str(iterations)
+        if type(element)=='numpy.ndarray':
+            try:
+                handle.write(log_entry_string + '\t' + str(iterations)
                      + '\t' + str(counter) +'\t' + str(eigenvector)+'\t' + str(sys.getsizeof(element.tobytes()))+'\n')
+            except AttributeError:
+                handle.write(log_entry_string + '\t' + str(iterations)
+                             + '\t' + str(counter) + '\t' + str(eigenvector) + '\t' + str(
+                    sys.getsizeof(element)) + '\n')
+        else:
+            handle.write(log_entry_string + '\t' + str(iterations)
+                         + '\t' + str(counter) + '\t' + str(eigenvector) + '\t' + str(
+                sys.getsizeof(element)) + '\n')
 
 
 ####### END ORIGINAL POWER ITERATION SCHEME ####
 
 
 ####### HYBRID POWER ITERATION SCHEME #######
-def hybrid_scheme(data_list, k, maxit, filename=None, filename2=None, scipy=None, choices=None, precomputed_pca=None):
-    #ug, eigenvalues = better_hybrid_scheme(local_data=data_list, k=k, maxit=maxit, filename=filename, choices=choices,
-                #                           scipy=scipy, precomputed_pca=precomputed_pca)
+def hybrid_scheme(data_list, k, maxit, filename=None, filename2=None, scipy=None, choices=None, precomputed_pca=None, federated_qr=False):
+    ug, eigenvalues, counter = better_hybrid_scheme(local_data=data_list, k=k, maxit=maxit, filename=filename, choices=choices, scipy=scipy, precomputed_pca=precomputed_pca, federated_qr=federated_qr)
 
-    ug, ev, eigenvalues = simulate_guo_benchmark(local_data=data_list, k=k, maxit=maxit, filename=filename, choices=choices, scipy=scipy, precomputed_pca=precomputed_pca, fractev=0.75)
+    #ug, ev, eigenvalues = simulate_guo_benchmark(local_data=data_list, k=k, maxit=maxit, filename=filename, choices=choices, scipy=scipy, precomputed_pca=precomputed_pca, fractev=0.75)
     ug1 = ug.copy()
-    restart = assure_consecutive(eigenvalues)
+    #restart = assure_consecutive(eigenvalues)
+    restart = counter
     print(restart)
     for i in range(restart, k - 1):
-        next_eigenvec = simulate_guo(data_list, maxit=maxit, V_k=ug1[:, 0:i+1], starting_vector=ug1[:, i+1],
-                                     filename=filename2, scipy=scipy, choices=choices, precomputed_pca=None)
-        ug = np.concatenate((ug1[:, 0:i+1], next_eigenvec), axis=1)
+        next_eigenvec = simulate_guo(data_list, maxit=maxit, V_k=ug1[:, 0:i],
+                                     filename=filename2, scipy=scipy, choices=choices, precomputed_pca=None, federated_qr = False, starting_vector= ug1[:, i])
+        ug = np.concatenate((ug1[:, 0:i], next_eigenvec), axis=1)
     return ug
 
 
-def better_hybrid_scheme(local_data, k, maxit, filename, scipy, choices, precomputed_pca=None):
+
+
+
+def better_hybrid_scheme(local_data, k, maxit, filename, scipy, choices, precomputed_pca=None, federated_qr=False):
     '''
        Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.
 
@@ -491,8 +530,10 @@ def better_hybrid_scheme(local_data, k, maxit, filename, scipy, choices, precomp
         start = start + local_data[i].shape[1]
 
     H_i_prev = sh.generate_random_gaussian(local_data[0].shape[0], k)  # dummy init
+    Gi_prev = G_i
 
     G_conv = None  # converged eigenvector matrix
+    G_conv_list = []
     converged_counter = 0
     annormaly = [0] * k  # init counter for small eigengaps
     global_eigenvalues = []
@@ -509,11 +550,12 @@ def better_hybrid_scheme(local_data, k, maxit, filename, scipy, choices, precomp
         log_transmission(filename, "H_global=SC", iterations, 1, H_i)
 
         converged, sum_of_delta, converged_eigenvals, delta = gv.convergence_checker(H_i, H_i_prev, return_converged=True)
-
+        #print(delta)
         for i in range(len(G_list)):
             G_list[i] = np.dot(local_data[i].T, H_i) + G_list[i]
 
         G_i = np.concatenate(G_list, axis=0)
+        gi_delta_obj = sh.eigenvector_convergence_checker(G_i, Gi_prev)
 
         # get the converged eigenvalues
         eigenvals = global_eigenvalues.copy()
@@ -535,10 +577,21 @@ def better_hybrid_scheme(local_data, k, maxit, filename, scipy, choices, precomp
                 annormaly[d] = annormaly[d] + 1
         #print(annormaly)
 
-        # Orthonormalise based on all eigenvectors
-        if G_conv is not None and G_conv.shape[1] > 0:
-            G_i = np.concatenate([G_conv, G_i], axis=1)
-        G_i, R = la.qr(G_i, mode='economic')
+
+
+        if federated_qr:
+            temp = []
+            if len(G_conv_list)!=0:
+                for i in range(len(G_list)):
+                    temp.append(np.concatenate([G_conv_list[i], G_list[i]], axis=1))
+                G_i, G_list = qr.simulate_federated_qr(temp, encrypt=False)
+            else:
+                G_i, G_list = qr.simulate_federated_qr(G_list, encrypt=False)
+        else:
+            # Orthonormalise based on all eigenvectors
+            if G_conv is not None and G_conv.shape[1] > 0:
+                G_i = np.concatenate([G_conv, G_i], axis=1)
+            G_i, R = la.qr(G_i, mode='economic')
 
         # current iteration led to some eigenvectors converging
         if len(converged_eigenvals) > 0:
@@ -552,32 +605,46 @@ def better_hybrid_scheme(local_data, k, maxit, filename, scipy, choices, precomp
         else:
             H_i_prev = H_i
 
-        log_current_accuracy(scipy=scipy, G_i=G_i, eigenvals=eigenvals, conv=delta, current_iteration=iterations,
-                             filename=filename, choices=choices, precomputed_pca=precomputed_pca)
+        log_current_accuracy(scipy=scipy, G_i=G_i, eigenvals=eigenvals, conv=delta, current_iteration=iterations, filename=filename, choices=choices, precomputed_pca=precomputed_pca, gi_delta_obj=gi_delta_obj)
         # in any case reslice G_i into converged and
         # unconverged
-        G_conv = G_i[:, 0:converged_counter]
-        G_i = G_i[:, converged_counter:]
+        #print(converged_counter)
 
-        # redistribute the eigenvector parts
-        start = 0
-        for i in range(len(local_data)):
-            G_list[i] = G_i[start:start + local_data[i].shape[1], :]
-            log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
-            start = start + local_data[i].shape[1]
+        if federated_qr:
+            G_conv_list = []
+            for i in range(len(G_list)):
+                G_conv_list.append(G_list[i][:, 0:converged_counter])
+                G_list[i] = G_list[i][:, converged_counter:]
+
+        else:
+            G_conv = G_i[:, 0:converged_counter]
+            G_i = G_i[:, converged_counter:]
+            # redistribute the eigenvector parts
+            start = 0
+            for i in range(len(local_data)):
+                G_list[i] = G_i[start:start + local_data[i].shape[1], :]
+                log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
+                start = start + local_data[i].shape[1]
 
 
-    print(iterations)
-    if  G_i.shape[1] > 0:
-        G_conv = np.concatenate([G_conv, G_i], axis=1)
-    return G_conv, global_eigenvalues
+    #print(iterations)
+    if federated_qr:
+        temp = []
+        if len(G_conv_list) != 0:
+            for i in range(len(G_list)):
+                temp.append(np.concatenate([G_conv_list[i], G_list[i]], axis=1))
+        G_conv = np.concatenate(temp, axis=0)
+    else:
+        if G_i.shape[1] > 0:
+            G_conv = np.concatenate([G_conv, G_i], axis= 1)
+    return G_conv, global_eigenvalues, converged_counter
 
 
 ####### END HYBRID POWER ITERATION SCHEME #######
 
 
 ####### BENCHMARK RUNNER #######
-def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, convergence_eps=1e-6, precomputed_pca=None):
+def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, convergence_eps=1e-6, precomputed_pca=None, unequal=False):
     '''
     run the simulation of a federated run of vertical power iteration
     Args:
@@ -608,82 +675,103 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, conv
 
     dataset_name_guo = dataset_name + '_guo'
 
+    current_split = 0
     for c in range(nr_repeats):
         for s in splits:
             # filename will be the same for angle log file and correlation log file
             timer = time.monotonic()
-            filename = init_benchmark(outdir=outdir, dataset_name=dataset_name, maxit=maxit, counter=c,
-                                      nr_samples=nr_samples, nr_features=nr_features, k=k,
-                                      convergence_eps=convergence_eps,
-                                      splits=s, timer=timer, transmission_costs=True)
+
 
             # split the data
             if not islist:
-                data_list, choice = sh.partition_data_vertically(data, s, randomize=True)
+                if unequal:
+                    # if unequal then the number of sites is the length of s and s itself contains the splits
+                    data_list, choice = sh.partition_data_vertically(data, len(s), randomize=True, perc=s, equal=False)
+                    s = current_split
+                    current_split += 1
+                else:
+                    data_list, choice = sh.partition_data_vertically(data, s, randomize=True)
             else:
                 choice = range(data.shape[1])
-            logf = op.join(outdir, 'log_choices.log')
-            log_choices(logf, filename, choice)
 
-            start = time.monotonic()
+
+
+
             logftime = op.join(outdir, 'time.log')
 
             # # simulate the run
-            simulate_guo_benchmark(data_list, k, maxit=maxit, scipy=u, filename=filename, choices=choice,
-                                   precomputed_pca=precomputed_pca)
-            end = time.monotonic()
+            for fedqr, mode in zip([True, False], ['fed_qr', 'central_qr']):
+                start = time.monotonic()
+                filename = init_benchmark(outdir=outdir, dataset_name=dataset_name+'_'+mode, maxit=maxit, counter=c, nr_samples=nr_samples, nr_features=nr_features, k=k, convergence_eps=convergence_eps, splits=s, timer=timer, transmission_costs=True)
+                simulate_guo_benchmark(data_list, k, maxit=maxit, scipy=u, filename=filename, choices=choice, precomputed_pca=precomputed_pca, federated_qr=fedqr)
+                end = time.monotonic()
 
-            log_time(logftime, 'qr_scheme', end - start, s, c)
+                log_time(logftime, 'qr_scheme'+'_'+mode, end - start, s, c)
 
-            filename = init_benchmark(outdir=outdir, dataset_name=dataset_name_guo, maxit=maxit, counter=c,
-                                      nr_samples=nr_samples, nr_features=nr_features, k=k,
-                                      convergence_eps=convergence_eps,
-                                      splits=s, timer=timer, transmission_costs=True)
+                filename = init_benchmark(outdir=outdir, dataset_name=dataset_name_guo+'_'+mode, maxit=maxit, counter=c,
+                                          nr_samples=nr_samples, nr_features=nr_features, k=k,
+                                          convergence_eps=convergence_eps,
+                                          splits=s, timer=timer, transmission_costs=True)
 
-            start = time.monotonic()
-            compute_k_eigenvectors(data_list, k=k, maxit=maxit, scipy=u, filename=filename, choices=choice,
-                                            precomputed_pca=precomputed_pca)
-            end = time.monotonic()
-            log_time(logftime, 'guo_single', end - start, s, c)
+                start = time.monotonic()
+                compute_k_eigenvectors(data_list, k=k, maxit=maxit, scipy=u, filename=filename, choices=choice,
+                                                precomputed_pca=precomputed_pca, federated_qr=fedqr)
+                end = time.monotonic()
+                log_time(logftime, 'guo_single'+'_'+mode, end - start, s, c)
 
-            filename = init_benchmark(outdir=outdir, dataset_name=dataset_name + '_hybrid', maxit=maxit, counter=c,
-                                      nr_samples=nr_samples, nr_features=nr_features, k=k,
-                                      convergence_eps=convergence_eps,
-                                      splits=s, timer=timer, transmission_costs=True)
-            filename2 = init_benchmark(outdir=outdir, dataset_name=dataset_name + '_hybrid_reit', maxit=maxit,
-                                       counter=c,
-                                       nr_samples=nr_samples, nr_features=nr_features, k=k,
-                                       convergence_eps=convergence_eps,
-                                       splits=s, timer=timer, transmission_costs=True)
+                filename = init_benchmark(outdir=outdir, dataset_name=dataset_name + '_hybrid'+'_'+mode, maxit=maxit, counter=c,
+                                          nr_samples=nr_samples, nr_features=nr_features, k=k,
+                                          convergence_eps=convergence_eps,
+                                          splits=s, timer=timer, transmission_costs=True)
+                filename2 = init_benchmark(outdir=outdir, dataset_name=dataset_name + '_hybrid_reit'+'_'+mode, maxit=maxit,
+                                           counter=c,
+                                           nr_samples=nr_samples, nr_features=nr_features, k=k,
+                                           convergence_eps=convergence_eps,
+                                           splits=s, timer=timer, transmission_costs=True)
 
-            start = time.monotonic()
-            hybrid_scheme(data_list, k=k, maxit=maxit, scipy=u, filename=filename, filename2=filename2,
-                         choices=choice,
-                         precomputed_pca=precomputed_pca)
-            end = time.monotonic()
-            log_time(logftime, 'hybrid_scheme', end - start, s, c)
+                start = time.monotonic()
+                hybrid_scheme(data_list, k=k, maxit=maxit, scipy=u, filename=filename, filename2=filename2,
+                             choices=choice,
+                             precomputed_pca=precomputed_pca, federated_qr=fedqr)
+                end = time.monotonic()
+                log_time(logftime, 'hybrid_scheme'+'_'+mode, end - start, s, c)
+
+                logf = op.join(outdir, 'log_choices.log')
+                log_choices(logf, filename, choice)
 
 
 ####### BENCHMARK RUNNER #######
 
 if __name__ == '__main__':
-   #  data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
-   #  data = coo_matrix.asfptype(data)
-   #  # args.k = 10
-   #  # g = gv.standalone(data, k=2)
-   #  #
-   #  u, s, v = lsa.svds(data.T,k=10)
-   #  u = np.flip(u, axis = 1)
-   #  s = np.flip(s)
-   #  v = np.flip(v.T, axis=1)
-   #
-   #  data_list, choices = sh.partition_data_vertically(data,2)
-   #  ev = hybrud(data_list, 10, 2000, scipy=u)
-   #  print(co.compute_angles(u, ev))
-   # # print(co.angle(u[:,7], ev[:,9]))
-
-
-
+    # # #data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
+    # #
+    # data, sample_ids, variable_names = si.data_import('/home/anne/Documents/featurecloud/data/tcga/data_clean/MMRF-COMMPASS/coding_only.tsv', sep='\t', header=0, rownames=0)
+    # data = si.scale_center_data_columnwise(data)
+    # #data = coo_matrix.asfptype(data)
+    # # args.k = 10
+    # # g = gv.standalone(data, k=2)
+    # #
+    # u, s, v = lsa.svds(data.T,k=10)
+    # u = np.flip(u, axis = 1)
+    # s = np.flip(s)
+    # v = np.flip(v.T, axis=1)
+    #
+    # data_list, choices = sh.partition_data_vertically(data,3)
+    # # ev =compute_k_eigenvectors(data_list, 10, 2000)
+    # # ev1 = hybrid_scheme(data_list, 10, 2000, scipy=u)
+    # # ev2,ee2,ee3 = simulate_guo_benchmark(data_list, 10, 500)
+    # # print(co.compute_angles(u, ev))
+    # # print(co.compute_angles(u, ev1))
+    # # print(co.compute_angles(u, ev2))
+    #
+    # ev = compute_k_eigenvectors(data_list, 10, 2000, federated_qr=True)
+    # ev1 = hybrid_scheme(data_list, 10, 2000, scipy=u, federated_qr=True)
+    # ev2, ee2, ee3 = simulate_guo_benchmark(data_list, 10, 500, federated_qr=True)
+    # print(co.compute_angles(u, ev))
+    # print(co.compute_angles(u, ev1))
+    # print(co.compute_angles(u, ev2))
+    #
+    #
 
     parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
     parser.add_argument('-f', metavar='file', type=str, help='filename of data file; default tab separated')
@@ -706,7 +794,7 @@ if __name__ == '__main__':
     parser.add_argument('--orthovector', metavar='compare', default=None, type=str,
                         help='filename of orthogonal file')
     parser.add_argument('--scaled', action='store_true', help='data is prescaled')
-    parser.add_argument('--lvg', action='store_true', help='spreadsheet separator, default tab')
+    parser.add_argument('--unequal', default=None, type=str, help='split unequal, load split file')
     args = parser.parse_args()
 
     np.random.seed(95)
@@ -720,9 +808,17 @@ if __name__ == '__main__':
     else:
         dataset_name = args.names
 
-    s = args.s
-    splits = s.strip().split(',')
-    splits = np.int8(splits)
+    if args.unequal is None:
+        s = args.s
+        splits = s.strip().split(',')
+        splits = np.int8(splits)
+        unequal = False
+    else:
+        unequal = True
+        split_data = pd.read_csv(args.unequal, sep='\t', header=None)
+        splits = []
+        for i in range(split_data.shape[0]):
+            splits.append(split_data.iloc[i, :].tolist())
 
     maxit = args.i
     nr_repeats = args.r
@@ -787,7 +883,7 @@ if __name__ == '__main__':
         precomputed_pca = None
 
     the_epic_loop(data=data, dataset_name=dataset_name, maxit=maxit, nr_repeats=nr_repeats, k=k, splits=splits,
-                  outdir=outdir, precomputed_pca=precomputed_pca)
+                  outdir=outdir, precomputed_pca=precomputed_pca, unequal=unequal)
 
     # produce k-1 eigenvectors
 
@@ -816,4 +912,7 @@ if __name__ == '__main__':
         ortho = np.asarray(ortho)
 
         pd.DataFrame(ortho).to_csv(args.orthovector, header=False)
+
+
+
 
