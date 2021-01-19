@@ -4,10 +4,17 @@ echo $PYTHONPATH
 conda activate federated-pca
 datapath=$gwaspath/data/1000g/raw
 resultpath=$gwaspath/results/1000g
-for e in {1..22} ;
+
+# take 2 chromosomes, we don't want to spam
+for e in {1..2} ;
 do
-python3 $gwaspath/federated_dp_pca/python/PCA/guo_vertical_runner_benchmark_edition.py -f \
+python3 $gwaspath/federated_dp_pca/python/PCA/vertical_pca_benchmark.py-f \
 $datapath/chr${e}/chr${e}.thin \
 --filetype 'gwas' --center -o $resultpath/chr${e} -r 10 -k 10 \
- -i 2000 --sep '\t' --header 0 --rownames 0 --names chr${e} --scale --compare_pca $resultpath/chr${e}/plink/chr${e}.thin.eigenvec.values
+ -i 200 --sep '\t' --header 0 --rownames 0 --names chr${e} --scale \
+ --compare_pca $resultpath/chr${e}/plink/chr${e}.thin.eigenvec.values \
+ --vert -s 2,5
 done
+cd $resultpath/chr${e}
+bash /home/anne/Documents/featurecloud/pca/federated_dp_pca/misc_scipts/make_summaries.sh \
+$gwaspath/federated_dp_pca
