@@ -29,14 +29,10 @@ def log_transmission(logfile, log_entry_string, iterations, counter, element, ei
                 sys.getsizeof(element)) + '\n')
 
 def log_costs(filename, action, duration, split, repeat):
-    with open(filename, 'a') as handle:
+    with open(filename, 'a+') as handle:
             handle.write(action+'\t'+str(split)+'\t'+str(repeat)+'\t'+str(duration)+'\n')
 
-def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repeat=None):
-    if filename is not None:
-        log = True
-    else:
-        log = False
+def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repeat=None, log=False):
     start = time.monotonic()
     # Using a temporary dir as a "secure channel"
     # This can be changed into real communication using other python libraries.
@@ -216,7 +212,7 @@ def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repea
 
     end = time.monotonic()
     # log time for run, and time for encryption
-    if filename is not None:
+    if log:
         if encrypt:
             logentry = 'total_encrypted'
             log_costs(filename, logentry, end - start, split=split, repeat=repeat)
@@ -231,9 +227,6 @@ def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repea
 
     ortho = np.concatenate(G_list, axis=0)
     return ortho, G_list
-
-
-
 
 def simulate_federated_qr_stabilised(local_data,  encrypt):
 

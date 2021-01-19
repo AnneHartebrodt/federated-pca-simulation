@@ -1,7 +1,7 @@
 import numpy as np
 import scipy as sc
 import scipy.sparse.linalg as lsa
-import pandas
+
 
 
 def svd_sub(cov, ndims):
@@ -74,13 +74,21 @@ def projection(scaled, sim, ndims):
     return projection
 
 
-def partition_data_horizontally(data, splits=2, equal=True, randomize=False):
+def partition_data_horizontally(data, splits=2, equal=True, randomize=False, perc = []):
     n = data.shape[0]
+    interval_end = []
     interval_end = []
     if equal:
         for s in range(splits - 1):
             interval_end.append(int(np.floor((s + 1) * n / splits)))
         # last one should include all the elements!
+        interval_end.append(n)
+    else:
+        psum = 0
+        for p in perc:
+            psum = psum + p
+            interval_end.append(int(np.floor(psum * n)))
+        # last one should include all the remaining elements!
         interval_end.append(n)
 
     if randomize:
@@ -167,11 +175,12 @@ def eigenvector_convergence_checker(current, previous, tolerance=0.000001, requi
     while col < current.shape[1] and not converged:
         # check if the scalar product of the current and the previous eigenvectors
         # is 1, which means the vectors are 'parallel'
-        delta = np.abs(np.sum(np.dot(np.transpose(current[:, col]), previous[:, col])) - 1)
+        delta = np.sum(np.dot(np.transpose(current[:, col]), previous[:, col]))
         deltas.append(delta)
-        if delta < tolerance:
+        if delta >= 1 - tolerance:
             nr_converged = nr_converged + 1
         if nr_converged >= required:
             converged = True
         col = col + 1
     return converged, deltas
+

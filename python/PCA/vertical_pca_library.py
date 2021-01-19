@@ -71,7 +71,7 @@ def convergence_checker_d(current, previous, epsilon=0.000001):
         previous:
         epsilon:
 
-    Returns: -1 if concer
+    Returns: -1 if convergence not reached
 
     '''
     sum = 0
@@ -83,9 +83,46 @@ def convergence_checker_d(current, previous, epsilon=0.000001):
     else:
         return ra
 
+def convergence_checker_angle(current, previous, epsilon=0.000001, return_converged=False):
+    """
+    Check if angle between consecutive eigenvectors is nearing 0
+    Args:
+        current: Current eigenvalue guesss
+        previous: Previous eigenvalue guess
+        epsilon: tolerance
+        return_converged: verbosity
 
+    Returns:
+
+    """
+    sum = 0
+    converged = True
+    converged_eigenvectors = []
+    deltas = []
+    for i in range(current.shape[1]):
+        ra = np.dot(current[:,i].T, previous[:,i])
+        if ra >= 1-epsilon:
+            converged_eigenvectors.append(i)
+        else:
+            # if one of the eigenvalues has not converged set overall convergence to true
+            converged = False
+    if return_converged:
+        return converged, sum,  converged_eigenvectors, deltas
+    else:
+        return converged, sum
 
 def convergence_checker(current, previous, epsilon=0.000001, return_converged=False):
+    """
+    Convergence checked via Raleigh coefficient.
+    Args:
+        current:
+        previous:
+        epsilon:
+        return_converged:
+
+    Returns:
+
+    """
     sum = 0
     converged = True
     converged_eigenvectors = []
@@ -103,6 +140,39 @@ def convergence_checker(current, previous, epsilon=0.000001, return_converged=Fa
         return converged, sum,  converged_eigenvectors, deltas
     else:
         return converged, sum
+
+def convergence_checker_a(current, previous,alpha_norm, alpha_norm_prev, epsilon=0.000001, return_converged=False):
+    """
+    weird convergence criterion emplyed by Guo et al.
+    Args:
+        current: Current H
+        previous: previous H
+        alpha_norm: Current G norm
+        alpha_norm_prev: previous G norm
+        epsilon: tolerance
+        return_converged: Which values to return
+
+    Returns:
+
+    """
+    sum = 0
+    converged = True
+    converged_eigenvectors = []
+    deltas = []
+    for i in range(current.shape[1]):
+        ra = np.dot(current[:,i].T, current[:,i])/alpha_norm[i]
+        rap = np.dot(previous[:,i].T, previous[:,i])/alpha_norm_prev[i]
+        sum = sum + np.abs(ra-rap)
+        deltas.append(np.abs(ra-rap))
+        if np.abs(ra-rap) > epsilon:
+            converged=False
+        else:
+            converged_eigenvectors.append(i)
+    if return_converged:
+        return converged, sum,  converged_eigenvectors, deltas
+    else:
+        return converged, sum
+
 def standalone2(data, first):
 
     G_i = sh.generate_random_gaussian(data.shape[1], 1)

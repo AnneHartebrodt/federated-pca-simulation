@@ -3,7 +3,7 @@ import scipy as sc
 import scipy.linalg as la
 import scipy.sparse.linalg as lsa
 import scipy.spatial.distance as d
-import convenience as cv
+import python.PCA.convenience as cv
 import time as time
 
 
@@ -128,7 +128,7 @@ def pooling_step(Yis, current, weights=None):
     E = la.norm(Yi, axis=0)
     Xi, R = la.qr(Yi, mode='economic')
 
-    if np.abs(np.sum(np.dot(np.transpose(Xi), current)) - Xi.shape[1]) < 0.001:
+    if np.abs(np.sum(np.dot(np.transpose(Xi), current)) - Xi.shape[1]) < 0.01:
         converged = True
     return Xi, E, converged
 

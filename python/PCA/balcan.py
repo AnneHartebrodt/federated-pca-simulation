@@ -3,8 +3,8 @@ import pandas as pd
 import scipy as sc
 import scipy.linalg as la
 import scipy.sparse.linalg as lsa
-import shared_functions as s
-import convenience as cv
+import python.PCA.shared_functions as s
+import python.PCA.convenience as cv
 
 
 def perform_SVD(data, t1=10):

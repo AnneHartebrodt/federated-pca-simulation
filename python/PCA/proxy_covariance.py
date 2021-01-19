@@ -3,9 +3,9 @@ import pandas as pd
 import scipy as sc
 import scipy.linalg as la
 import scipy.sparse.linalg as lsa
-import shared_functions as s
-import convenience as cv
-import balcan as b
+import python.PCA.shared_functions as s
+import python.PCA.convenience as cv
+import python.PCA.balcan as b
 
 
 def aggregate_partial_SVDs(svd_list, t1=10, weights=None,means =None, totaln=None):

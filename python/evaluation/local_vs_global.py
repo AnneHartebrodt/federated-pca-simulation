@@ -1,11 +1,5 @@
-import python.PCA.vertical_pca_library as gv
 import python.PCA.shared_functions as sh
-import scipy.linalg as la
-#import import_export.easy_import as easy
 import scipy.sparse.linalg as lsa
-import argparse as ap
-import pandas as pd
-import os.path as op
 import python.PCA.comparison as co
 import python.PCA.convenience as cv
 import time as time
@@ -14,9 +8,29 @@ from scipy.sparse import coo_matrix
 import os
 import numpy as np
 
-
+###################################################################
+# This is just a quick sanity check to see if we can get away with
+# just running PCA locally.
+# Looking a the angles this is clearly not the case.
+###################################################################
 
 def central_pca_vs_site_pca(data, splits, file, outdir, k=10):
+    """
+    This is just to show that the result of the PCA on each site is not the same
+    as centralised PCA. Some files are written with some informative measures
+    on the accuracy of the PCA
+    Args:
+        data: Some data set
+        splits: The number of sites to simulate
+        file: file prefix
+        outdir: Output directory
+        k: Number of Principal components to retrieve
+
+    Returns: Nothing.
+
+    """
+
+    # Canonical single site PCA
     u, s, v = lsa.svds(data.T, k=k)
     u = np.flip(u, axis=1)
     s = np.flip(s)
@@ -45,8 +59,8 @@ def central_pca_vs_site_pca(data, splits, file, outdir, k=10):
 
                 logstring = str(s) + '\t' + str(i)
                 handle2.write(cv.collapse_array_to_string(np.abs(s - s_d), logstring))
-                handle.write(cv.collapse_array_to_string(co.compute_angles(u, u_d), logstring))
-                handle3.write(cv.collapse_array_to_string(co.compute_correlations(u, u_d), logstring))
+                handle.write(cv.collapse_array_to_string(co.compute_angles(u[choice,:], u_d), logstring))
+                handle3.write(cv.collapse_array_to_string(co.compute_correlations(u[choice,:], u_d), logstring))
 
 
                 subs_fed = co.subspace_reconstruction_error(data, u_d)
@@ -62,5 +76,3 @@ if __name__ == '__main__':
     data, test_lables = imnist.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw','train')
     data = coo_matrix.asfptype(data)
     central_pca_vs_site_pca(data, splits=[2], file = 'mnist', outdir='/home/anne/Documents/featurecloud/pca/vertical-pca/results/local_vs_global/mnist/')
-    #central_pca_vs_site_pca(data, splits=[2], file='meta_feature',
-                            #outdir='/home/anne/Documents/featurecloud/pca/vertical-pca/results/local_vs_global/mnist/')

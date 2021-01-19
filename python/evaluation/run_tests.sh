@@ -1,34 +1,37 @@
 export PYTHONPATH=$PYTHONPATH:/home/anne/Documents/featurecloud/pca/federated_dp_pca
 
-#mkdir -p '/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist'
+#outfile='/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist_january'
+#mkdir -p $outfile
+#python3 /home/anne/Documents/featurecloud/pca/federated_dp_pca/python/PCA/vertical_pca_benchmark.py -f \
+#'/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw' \
+#--filetype 'mnist' --center -o $outfile -r 2 -k 10 \
+# -i 200 -s 10,5,3,2 --vert
+
+#mkdir -p '/home/anne/Documents/featurecloud/pca/vertical-pca/results/unequal/mnist'
 #python3 /home/anne/Documents/featurecloud/pca/federated_dp_pca/python/PCA/vertical_pca_benchmark.py -f \
 #'/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw' \
 #--filetype 'mnist' --center -o '/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist' -r 20 -k 10 \
-# -i 2000 -s 10,5,3,2
-#
-mkdir -p '/home/anne/Documents/featurecloud/pca/vertical-pca/results/unequal/mnist'
-python3 /home/anne/Documents/featurecloud/pca/federated_dp_pca/python/PCA/vertical_pca_benchmark.py -f \
-'/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw' \
---filetype 'mnist' --center -o '/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist' -r 20 -k 10 \
- -i 2000 -s 10,5,3,2 --unequal '/home/anne/Documents/featurecloud/pca/vertical-pca/results/unequal/splits.tsv'
-
-#mkdir -p '/home/anne/Documents/featurecloud/pca/vertical-pca/results/mfeat'
-#python3 /home/anne/Documents/featurecloud/pca/federated_dp_pca/python/PCA/vertical_pca_benchmark.py -f \
-#'/home/anne/Documents/featurecloud/pca/vertical-pca/data/mfeat/mfeat-fou,/home/anne/Documents/featurecloud/pca/vertical-pca/data/mfeat/mfeat-fac,/home/anne/Documents/featurecloud/pca/vertical-pca/data/mfeat/mfeat-kar,/home/anne/Documents/featurecloud/pca/vertical-pca/data/mfeat/mfeat-mor,/home/anne/Documents/featurecloud/pca/vertical-pca/data/mfeat/mfeat-pix,/home/anne/Documents/featurecloud/pca/vertical-pca/data/mfeat/mfeat-zer' \
-#--filetype 'delim-list' --center -o '/home/anne/Documents/featurecloud/pca/vertical-pca/results/mfeat' -r 20 -k 10 \
-# -i 2000 --sep '\s+' -s 10,5,3,2
+# -i 2000 -s 10,5,3,2 --unequal '/home/anne/Documents/featurecloud/pca/vertical-pca/results/unequal/splits.tsv'
 
 ##
-#mkdir -p '/home/anne/Documents/featurecloud/pca/vertical-pca/results/MMRF-COMMPASS'
-#python3 /home/anne/Documents/featurecloud/pca/federated_dp_pca/python/PCA/vertical_pca_benchmark.py -f \
-#'/home/anne/Documents/featurecloud/data/tcga/data_clean/MMRF-COMMPASS/coding_only.tsv' \
-#--filetype 'delim' --center -o '/home/anne/Documents/featurecloud/pca/vertical-pca/results/MMRF-COMMPASS' -r 20 -k 10 \
-# -i 2000 --sep '\t' --header 0 --rownames 0 --names 'MMRF-COMMPASS' --scale
-
-#
-mkdir -p '/home/anne/Documents/featurecloud/pca/vertical-pca/results/unequal/MMRF-COMMPASS'
+outfile='/home/anne/Documents/featurecloud/pca/vertical-pca/results/MMRF-COMMPASS_jan'
+mkdir -p $outfile
 python3 /home/anne/Documents/featurecloud/pca/federated_dp_pca/python/PCA/vertical_pca_benchmark.py -f \
 '/home/anne/Documents/featurecloud/data/tcga/data_clean/MMRF-COMMPASS/coding_only.tsv' \
---filetype 'delim' --center -o '/home/anne/Documents/featurecloud/pca/vertical-pca/results/unequal/MMRF-COMMPASS' -r 20 -k 10 \
- -i 2000 --sep '\t' --header 0 --rownames 0 --names 'MMRF-COMMPASS' --scale \
-  --unequal '/home/anne/Documents/featurecloud/pca/vertical-pca/results/unequal/splits.tsv'
+--filetype 'delim' --center -o $outfile -r 2 -k 10 \
+ -i 200 --sep '\t' --header 0 --rownames 0 --names 'MMRF-COMMPASS' --scale --vert
+
+#
+#mkdir -p '/home/anne/Documents/featurecloud/pca/vertical-pca/results/unequal/MMRF-COMMPASS'
+#python3 /home/anne/Documents/featurecloud/pca/federated_dp_pca/python/PCA/vertical_pca_benchmark.py -f \
+#'/home/anne/Documents/featurecloud/data/tcga/data_clean/MMRF-COMMPASS/coding_only.tsv' \
+#--filetype 'delim' --center -o '/home/anne/Documents/featurecloud/pca/vertical-pca/results/unequal/MMRF-COMMPASS' -r 20 -k 10 \
+# -i 2000 --sep '\t' --header 0 --rownames 0 --names 'MMRF-COMMPASS' --scale \
+#  --unequal '/home/anne/Documents/featurecloud/pca/vertical-pca/results/unequal/splits.tsv'
+
+
+#mkdir -p '/home/anne/Documents/featurecloud/pca/vertical-pca/results/seeds'
+#python3 /home/anne/Documents/featurecloud/pca/federated_dp_pca/python/PCA/vertical_pca_benchmark.py -f \
+#'/home/anne/Documents/featurecloud/dev/pca-tool/fed-pca-client/test_datasets/seeds/seeds_dataset.csv' \
+#--filetype 'delim' -o '/home/anne/Documents/featurecloud/pca/vertical-pca/results/seeds' -r 1 -k 6 \
+# -i 2000 --sep ',' --header 0 --names 'seeds'
