@@ -19,28 +19,17 @@
 
 '''
 
-import python.PCA.vertical_pca_library as gv
+import python.PCA.vertical.vertical_pca_library as gv
 import python.PCA.shared_functions as sh
 import scipy.linalg as la
 #import import_export.easy_import as easy
 import scipy.sparse.linalg as lsa
-import argparse as ap
-import pandas as pd
-import os.path as op
 import python.PCA.comparison as co
-import python.PCA.convenience as cv
 import time as time
 import python.import_export.mnist_import as imnist
-import python.PCA.vertical_pca_runner as runner
-
 from scipy.sparse import coo_matrix
-import os
-import gzip
 import numpy as np
-import python.import_export.spreadsheet_import as si
-import python.import_export.gwas_import as gi
-import python.import_export.mnist_import as mi
-from Pyfhel import Pyfhel, PyPtxt, PyCtxt
+from Pyfhel import Pyfhel
 import tempfile
 from pathlib import Path
 

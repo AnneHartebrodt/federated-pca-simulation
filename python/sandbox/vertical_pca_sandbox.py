@@ -20,7 +20,7 @@
 '''
 
 import numpy as np
-import python.PCA.vertical_pca_library as gv
+import python.PCA.vertical.vertical_pca_library as gv
 import python.PCA.shared_functions as sh
 import scipy.linalg as la
 import scipy.sparse.linalg as lsa
@@ -643,9 +643,7 @@ if __name__ == '__main__':
     # sys.getsizeof(data)/100000000
     # sys.getsizeof(cpickle)/100000000
 
-    from matplotlib import pyplot as plt
     import numpy as np
-    import math  # needed for definition of pi
 
     uu1, ss1, vv1 = lsa.svds(data, k=10)
     uu2, ss2, vv2 = lsa.svds(data_list[0], k=10)

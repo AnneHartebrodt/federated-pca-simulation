@@ -1,22 +1,14 @@
-import argparse as ap
 import os.path as path
 
-import numpy as np
 import scipy.linalg as lsa
 
 #import python.PCA.import_export.
-import python.PCA.power_iteration as powerit
-import python.PCA.proxy_covariance as dpca
-import python.PCA.vertical_pca_library as vert
-import python.PCA.comparison as co
+import python.PCA.horizontal.power_iteration as powerit
+import python.PCA.horizontal.proxy_covariance as dpca
+import python.PCA.vertical.vertical_pca_library as vert
 # import import_export.easy_import as easy
 import argparse as ap
-import os
-import os.path as op
-import time
 import numpy as np
-import pandas as pd
-import scipy.linalg as la
 import scipy.sparse.linalg as lsa
 
 def run_standalone(data, outfile=None, p=10, header=None, rownames=None, center=True, scale_var=True, scale01=False,

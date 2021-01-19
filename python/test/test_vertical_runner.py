@@ -1,5 +1,5 @@
 import unittest
-from python.PCA import vertical_pca_benchmark as benchmark
+from python.PCA.vertical import vertical_pca_benchmark as benchmark
 
 
 class TestBenchmark(unittest.TestCase):

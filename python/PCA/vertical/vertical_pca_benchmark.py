@@ -36,8 +36,8 @@ import python.PCA.shared_functions as sh
 import python.import_export.gwas_import as gi
 import python.import_export.mnist_import as mi
 import python.import_export.spreadsheet_import as si
-import python.PCA.federated_qr as qr
-import python.PCA.power_iteration as powerit
+import python.PCA.vertical.federated_qr as qr
+import python.PCA.horizontal.power_iteration as powerit
 
 
 ####### LOGGING FUNCTIONS #######
@@ -583,66 +583,6 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, epsi
 ####### BENCHMARK RUNNER #######
 
 if __name__ == '__main__':
-    # data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
-    # #
-    # #data, sample_ids, variable_names = si.data_import('/home/anne/Documents/featurecloud/data/tcga/data_clean/MMRF-COMMPASS/coding_only.tsv', sep='\t', header=0, rownames=0)
-    # #data = si.scale_center_data_columnwise(data)
-    # data = coo_matrix.asfptype(data)
-    # # args.k = 10
-    # # g = gv.standalone(data, k=2)
-    # #
-    # u, s, v = lsa.svds(data.T,k=10)
-    # u = np.flip(u, axis = 1)
-    # s = np.flip(s)
-    # v = np.flip(v.T, axis=1)
-    #
-    # data_list, choices = sh.partition_data_vertically(data,3)
-    # # ev =compute_k_eigenvectors(data_list, 10, 2000)
-    # # ev1 = hybrid_scheme(data_list, 10, 2000, u=u)
-    # ev2,ee2,ee3, HI = simulate_subspace_iteration(data_list, 10, 500)
-    # #print(co.compute_angles(u, ev))
-    # #print(co.compute_angles(u, ev1))
-    # angles = co.compute_angles(u, ev2)
-    #
-    #
-    # dsub  = data[0:30000, :]
-    # u, s, v = lsa.svds(dsub.T,k=10)
-    # u = np.flip(u, axis = 1)
-    # s = np.flip(s)
-    # v = np.flip(v.T, axis=1)
-    #
-    # data_list, choices = sh.partition_data_vertically(dsub,3)
-    # # ev =compute_k_eigenvectors(data_list, 10, 2000)
-    # # ev1 = hybrid_scheme(data_list, 10, 2000, u=u)
-    # ev2,ee2,ee3, HI = simulate_subspace_iteration(data_list, 10, 500)
-    # #print(co.compute_angles(u, ev))
-    # #print(co.compute_angles(u, ev1))
-    # angles2 = co.compute_angles(u, ev2)
-    #
-    #
-    # dsub2  = data[0:10000, :]
-    # u, s, v = lsa.svds(dsub2.T,k=10)
-    # u = np.flip(u, axis = 1)
-    # s = np.flip(s)
-    # v = np.flip(v.T, axis=1)
-    #
-    # data_list, choices = sh.partition_data_vertically(dsub2,3)
-    # # ev =compute_k_eigenvectors(data_list, 10, 2000)
-    # # ev1 = hybrid_scheme(data_list, 10, 2000, u=u)
-    # ev2,ee2,ee3, HI = simulate_subspace_iteration(data_list, 10, 500)
-    # #print(co.compute_angles(u, ev))
-    # #print(co.compute_angles(u, ev1))
-    # angles3 = co.compute_angles(u, ev2)
-    #
-    # # ev = compute_k_eigenvectors(data_list, 10, 2000, federated_qr=True)
-    # # ev1 = hybrid_scheme(data_list, 10, 2000, u=u, federated_qr=True)
-    # # ev2, ee2, ee3 = simulate_subspace_iteration(data_list, 10, 500, federated_qr=True)
-    # # print(co.compute_angles(u, ev))
-    # # print(co.compute_angles(u, ev1))
-    # # print(co.compute_angles(u, ev2))
-    # #
-    # #
-
     parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
     parser.add_argument('-f', metavar='file', type=str, help='filename of data file; default tab separated')
     parser.add_argument('--filetype', metavar='filetype', type=str, help='Type of the dataset')
@@ -771,3 +711,66 @@ if __name__ == '__main__':
         os.makedirs(horizontal, exist_ok=True)
         the_epic_loop(data=data, dataset_name=dataset_name, maxit=maxit, nr_repeats=nr_repeats, k=k, splits=splits,
                       outdir=horizontal, precomputed_pca=precomputed_pca, unequal=unequal, horizontal=True)
+
+
+
+    #### TEST CODE ###
+    # data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
+    # #
+    # #data, sample_ids, variable_names = si.data_import('/home/anne/Documents/featurecloud/data/tcga/data_clean/MMRF-COMMPASS/coding_only.tsv', sep='\t', header=0, rownames=0)
+    # #data = si.scale_center_data_columnwise(data)
+    # data = coo_matrix.asfptype(data)
+    # # args.k = 10
+    # # g = gv.standalone(data, k=2)
+    # #
+    # u, s, v = lsa.svds(data.T,k=10)
+    # u = np.flip(u, axis = 1)
+    # s = np.flip(s)
+    # v = np.flip(v.T, axis=1)
+    #
+    # data_list, choices = sh.partition_data_vertically(data,3)
+    # # ev =compute_k_eigenvectors(data_list, 10, 2000)
+    # # ev1 = hybrid_scheme(data_list, 10, 2000, u=u)
+    # ev2,ee2,ee3, HI = simulate_subspace_iteration(data_list, 10, 500)
+    # #print(co.compute_angles(u, ev))
+    # #print(co.compute_angles(u, ev1))
+    # angles = co.compute_angles(u, ev2)
+    #
+    #
+    # dsub  = data[0:30000, :]
+    # u, s, v = lsa.svds(dsub.T,k=10)
+    # u = np.flip(u, axis = 1)
+    # s = np.flip(s)
+    # v = np.flip(v.T, axis=1)
+    #
+    # data_list, choices = sh.partition_data_vertically(dsub,3)
+    # # ev =compute_k_eigenvectors(data_list, 10, 2000)
+    # # ev1 = hybrid_scheme(data_list, 10, 2000, u=u)
+    # ev2,ee2,ee3, HI = simulate_subspace_iteration(data_list, 10, 500)
+    # #print(co.compute_angles(u, ev))
+    # #print(co.compute_angles(u, ev1))
+    # angles2 = co.compute_angles(u, ev2)
+    #
+    #
+    # dsub2  = data[0:10000, :]
+    # u, s, v = lsa.svds(dsub2.T,k=10)
+    # u = np.flip(u, axis = 1)
+    # s = np.flip(s)
+    # v = np.flip(v.T, axis=1)
+    #
+    # data_list, choices = sh.partition_data_vertically(dsub2,3)
+    # # ev =compute_k_eigenvectors(data_list, 10, 2000)
+    # # ev1 = hybrid_scheme(data_list, 10, 2000, u=u)
+    # ev2,ee2,ee3, HI = simulate_subspace_iteration(data_list, 10, 500)
+    # #print(co.compute_angles(u, ev))
+    # #print(co.compute_angles(u, ev1))
+    # angles3 = co.compute_angles(u, ev2)
+    #
+    # # ev = compute_k_eigenvectors(data_list, 10, 2000, federated_qr=True)
+    # # ev1 = hybrid_scheme(data_list, 10, 2000, u=u, federated_qr=True)
+    # # ev2, ee2, ee3 = simulate_subspace_iteration(data_list, 10, 500, federated_qr=True)
+    # # print(co.compute_angles(u, ev))
+    # # print(co.compute_angles(u, ev1))
+    # # print(co.compute_angles(u, ev2))
+    # #
+    # #
