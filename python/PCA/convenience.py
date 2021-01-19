@@ -57,9 +57,6 @@ def delete(eigenvector_path):
     sh.rmtree(eigenvector_path)
 
 
-
-
-
 def parse_array(value_str):
     values_str = value_str.split(',')
     values_int = []

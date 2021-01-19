@@ -1,0 +1,2 @@
+# Federated Principal Component Analysis
+This repository contains additional information regarding federated principal component analysis. Code for the simulation of federated PCA is available in 'evaluation'.
