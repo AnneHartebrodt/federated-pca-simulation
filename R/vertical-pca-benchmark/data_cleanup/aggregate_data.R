@@ -23,8 +23,8 @@ infile<-opt$infile
 outfile<-opt$outfile
 column<-opt$column
 
-infile<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist_january/angles.u.tsv'
-column<-'angle'
+#infile<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist_january/angles.u.tsv'
+#column<-'angle'
 
 data<-fread(infile)
 summary<-data %>% group_by(iterations,orientation, matrix, sites, eigenvector_update, qr_method, rank) %>%
