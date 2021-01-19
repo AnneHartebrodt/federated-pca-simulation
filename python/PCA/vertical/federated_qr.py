@@ -1,5 +1,8 @@
 import numpy as np
-from Pyfhel import Pyfhel, PyPtxt, PyCtxt
+try:
+    from Pyfhel import Pyfhel, PyPtxt, PyCtxt
+except ImportError:
+    pass
 import tempfile
 from pathlib import Path
 import scipy.linalg as la
