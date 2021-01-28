@@ -721,7 +721,7 @@ if __name__ == '__main__':
             data = si.scale_center_data_columnwise(data, center=center, scale_variance=scale)
             nr_samples = data.shape[0]
             nr_features = data.shape[1]
-
+        data = data.T
 
     elif filetype == 'gwas':
         bim = path + '.bim'
@@ -748,7 +748,7 @@ if __name__ == '__main__':
 
     # vertical test
     if args.vert:
-        data = data.T
+
         vertical = op.join(outdir, 'vertical')
         os.makedirs(vertical, exist_ok=True)
         the_epic_loop(data=data, dataset_name=dataset_name, maxit=maxit, nr_repeats=nr_repeats, k=k, splits=splits,
