@@ -28,113 +28,33 @@ my_theme <-
 
 
 
-byte2giga <- 100000000
-byte2mega <- 100000
+data <- fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/1000g/chr1/summaries//wide.vertical.eigenval.summary.tsv')
 
+# gradient version converges to the squared eigenvalue.
+#data$vector_2_gradient_central_qr<-sqrt(data$vector_2_gradient_central_qr)
 
-read_files_from_dir <- function(directory, prefix, suffix) {
-  myfiles <-  list.files(directory)
-  myangles <- list()
-  mylastlines <- list()
-  for (i in c(1, 2, 3, 5, 10)) {
-    for (f in which(str_detect(myfiles, paste0("^", prefix, i, ".*.", suffix)))) {
-      filename <- myfiles[f]
-      print(file.path(directory, filename))
-      if(countLines(file.path(directory, filename))<=9){
-        next
-      }
-      angles <-
-        fread(
-          file.path(directory, filename),
-          sep = '\t',
-          skip = 9,
-          header = F
-        )
-      if (is.null(angles)) {
-        next
-      }
-      colnames(angles) <-
-        c('iterations', sapply(1:(ncol(angles) - 1), function(x)
-          paste0('', x)))
-      angles$dataset <- filename
-      angles$splits <- i
-      
-      angles <-
-        as.data.table(pivot_longer(angles,-c(iterations, dataset, splits)))
-      myangles[[filename]] <- angles
-      
-      
-    }
-  }
-
-  myangles <- rbindlist(myangles)
-  myangles <- myangles[!is.na(value)]
-  
-  return (myangles)
-}
+d <- data %>% pivot_longer(-c(iterations, rank))
+d<-as.data.table(d)
+# select the correct configuration
+selection<-c("matrix_2_power_central_qr", "matrix_2_power_federated_qr", "vector_2_power_central_qr", "vector_2_power_federated_qr","vector_2_gradient_central_qr")
+#selection3<-c("matrix_3_power_central_qr", "matrix_3_power_federated_qr", "vector_3_power_central_qr", "vector_3_power_federated_qr")
 
 
 
-
-# dataset <- 'MMRF-COMMPASS'
-# prefix = 'MMRF\\-COMMPASS_'
-# s = 2
-# offset <- c(rep(-50, 7),80 ,80)
-# adjust <- 100
-
-# dataset <- 'mnist'
-# prefix = 'raw_'
-# s = 2
-# offset <- c(-15, -15, 0, -15,-15, -15,0 ,-15, 0)
-# adjust <- 10
-
-
-#dataset <- 'mfeat'
-#prefix = 'mfeat\\-zer_'
-#s = 1
-#offset <- c(-5, -5, -5, 0,5, 0, -5 ,-5, -5)
-#adjust = 5
-
-dataset <- '1000g/chr1'
-prefix = 'chr1_fed_qr_'
-s = 2
-offset <- rep(9, 0)
-adjust <- 20
-
-dirname <- paste0('/home/anne/Documents/featurecloud/pca/vertical-pca/results/', dataset)
-
-evals <-read_files_from_dir(dirname, prefix, 'eigenval')
-outfile <- paste0('/home/anne/Documents/featurecloud/pca/vertical-pca/figures/', dataset,'_eigengaps_split_2.pdf')
-
-evals[, diff:=abs(value-shift(value, 1)), by =.(iterations, dataset, splits)]
-evals[, na:= paste0(shift(name, 1), '-' ,name), by =.(iterations, splits)]
-evals$ldiff<-log(evals$diff)
-mm <-mean(evals$ldiff, na.rm=T)
-ssd <- sd(evals$ldiff, na.rm=T)
-
-sum <- evals[,mean(diff), by =.(splits, name, na, iterations)]
-sum<- sum[!is.na(V1)]
-
-
-breaks <- sum %>% group_by(splits) %>%top_n(1, iterations) %>% select(na, splits, V1, iterations)
-breaks<-as.data.table(breaks)
-selection <-breaks$splits==s
-breaks<-breaks[selection]
-
-# hack the system here. Adjust the line label position
-breaks$iterations<-breaks$iterations + offset
-maxit <- breaks$iterations[1]-adjust
-
-
-eigengaps <-ggplot(sum[splits==s & iterations<maxit], aes(iterations, V1, col=na))+
+# make the plot
+angles.plot<-ggplot(d[name %in% selection & rank==1], aes(iterations, value, col=as.factor(name)))+
   geom_line()+
-  scale_y_log10()+
-  scale_color_manual(values=palette_div)+
-  my_theme+
-  guides(color=F)+
-  ylab('Eigengap [Log10]')+
-  geom_text(data = breaks, aes(label = na, x = iterations , y = V1, color = na))+
-  theme(text = element_text(size=3))
+  my_theme+ylab('Eigenvalue')+ 
+  xlab('#Iterations')+
+  scale_color_manual('Configuration', values = palette_div)+
+  theme(axis.line=element_line(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = c(1, 0.5),
+        legend.justification = c("right", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(0.25, 0.25, 0.25, 0.25),
+        legend.title = element_text(size=10))+
+  guides(color=guide_legend(keyheight = 0.5, title = element_text('Configuration', size = 8)))
 
-eigengaps
-ggsave(eigengaps, file=outfile, height = 10, units = 'cm')
+angles.plot

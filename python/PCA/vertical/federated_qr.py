@@ -17,19 +17,35 @@ import sys
 
 
 def log_transmission(logfile, log_entry_string, iterations, counter, element, eigenvector=10):
-    with open(logfile + '.transmission', 'a') as handle:
-        if type(element)=='numpy.ndarray':
-            try:
-                handle.write(log_entry_string + '\t' + str(iterations)
-                     + '\t' + str(counter) +'\t' + str(eigenvector)+'\t' + str(sys.getsizeof(element.tobytes()))+'\n')
-            except AttributeError:
-                handle.write(log_entry_string + '\t' + str(iterations)
-                             + '\t' + str(counter) + '\t' + str(eigenvector) + '\t' + str(
-                    sys.getsizeof(element)) + '\n')
+
+    """
+    Dumps object to json to estimate the size.
+    Args:
+        logfile:
+        log_entry_string:
+        iterations:
+        counter:
+        element:
+        eigenvector: Dummy value 10 if not put
+
+    Returns:
+
+    """
+    with open(logfile + '.transmission', 'a+') as handle:
+
+        if isinstance(element, np.ndarray):
+            size = len(element.flatten())
+        elif isinstance(element, float) or isinstance(element, int):
+            size = 1
+        elif isinstance(element, list):
+            # cast to numpy array and flatten
+            # in case nested list.
+            size = len(np.asanyarray(element).flatten())
         else:
-            handle.write(log_entry_string + '\t' + str(iterations)
-                         + '\t' + str(counter) + '\t' + str(eigenvector) + '\t' + str(
-                sys.getsizeof(element)) + '\n')
+            # in case something goes wrong
+            size = -1
+        handle.write(log_entry_string + '\t' + str(iterations)+ '\t' + str(counter) + '\t' + str(eigenvector) + '\t' + str(size) + '\n')
+
 
 def log_costs(filename, action, duration, split, repeat):
     with open(filename, 'a+') as handle:
@@ -77,6 +93,7 @@ def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repea
     else:
         sum = 0
 
+    # Compute first eigenvector norm
     for d in range(len(local_data)):
         if encrypt:
             s = time.monotonic()
@@ -93,8 +110,10 @@ def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repea
             sum = sum+se
         alist.append(local_data[d][:,0])
         if log:
+            # send local norm to server
             log_transmission(filename, "qr_local_norm=CS", repeat, d, se)
     if log:
+        # server send global norm to clients
         log_transmission(filename, "qr_global_norm=SC", repeat, 1, sum)
     ortho.append(alist)
 
@@ -105,6 +124,7 @@ def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repea
     norms = [sum]
     # iterate over the eigenvectors
     for i in range(1,local_data[0].shape[1]):
+        # conorms we want to calculate
         sums = []
         aplist = []
 
@@ -120,7 +140,9 @@ def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repea
         # lists and the associated norms
         # decrypt norms
         for di in range(len(ortho)):
+            # local eigenvector snippets
             o = ortho[di]
+            # eigenvector norms
             nn = norms[di]
             if encrypt:
                 s = time.monotonic()
@@ -153,16 +175,20 @@ def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repea
                     addition_time += time.monotonic()-s
                     encrypted_additions += 1
                 else:
+                    # Compute conorm
                     se = np.dot(o1, d[:, i]) / n
                     sum = sum + se
 
                 if log:
+                    # send local conorms to coordinator
                     log_transmission(filename, "qr_local_dp=CS", repeat, ik, se)
             if log:
+                # send global conorms back to clients
                 log_transmission(filename, "qr_global_dp=SC", repeat, 1, sum)
             sums.append(sum)
 
         for d in range(len(local_data)):
+            # ap = newly reorthogonalised eigenvector snippet
             ap = local_data[d][:, i]
             for j in range(len(sums)):
                 if encrypt:
@@ -172,6 +198,7 @@ def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repea
                     decryption_time += time.monotonic() - s
                     decrypted_values += 1
                 else:
+                    # reorthonogonalise
                     ap = ap - sums[j] * ortho[j][d]
 
             # compute the local norm of the freshly orthogonalised
@@ -187,6 +214,7 @@ def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repea
                 encrypted_additions += 1
                 encrypted_values += 1
             else:
+                # Compute current eigenvector norm
                 se = np.dot(ap, ap)
                 norm = norm + se
             if log:

@@ -10,5 +10,6 @@ summary <- as.data.table(summary)
 summary$mean_size_enc<- summary$mean_size_enc/byte2giga
 summary$mean_size_ne <- summary$mean_size_ne/byte2giga
 
-ggplot(data[], aes(as.factor(V2),V5))+geom_boxplot()+scale_y_log10()+facet_wrap(~V4, scales = 'free')
+ggplot(data[], aes(as.factor(V2),V5))+geom_boxplot()+scale_y_log10()+facet_wrap(~V4, scales = 'free')+
+  xlab('Elements in matrix')+ylab('Encryption time [s]')
     

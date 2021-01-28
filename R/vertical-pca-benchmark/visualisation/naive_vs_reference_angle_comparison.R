@@ -18,14 +18,17 @@ my_theme <-
     legend.text = element_text(size = 12),
     plot.subtitle = element_text(size = 12, hjust = 0.5)
   )
-angles<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/local_vs_global/mnist/164157.244188193.mnist.subspace', header=F)
+angles<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/local_vs_global/mnist/446019.909685944.mnist.angles', header=F)
 
-angles <- angles %>% pivot_longer(-c(V1, V2, V3))
-angles$name <- sapply(angles$name, function(x)as.numeric(gsub('V','', x))-3)
-angles.plot<-ggplot(angles, aes(factor(name), value, color=V3))+geom_boxplot()+ylab('Subspacen\nreconstruction\nerror')+my_theme+
+angles <- angles %>% pivot_longer(-c(V1, V2))
+angles<-as.data.table(angles)
+angles$name <- sapply(angles$name, function(x)as.numeric(gsub('V','', x))-2)
+angles<-angles[!is.na(value)]
+angles.plot<-ggplot(angles, aes(factor(name), value))+geom_boxplot()+ylab('Angle [degree]')+my_theme+
   xlab('Eigenvector rank') +
-  scale_color_manual(name = "Eigenvector rank",values = palette_div[c(1, 8)])
+  scale_color_manual(name = "Eigenvector rank",values = palette_div[c(1, 8)])+
+  ggtitle('Angles between eigenvectors', subtitle = 'Naive federation ("stack individual eigenvectors") vs. reference')
 angles.plot
-ggsave(angles.plot, filename = '/home/anne/Documents/featurecloud/pca/vertical-pca/figures/sre_naive_fed_vert.pdf',
+ggsave(angles.plot, filename = '/home/anne/Documents/featurecloud/pca/vertical-pca/figures/angles_naive_vs_fed.pdf',
        height = 2)
 

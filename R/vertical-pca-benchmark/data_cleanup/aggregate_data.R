@@ -1,11 +1,11 @@
-require(data.table)
-require(ggplot2)
-require(tidyr)
-require(cowplot)
-require(optparse)
-require(dplyr)
-require(stringr)
-require(optparse)
+suppressMessages(require(data.table))
+suppressMessages(require(ggplot2))
+suppressMessages(require(tidyr))
+suppressMessages(require(cowplot))
+suppressMessages(require(optparse))
+suppressMessages(require(dplyr))
+suppressMessages(require(stringr))
+suppressMessages(require(optparse))
 
 option_list = list(
   make_option(c("-f", "--infile"), action="store", default=NA, type='character',
@@ -22,11 +22,14 @@ opt = parse_args(OptionParser(option_list=option_list))
 infile<-opt$infile
 outfile<-opt$outfile
 column<-opt$column
+print(infile)
+#infile<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/MMRF-COMMPASS/eigenval.tsv'
+#column<-'eigenval'
 
-#infile<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist_january/angles.u.tsv'
-#column<-'angle'
 
 data<-fread(infile)
+data[, 9]<-as.numeric(unlist(data[, 9]))
+
 summary<-data %>% group_by(iterations,orientation, matrix, sites, eigenvector_update, qr_method, rank) %>%
         summarise(mean_value = mean(get(column)))
 summary<-as.data.table(summary)

@@ -19,6 +19,6 @@ my_theme <-
     plot.subtitle = element_text(size = 12, hjust = 0.5)
   )
 
-time<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist/time.log', header=F)
+time<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist/vertical/time.log', header=F)
 time.plot<- ggplot(time, aes(V1, V4))+geom_boxplot()
 ggsave(time.plot, file='/home/anne/Documents/featurecloud/pca/vertical-pca/figures/time.pdf')

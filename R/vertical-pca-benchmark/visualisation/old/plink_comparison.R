@@ -24,93 +24,16 @@ my_theme <-
     plot.subtitle = element_text(size = 10, hjust = 0.5),
     legend.key.size = unit(1.5, 'lines'))
 
-read_files_from_dir <- function(directory, prefix, suffix) {
-  myfiles <-  list.files(directory, recursive = F)
-  myangles <- list()
-  mylastlines <- list()
-  for (i in c(1,2, 3, 5, 10)) {
-    for (f in which(str_detect(myfiles, paste0("^", prefix, i, ".*.", suffix)))) {
-      filename <- myfiles[f]
-      if(countLines(file.path(directory, filename))<=9){
-        next
-      }
-      print(file.path(directory, filename))
-      angles <-
-        fread(
-          file.path(directory, filename),
-          sep = '\t',
-          header = F,
-          fill=T
-        )
-      if (is.null(angles)) {
-        next
-      }
-      colnames(angles) <-c('iterations', sapply(1:(ncol(angles) - 1), function(x) paste0('', x)))
-      angles$filename <- filename
-      angles$dataset<-prefix
-      angles$splits <- i
-      angles <-
-        as.data.table(pivot_longer(angles,-c(iterations, dataset, splits, filename)))
-      myangles[[filename]]<-angles
-    }
-  }
-  
-  myangles <- rbindlist(myangles)
-  myangles <- myangles[!is.na(value)]
-  colnames(myangles)<-c('it','filename', 'dataset', 'splits', 'rank','angle')
-  
-  return (myangles)
-}
+data <- fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/1000g/chr1/summaries/wide.vertical.angles_precomp.summary.tsv')
+d <- data %>% pivot_longer(-c(iterations, rank))
+d<-as.data.table(d)
+selection<-c("matrix_2_power_central_qr", "matrix_2_power_federated_qr", "vector_2_power_central_qr", "vector_2_power_federated_qr","vector_2_gradient_central_qr")
 
-directory <- paste0('/home/anne/Documents/featurecloud/pca/vertical-pca/results/', dataset)
-dataset = '1000g/chr1'
-suffix = 'angles'
-i = 'all'
-prefix = 'chr1_fed_qr'
 
-angles_plink <- read_files_from_dir(directory, paste0(prefix,  '_') , 'angles_precomp')
-sumstat <- angles_plink %>% group_by(rank, it, dataset, splits) %>% summarise(mean_angle=mean(angle))
-sumstat <- as.data.table(sumstat)
-sumstat$rank<-as.numeric(sumstat$rank)
-sumstat$qr <- 'federated'
 
-sumstat2<-sumstat
+p<-ggplot(d[name %in% selection], aes(iterations, value, col=as.factor(rank)))+geom_line()+facet_wrap(~name, nrow = 3)+
+  xlab('Angle [degree]')+ylab('Eigenvector rank')+my_theme+scale_color_manual('Eigenvector\nrank',values = palette_div)
 
-prefix <- 'chr1_central_qr'
-angles_plink <- read_files_from_dir(directory, paste0(prefix,  '_') , 'angles_precomp')
-sumstat <- angles_plink %>% group_by(rank, it, dataset, splits) %>% summarise(mean_angle=mean(angle))
-sumstat <- as.data.table(sumstat)
-sumstat$rank<-as.numeric(sumstat$rank)
-sumstat$qr <- 'central'
+ggsave(p, file='/home/anne/Documents/featurecloud/pca/vertical-pca//paper/plink_comparison.pdf')
 
-sumstat<-rbind(sumstat, sumstat2)
-
-angles.plot<-ggplot(sumstat[splits %in% c(10)], aes(it, mean_angle, col=as.factor(rank)))+
-  geom_line(size = 1) +facet_wrap(~qr, scales = 'free')+
-  my_theme+ylab('Mean angle [degree]')+ 
-  xlab('# iterations')+
-  scale_color_manual('Eigenvector\nrank', values = palette_div)+
-  theme(axis.line=element_line(),
-        legend.position = c(1, 0.95),
-        legend.justification = c("right", "top"),
-        legend.box.just = "right",
-        legend.margin = margin(6, 6, 6, 6))+
-  guides(linetype=FALSE, color=guide_legend(keyheight = 0.75, title = element_text('Eigenvector\nrank', size = 10)))
-angles.plot
-ggsave(angles.plot, file=paste0('/home/anne/Documents/featurecloud/pca/vertical-pca/figures/',
-                      dataset, '/', suffix, '_eigenvector_comparison_plink_', 10, '.pdf'),height = 10, units = 'cm')
-
-angles.plot<-ggplot(sumstat[splits %in% c(2,3,5,10)], aes(it, mean_angle, col=as.factor(rank)))+
-  geom_line(size = 1) +facet_grid( rows = vars(splits), cols = vars(qr))+
-  my_theme+ylab('Mean angle [degree]')+ 
-  xlab('# iterations')+
-  scale_color_manual('Eigenvector\nrank', values = palette_div)+
-  theme(axis.line=element_line(),
-        legend.position = c(1, 0.95),
-        legend.justification = c("right", "top"),
-        legend.box.just = "right",
-        legend.margin = margin(6, 6, 6, 6))+
-  guides(linetype=FALSE, color=guide_legend(keyheight = 0.75, title = element_text('Eigenvector\nrank', size = 10)))
-angles.plot
-ggsave(angles.plot, file=paste0('/home/anne/Documents/featurecloud/pca/vertical-pca/figures/',
-                                dataset, '/', suffix, '_eigenvector_comparison_plink_', i, '.pdf'),height = 10, units = 'cm')
+p

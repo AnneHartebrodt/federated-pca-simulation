@@ -28,13 +28,16 @@ my_theme <-
 
 
 # read the data and transform into long
-#data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist_january/wide.vertical.angles.u.summary.tsv')
-data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/MMRF-COMMPASS/wide.vertical.angles.u.summary.tsv')
+#data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist4//wide.vertical.angles.u.summary.tsv')
 d <- data %>% pivot_longer(-c(iterations, rank))
 d<-as.data.table(d)
-
+d<-d[!is.na(value)]
 # select the correct configuration
-selection<-c("matrix_2_power_central_qr", "matrix_2_power_federated_qr", "vector_2_power_central_qr", "vector_2_power_federated_qr")
+selection<-c("matrix_5_power_central_qr", "matrix_5_power_federated_qr","vector_2_gradient_central_qr")
+#selection3<-c("matrix_3_power_central_qr", "matrix_3_power_federated_qr", "vector_3_power_central_qr", "vector_3_power_federated_qr")
+
+
+#selection<-c("vector_2_gradient_central_qr")
 #selection3<-c("matrix_3_power_central_qr", "matrix_3_power_federated_qr", "vector_3_power_central_qr", "vector_3_power_federated_qr")
 
 # make the plot

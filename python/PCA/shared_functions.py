@@ -1,6 +1,7 @@
 import numpy as np
 import scipy as sc
 import scipy.sparse.linalg as lsa
+import python.PCA.comparison as co
 
 
 
@@ -154,7 +155,7 @@ def eigenvalues(eigenvectors, cov):
         eigenvals.append(eigenvalue(cov, eigenvectors[:, v]))
     return eigenvals
 
-def eigenvector_convergence_checker(current, previous, tolerance=0.000001, required=None):
+def eigenvector_convergence_checker(current, previous, tolerance=1e-6, required=None):
     '''
 
     Args:
@@ -175,7 +176,8 @@ def eigenvector_convergence_checker(current, previous, tolerance=0.000001, requi
     while col < current.shape[1] and not converged:
         # check if the scalar product of the current and the previous eigenvectors
         # is 1, which means the vectors are 'parallel'
-        delta = np.sum(np.dot(np.transpose(current[:, col]), previous[:, col]))
+        #print('angle' +str(co.angle(current[:, col], previous[:, col])))
+        delta = np.abs(np.sum(np.dot(np.transpose(current[:, col]), previous[:, col])))
         deltas.append(delta)
         if delta >= 1 - tolerance:
             nr_converged = nr_converged + 1
@@ -183,4 +185,36 @@ def eigenvector_convergence_checker(current, previous, tolerance=0.000001, requi
             converged = True
         col = col + 1
     return converged, deltas
+
+def convergence_checker_rayleigh(current, previous, alpha_current, alpha_prev, epsilon=1e-11, required=None):
+    """
+    Convergence checked via Raleigh coefficient.
+    Args:
+        current:
+        previous:
+        epsilon:
+        return_converged:
+
+    Returns:
+
+    """
+
+    nr_converged = 0
+    col = 0
+    converged = False
+    deltas = []
+    if required is None:
+        required = current.shape[1]
+    while col < current.shape[1] and not converged:
+        ra = np.dot(current[:,col].T, current[:,col])/ alpha_current[col]
+        rap = np.dot(previous[:,col].T, previous[:,col])/ alpha_prev[col]
+        deltas.append(np.abs(ra-rap))
+        if np.abs(ra-rap) < epsilon:
+            nr_converged = nr_converged+1
+        if nr_converged >= required:
+            converged = True
+        col = col + 1
+
+    return converged, deltas
+
 
