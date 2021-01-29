@@ -7,7 +7,7 @@ def run_scalability_test(data, dataset_name,outdir):
         od = op.join(outdir, str(p))
         os.makedirs(od, exist_ok=True)
         # repeat 10 times
-        for i in range(1):
+        for i in range(10):
             # select arbitrary subset of samples
             data_list, choices = sh.partition_data_vertically(data, splits=2, randomize=True, perc=[p, 1-p], equal=False)
             # run all algorithms once
