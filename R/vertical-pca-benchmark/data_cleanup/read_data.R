@@ -19,7 +19,10 @@ option_list = list(
   make_option(c("-d", "--scriptdir"), action="store", default=NA, type='character',
               help="output file"),
   make_option(c("-a", "--scalability"), action="store_true", default=FALSE, type='logical',
+              help="output file"),
+  make_option(c("-m", "--matrix_only"), action="store_true", default=FALSE, type='logical',
               help="output file")
+
 )
 opt = parse_args(OptionParser(option_list=option_list))
 
@@ -67,7 +70,7 @@ mf_m <- mf_m %>% select('iterations', paste0(1:10, ''),
                                    'orientation', 'matrix', 'sites', 'eigenvector_update',
                                    'qr_method', 'filename'), values_to = column_name, names_to = 'rank')
 
-
+if (!opt$matrix_only){
 # all data frames need to have the same shape
 vector_or_subspace<-c('vector')
 mf_v<-read_all_files(basedir, suffix)
@@ -84,5 +87,8 @@ mf_v<- mf_v %>% select('rank', 'iterations',
 
 #combine data
 data<-rbind(mf_m, mf_v)
+}else{
+data<-mf_m
+}
 fwrite(data, file = file.path(basedir, outfile), sep='\t', quote = F)
 
