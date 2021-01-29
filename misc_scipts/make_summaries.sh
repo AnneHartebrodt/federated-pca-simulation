@@ -53,8 +53,8 @@ colname='eigenval'
 Rscript $basedir/R/vertical-pca-benchmark/data_cleanup/read_data.R -b $(pwd) -s $colname -c $colname -o $outfile1 -d $basedir
 Rscript $basedir/R/vertical-pca-benchmark/data_cleanup/aggregate_data.R -f $outfile1 -o $outfile2  -c $colname
 
-outfile1='angles_precomp.tsv'
-outfile2='angles_precomp.summary.tsv'
-colname='angle'
-Rscript $basedir/R/vertical-pca-benchmark/data_cleanup/read_data.R -b $(pwd) -s $colname -c $colname -o $outfile1 -d $basedir
-Rscript $basedir/R/vertical-pca-benchmark/data_cleanup/aggregate_data.R -f $outfile1 -o $outfile2  -c $colname
+#outfile1='angles_precomp.tsv'
+#outfile2='angles_precomp.summary.tsv'
+#colname='angle'
+#Rscript $basedir/R/vertical-pca-benchmark/data_cleanup/read_data.R -b $(pwd) -s 'angles_precomp' -c $colname -o $outfile1 -d $basedir
+#Rscript $basedir/R/vertical-pca-benchmark/data_cleanup/aggregate_data.R -f $outfile1 -o $outfile2  -c $colname
