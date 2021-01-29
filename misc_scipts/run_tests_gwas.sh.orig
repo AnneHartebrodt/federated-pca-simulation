@@ -19,8 +19,12 @@ echo "summaries"
 for e in {1..2} :
 do
 cd $resultpath/chr${e}
-echo $(pwd)
+<<<<<<< HEAD
 bash $gwaspath/federated_dp_pca/misc_scipts/make_summaries.sh $gwaspath/federated_dp_pca
+=======
+echo $(pwd)
+bash $gwaspath/federated_dp_pca/misc_scipts/make_summaries.sh \
+$gwaspath/federated_dp_pca
 outfile1='angles_precomp.tsv'
 outfile2='angles_precomp.summary.tsv'
 colname='angle'
@@ -29,3 +33,4 @@ Rscript $gwaspath/federated_dp_pca/R/vertical-pca-benchmark/data_cleanup/aggrega
 mkdir -p summaries
 cp wide.* summaries
 done
+>>>>>>> 7b1cbaa20c25020f0d1eef7fc78a5b2b8dcc5625
