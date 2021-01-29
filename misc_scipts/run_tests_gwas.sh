@@ -17,5 +17,4 @@ $datapath/chr${e}/chr${e}.thin \
 done
 echo "summaries"
 cd $resultpath/chr${e}
-bash /home/anne/Documents/featurecloud/pca/federated_dp_pca/misc_scipts/make_summaries.sh \
-$gwaspath/federated_dp_pca
+bash $gwaspath/federated_dp_pca/misc_scipts/make_summaries.sh $gwaspath/federated_dp_pca

@@ -23,9 +23,9 @@ infile<-opt$infile
 outfile<-opt$outfile
 column<-opt$column
 print(infile)
-#infile<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/MMRF-COMMPASS/eigenval.tsv'
-#column<-'eigenval'
-
+#infile<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/1000g/chr1/chr1/chr1/summaries/angles.u.tsv'
+#column<-'angle'
+#outfile<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/1000g/chr1/chr1/chr1/summaries/angles.u.tsv.agg'
 
 data<-fread(infile)
 data[, 9]<-as.numeric(unlist(data[, 9]))
@@ -43,6 +43,6 @@ wide.vertical<-as.data.table(wide.vertical)
 fwrite(wide.vertical, paste0('wide.vertical.', outfile), sep='\t')
 
 
-wide.hori<-summary[orientation=='horizontal'] %>% pivot_wider(id_cols = c(iterations, rank), names_from = c(matrix, sites, eigenvector_update, qr_method), values_from = mean_value)
-wide.hori<-as.data.table(wide.hori)
-fwrite(wide.hori, paste0('wide.horizontal.', outfile), sep='\t')
+#wide.hori<-summary[orientation=='horizontal'] %>% pivot_wider(id_cols = c(iterations, rank), names_from = c(matrix, sites, eigenvector_update, qr_method), values_from = mean_value)
+#wide.hori<-as.data.table(wide.hori)
+#fwrite(wide.hori, paste0('wide.horizontal.', outfile), sep='\t')

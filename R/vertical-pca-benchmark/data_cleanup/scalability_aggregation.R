@@ -49,6 +49,14 @@ sumsum<-as.data.table(sumsum)
 
 selection<-c("matrix_3_power_central_qr", "matrix_3_power_federated_qr","vector_3_gradient_central_qr")
 
+
+wide.for.tikz<-sumsum %>% pivot_wider(id_cols = c(counter), names_from = c(matrix, sites, eigenvector_update, qr_method, data_fraction), values_from = c(max_it))
+wide.for.tikz<-as.data.table(wide.for.tikz)
+cols <- grep("matrix_3_power_central_qr|matrix_3_power_federated_qr|vector_3_gradient_central_qr", names(wide.for.tikz), value = TRUE)
+cols<-c('counter', cols)
+wide.for.tikz <- wide.for.tikz %>% select(cols)
+fwrite(wide.for.tikz, paste0('wide.tikz.iterations.', outfile), sep='\t')
+
 # make a summary for the maximal iteration
 wide.maxit<-sumsum %>% pivot_wider(id_cols = c(data_fraction, counter), names_from = c(matrix, sites, eigenvector_update, qr_method), values_from = c(max_it))
 wide.maxit<-as.data.table(wide.maxit)
@@ -56,8 +64,16 @@ long.maxit<-wide.maxit %>% pivot_longer(-data_fraction)
 long.maxit<-as.data.table(long.maxit)
 ggplot(long.maxit[name %in% selection], aes(as.factor(data_fraction), value, fill=name))+geom_boxplot()
 
+
+wide.for.tikz<-sumsum %>% pivot_wider(id_cols = c(counter), names_from = c(matrix, sites, eigenvector_update, qr_method, data_fraction), values_from = c(nr_float))
+wide.for.tikz<-as.data.table(wide.for.tikz)
+cols <- grep("matrix_3_power_central_qr|matrix_3_power_federated_qr|vector_3_gradient_central_qr", names(wide.for.tikz), value = TRUE)
+cols<-c('counter', cols)
+wide.for.tikz <- wide.for.tikz %>% select(cols)
+fwrite(wide.for.tikz, paste0('wide.tikz.transmission.', outfile), sep='\t')
+
 # make a summary for the transmission cost
-wide.transmission<-sumsum %>% pivot_wider(id_cols = c(data_fraction, counter), names_from = c(matrix, sites, eigenvector_update, qr_method), values_from = c(nr_float))
+wide.transmission<-sumsum %>% pivot_wider(id_cols = c(counter), names_from = c(matrix, sites, eigenvector_update, qr_method, data_fraction), values_from = c(nr_float))
 wide.transmission<-as.data.table(wide.transmission)
 long.transmission<-wide.transmission %>% pivot_longer(-data_fraction)
 long.transmission<-as.data.table(long.transmission)
