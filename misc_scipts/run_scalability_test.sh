@@ -4,7 +4,7 @@ export PYTHONPATH=$PYTHONPATH:$scriptpath
 echo $PYTHONPATH
 
 
-outdir=$basepath'/results/scalability3'
+outdir=$basepath'/results/scalability'
 indir=$basepath'/data/mnist/raw'
 python3 $scriptpath/python/PCA/vertical/scalability.py -f $indir -o $outdir
 

@@ -26,6 +26,9 @@ outfile2='angles_precomp.summary.tsv'
 colname='angle'
 Rscript $gwaspath/federated_dp_pca/R/vertical-pca-benchmark/data_cleanup/read_data.R -b . -s 'angles_precomp' -c $colname -o $outfile1 -d $gwaspath/federated_dp_pca
 Rscript $gwaspath/federated_dp_pca/R/vertical-pca-benchmark/data_cleanup/aggregate_data.R -f $outfile1 -o $outfile2  -c $colname
+Rscript $gwaspath/federated_dp_pca/R/vertical-pca-benchmark/data_cleanup/aggregate_data_with_dummy.R -f $outfile1 -o $outfile2  -c $colname
 mkdir -p summaries
-cp wide.* summaries
+mv wide.* summaries
+mv angles* co* eig* summaries
+tar cvzf summaries.tar.gz summaries
 done
