@@ -28,12 +28,12 @@ my_theme <-
 
 
 # read the data and transform into long
-#data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist4//wide.vertical.angles.u.summary.tsv')
-d <- data %>% pivot_longer(-c(iterations, rank))
+data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/1000g/chr1/summaries/wide.tikz.angles.u.summary.tsv')
+d <- data %>% pivot_longer(-c(iterations))
 d<-as.data.table(d)
 d<-d[!is.na(value)]
 # select the correct configuration
-selection<-c("matrix_5_power_central_qr", "matrix_5_power_federated_qr","vector_2_gradient_central_qr")
+selection<-c("matrix_5_power_central_qr_10", "matrix_5_power_federated_qr_10","vector_5_gradient_central_qr_10")
 #selection3<-c("matrix_3_power_central_qr", "matrix_3_power_federated_qr", "vector_3_power_central_qr", "vector_3_power_federated_qr")
 
 
@@ -41,7 +41,7 @@ selection<-c("matrix_5_power_central_qr", "matrix_5_power_federated_qr","vector_
 #selection3<-c("matrix_3_power_central_qr", "matrix_3_power_federated_qr", "vector_3_power_central_qr", "vector_3_power_federated_qr")
 
 # make the plot
-angles.plot<-ggplot(d[name %in% selection & rank==10], aes(iterations, value, col=as.factor(name)))+
+angles.plot<-ggplot(d[name %in% selection], aes(iterations, value, col=as.factor(name)))+
   geom_line()+
   my_theme+ylab('Mean angle [degree]')+ 
   xlab('#Iterations')+

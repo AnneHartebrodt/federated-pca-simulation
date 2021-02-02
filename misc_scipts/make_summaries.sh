@@ -19,7 +19,7 @@ outfile1='angles.u.tsv'
 outfile2='angles.u.summary.tsv'
 Rscript $basedir/R/vertical-pca-benchmark/data_cleanup/read_data.R -b $(pwd) -s 'angles.u' -c $colname -o $outfile1 -d $basedir
 Rscript $basedir/R/vertical-pca-benchmark/data_cleanup/aggregate_data.R -f $outfile1 -o $outfile2 -c $colname
-Rscript $gwaspath/federated_dp_pca/R/vertical-pca-benchmark/data_cleanup/aggregate_data_with_dummy.R -f $outfile1 -o $outfile2  -c $colname
+Rscript $basedir/R/vertical-pca-benchmark/data_cleanup/aggregate_data_with_dummy.R -f $outfile1 -o $outfile2  -c $colname
 
 outfile1='angles.v.tsv'
 outfile2='angles.v.summary.tsv'

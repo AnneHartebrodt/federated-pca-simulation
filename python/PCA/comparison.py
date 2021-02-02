@@ -7,6 +7,7 @@ import scipy.spatial.distance as d
 import pandas as pd
 
 
+
 def angle(v1, v2):
     """
     Calculates the angle between to n-dimensional vectors

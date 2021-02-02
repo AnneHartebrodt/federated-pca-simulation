@@ -33,8 +33,135 @@ from Pyfhel import Pyfhel
 import tempfile
 from pathlib import Path
 
-def simulate_guo_benchmark_encrypt(local_data, k, maxit, filename=None, scipy=None, choices=None, precomputed_pca=None):
-    '''
+
+def log_current_accuracy(u, G_i, eigenvals, conv, current_iteration, filename, choices, precomputed_pca=None,
+                         current_ev=None, gi_delta_obj=None, v=None, H_i=None):
+    """
+    Log the current iterations angle to the canonical
+    Args:
+        u: column vector matrix with canonical eigenvectors
+        G_i: column vector based matrix with current eigenvector estimation
+        current_iteration: iteration index
+        filename: output filename prefix > out will be saved to out.angles, and out.cor
+
+    Returns: None
+
+    """
+    if current_ev is not None:
+        info_string = str(current_ev) + '\t' + str(current_iteration)
+    else:
+        info_string = str(current_iteration)
+
+    if not u is None:
+        with open(filename + '.angles.u', 'a+') as handle:
+            angles = co.compute_angles(u[choices, :], G_i)
+            if angles is not None and len(angles) > 0:
+                info = cv.collapse_array_to_string(angles, info_string)
+                handle.write(info)
+
+        with open(filename + '.cor', 'a+') as handle:
+            correlations = co.compute_correlations(u[choices, :], G_i)
+            if correlations is not None and len(correlations) > 0:
+                info = cv.collapse_array_to_string(correlations, info_string)
+                handle.write(info)
+
+    if not v is None:
+        with open(filename + '.angles.v', 'a+') as handle:
+            angles = co.compute_angles(v, H_i)
+            if angles is not None and len(angles) > 0:
+                info = cv.collapse_array_to_string(angles, info_string)
+                handle.write(info)
+
+    with open(filename + '.eigenval', 'a+') as handle:
+        info = cv.collapse_array_to_string(eigenvals, info_string)
+        handle.write(info)
+
+    if conv is not None:
+        with open(filename + '.conv', 'a+') as handle:
+            conv = cv.collapse_array_to_string(conv, info_string)
+            handle.write(conv)
+
+    if precomputed_pca is not None:
+        with open(filename + '.angles_precomp', 'a+') as handle:
+            angles = co.compute_angles(precomputed_pca[choices, :], G_i)
+            info = cv.collapse_array_to_string(angles, info_string)
+            handle.write(info)
+
+        with open(filename + '.cor_precomp', 'a+') as handle:
+            correlations = co.compute_correlations(precomputed_pca[choices, :], G_i)
+            info = cv.collapse_array_to_string(correlations, info_string)
+            handle.write(info)
+    if gi_delta_obj is not None:
+        with open(filename + '.eigenvector_convergence', 'a+') as handle:
+            conv = cv.collapse_array_to_string(gi_delta_obj, info_string)
+            handle.write(conv)
+
+def log_choices(logfile, filename, choices):
+    """
+    Log the permutation of the data sets.
+    Args:
+        logfile: Name of the log file
+        filename: Filename of the result file, this permutation belongs to
+        choices: the actual choice array
+
+    Returns: None
+
+    """
+    with open(logfile, 'a+') as handle:
+        handle.write(cv.collapse_array_to_string(choices, filename))
+
+
+def log_transmission(logfile, log_entry_string, iterations, counter, element, eigenvector=10):
+
+    """
+    Dumps object to json to estimate the size.
+    Args:
+        logfile:
+        log_entry_string:
+        iterations:
+        counter:
+        element:
+        eigenvector: Dummy value 10 if not put
+
+    Returns:
+
+    """
+    with open(logfile + '.transmission', 'a+') as handle:
+
+        if isinstance(element, np.ndarray):
+            size = len(element.flatten())
+        elif isinstance(element, float) or isinstance(element, int):
+            size = 1
+        elif isinstance(element, list):
+            # cast to numpy array and flatten
+            # in case nested list.
+            size = len(np.asanyarray(element).flatten())
+        else:
+            # in case something goes wrong
+            size = -1
+        handle.write(log_entry_string + '\t' + str(iterations)+ '\t' + str(counter) + '\t' + str(eigenvector) + '\t' + str(size) + '\n')
+
+
+def log_time(logfile, algorithm, time, split, repeat):
+    """
+    Log the permutation of the data sets.
+    Args:
+        logfile: Name of the log file
+        filename: Filename of the result file, this permutation belongs to
+        choices: the actual choice array
+
+    Returns: None
+
+    """
+    with open(logfile, 'a+') as handle:
+        handle.write(algorithm + '\t' + str(split) + '\t' + str(repeat) + '\t' + str(time) + '\n')
+
+
+
+####### MATRIX POWER ITERATION SCHEME #######
+def simulate_subspace_iteration_ecncrypted(local_data, k, maxit, filename=None, u=None, choices=None, precomputed_pca=None, fractev=1.0,
+                           federated_qr=False, v=None, gradient=True, epsilon=10e-9, log=True):
+    """
     Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.
 
     Args:
@@ -44,7 +171,8 @@ def simulate_guo_benchmark_encrypt(local_data, k, maxit, filename=None, scipy=No
 
     Returns: A column vector array containing the global eigenvectors
 
-    '''
+    """
+
     # Using a temporary dir as a "secure channel"
     # This can be changed into real communication using other python libraries.
     secure_channel = tempfile.TemporaryDirectory()
@@ -65,7 +193,7 @@ def simulate_guo_benchmark_encrypt(local_data, k, maxit, filename=None, scipy=No
 
     G_list = []
     iterations = 0
-    ra = False
+    convergedH = False
     total_len = 0
     # generate an intitial  orthogonal noise matrix
     for d in local_data:
@@ -73,57 +201,90 @@ def simulate_guo_benchmark_encrypt(local_data, k, maxit, filename=None, scipy=No
     start = 0
     G_i = sh.generate_random_gaussian(total_len, k)
     G_i, R = la.qr(G_i, mode='economic')
-    # send parts to local sites
-    for d in local_data:
-        G_list.append(G_i[start:start + d.shape[1], :])
-        start = start + d.shape[1]
-    H_i_prev = sh.generate_random_gaussian(local_data[0].shape[0], k)
-    shape_H = H_i_prev.shape
 
-    while not ra and iterations<maxit:
+    # send parts to local sites
+    for i in range(len(local_data)):
+        G_list.append(G_i[start:start + local_data[i].shape[1], :])
+        if log:
+            log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
+        start = start + local_data[i].shape[1]
+
+    # Initial guess
+    H_i_prev = sh.generate_random_gaussian(local_data[0].shape[0], k)
+    G_i_prev = G_i
+    converged_eigenvals = []
+    shape_H = H_i_prev.shape
+    eigenvals_prev = None
+    # Convergence can be reached when eigenvectors have converged, the maximal number of
+    # iterations is reached or a predetermined number of eignevectors have converged.
+    while not convergedH and iterations < maxit and len(converged_eigenvals) < k * fractev:
         iterations = iterations + 1
-        print(iterations)
+
+        # add up the H matrices
         H_i = np.zeros((local_data[0].shape[0], k))
         H_i = H_i.flatten()
         H_i = [HE.encryptFrac(x) for x in H_i]
-        for d, g in zip(local_data, G_list):
-            H_local  = np.dot(d, g)
+
+        for i in range(len(local_data)):
+            # send local H matrices to server
+            H_local = np.dot(local_data[i], G_list[i])
             start = time.monotonic()
-            H_local_enc = [HE.encryptFrac(H_local[x,y]) for x in range(H_local.shape[0]) for y in range(H_local.shape[1])]
+            H_local_enc = [HE.encryptFrac(H_local[x, y]) for x in range(H_local.shape[0]) for y in
+                           range(H_local.shape[1])]
             end = time.monotonic()
-            print('encrypted: '+str(end-start))
+            print('encrypted: ' + str(end - start))
             start = time.monotonic()
-            H_i = [H_i[x]+H_local_enc[x] for x in range(len(H_local_enc))]
-            print('added: '+ str( time.monotonic()-start))
-        G_list_n = []
-        start = time.monotonic()
+            H_i = [H_i[x] + H_local_enc[x] for x in range(len(H_local_enc))]
+            print('added: ' + str(time.monotonic() - start))
+
+            if log:
+                log_transmission(filename, "H_local=CS", iterations, i, H_local)
+            # add up H matrices at server and send them back to the clients
+            H_i = H_i + H_local
+        if log:
+            # Log only once for one site
+            log_transmission(filename, "H_global=SC", iterations, 1, H_i)
+
         H_i_dec = [HE.decryptFrac(x) for x in H_i]
-        H_i_dec = np.reshape(H_i_dec, shape_H)
+        H_i = np.reshape(H_i_dec, shape_H)
         print('decrypted: ' + str(time.monotonic() - start))
-        for d, g in zip(local_data, G_list):
-            G_i = np.dot(d.T, H_i_dec) + g
-            #G_i, Q = la.qr(G_i, mode='economic')
-            G_list_n.append(G_i)
-        start = 0
-        G_i = np.concatenate(G_list_n, axis=0)
+
+        # free orthonormalisation in terms of transmission cost
+        H_i, R = la.qr(H_i, mode='economic')
+
+        # Eigenvector update
+        for i in range(len(G_list)):
+            # Use gradient based update of the Eigenvectors
+            if gradient:
+                G_list[i] = np.dot(local_data[i].T, H_i) + G_list[i]
+            else:
+                # Use power iterations based update of the eigenvalue scheme
+                G_list[i] = np.dot(local_data[i].T, H_i)
+                if log and not federated_qr:
+                    log_transmission(filename, "Gi_local=CS", iterations, i, G_list[i])
+
+        # This is just for logging purposes
+        G_i = np.concatenate(G_list, axis=0)
+
+        # Eigenvalues are the norms of the eigenvecotrs
         eigenvals = []
         for col in range(G_i.shape[1]):
             eigenvals.append(np.linalg.norm(G_i[:, col]))
-        eigenvals = np.sqrt(eigenvals)
-        G_i, R = la.qr(G_i, mode='economic')
-        G_list = []
-        for d in local_data:
-            G_list.append(G_i[start:start + d.shape[1], :])
-            start = start + d.shape[1]
+        # Save eigenvalues
+        eigenvals_prev = eigenvals
 
-        ra, conv = gv.convergence_checker(H_i_dec, H_i_prev)
-        H_i_prev = H_i_dec
-        #log_current_accuracy(scipy, G_i, eigenvals, conv, current_iteration=iterations, filename=filename, choices=choices, precomputed_pca=precomputed_pca)
 
+        G_i, G_list = qr.simulate_federated_qr(G_list, encrypt=True, filename=filename, repeat=iterations, log=log)
+
+        convergedH, deltaH = sh.eigenvector_convergence_checker(H_i, H_i_prev, tolerance=epsilon)
+        H_i_prev = H_i
+        G_i_prev = G_i
+        log_current_accuracy(u=u, G_i=G_i, eigenvals=eigenvals, conv=deltaH, current_iteration=iterations,
+                             filename=filename, choices=choices, precomputed_pca=precomputed_pca,
+                             gi_delta_obj=deltaG, v=v, H_i=H_i)
     G_i = np.concatenate(G_list)
-    return G_i, eigenvals
-
-
+    print(iterations)
+    return G_i, eigenvals, converged_eigenvals, H_i
 
 
 
@@ -143,7 +304,7 @@ if __name__ == '__main__':
     #data = easy.easy_import(args.f, header=None, rownames=None, center=False, scale_var=False,sep='\t')
     data, test_lables = imnist.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
     data = coo_matrix.asfptype(data)
-    data = data[0:2500,:]
+    data = data.T
     # args.k = 10
    # g = gv.standalone(data, k=2)
     #
