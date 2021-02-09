@@ -12,8 +12,8 @@ import time
 import python.PCA.convenience as cv
 import python.PCA.comparison as co
 import os.path as path
-import sys
-#from python.PCA.vertical_pca_benchmark import log_transmission
+import os
+
 
 
 def log_transmission(logfile, log_entry_string, iterations, counter, element, eigenvector=10):
@@ -48,7 +48,7 @@ def log_transmission(logfile, log_entry_string, iterations, counter, element, ei
 
 
 def log_costs(filename, action, duration, split, repeat):
-    with open(filename, 'a+') as handle:
+    with open(filename+'.encryption', 'a+') as handle:
             handle.write(action+'\t'+str(split)+'\t'+str(repeat)+'\t'+str(duration)+'\n')
 
 def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repeat=None, log=False):
@@ -247,10 +247,10 @@ def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repea
         if encrypt:
             logentry = 'total_encrypted'
             log_costs(filename, logentry, end - start, split=split, repeat=repeat)
-            log_costs(filename, 'setup', setup_time, split=split, repeat=repeat)
-            log_costs(filename, 'encryption', encryption_time, split=split, repeat=repeat)
-            log_costs(filename, 'decryption', decryption_time, split=split, repeat=repeat)
-            log_costs(filename, 'addition', addition_time, split=split, repeat=repeat)
+            log_costs(filename, 'qr_setup', setup_time, split=split, repeat=repeat)
+            log_costs(filename, 'qr_encryption', encryption_time, split=split, repeat=repeat)
+            log_costs(filename, 'qr_decryption', decryption_time, split=split, repeat=repeat)
+            log_costs(filename, 'qr_addition', addition_time, split=split, repeat=repeat)
 
         else:
             logentry = 'total_unencrypted'
@@ -259,78 +259,6 @@ def simulate_federated_qr(local_data,  encrypt, filename=None, split=None, repea
     ortho = np.concatenate(G_list, axis=0)
     return ortho, G_list
 
-def simulate_federated_qr_stabilised(local_data,  encrypt):
-
-    # Using a temporary dir as a "secure channel"
-    # This can be changed into real communication using other python libraries.
-    if encrypt:
-        secure_channel = tempfile.TemporaryDirectory()
-        sec_con = Path(secure_channel.name)
-        pk_file = sec_con / "mypk.pk"
-        contx_file = sec_con / "mycontx.con"
-
-        ##### CLIENT
-        # HE Object Creation, including the public and private keys
-        HE = Pyfhel()
-        HE.contextGen(p=65537, m=2 ** 12)
-        HE.keyGen()  # Generates both a public and a private key
-
-        # Saving only the public key and the context
-        HE.savepublicKey(pk_file)
-        HE.saveContext(contx_file)
-    # vector 2 norm
-    alist = []
-    ortho = []
-    sum  = 0
-    # first verctor simply scaled to unit norm
-    for d in local_data:
-        sum  = sum+ np.sum(np.square(d[:,0]))
-
-    sum = np.sqrt(sum)
-    for d in local_data:
-        a = d[:,0]/sum
-        alist.append(a)
-
-    ortho.append(alist)
-
-    norms = []
-    prev = alist
-    for i in range(1,local_data[0].shape[1]):
-        sums = []
-        norm = 0
-        for o in ortho[i-1]:
-            norm = norm + np.dot(o, o)
-            #print(norm)
-        aplist = []
-        norms.append(norm)
-        #print(len(ortho))
-
-
-        sum = 0
-        no = 0
-        for k in range(len(local_data)):
-            sum = sum + np.dot(prev[k], local_data[k][:, i]) /norm
-        for d in range(len(local_data)):
-            # vi
-            ap = prev[d]
-            ap = ap - sum * prev[d]
-            no = no + np.sum(np.sum(ap))
-            aplist.append(ap)
-        no = np.sqrt(no)
-        for a in range(len(aplist)):
-            aplist[a] = aplist[a]/no
-
-        prev=aplist
-        ortho.append(aplist)
-        #aplist = aplist/np.linalg.norm(aplist)
-
-    oo = []
-    for o in ortho:
-        a = np.concatenate(o)
-        a = a/np.linalg.norm(a)
-        oo.append(a)
-    ortho = np.stack(oo, axis=1)
-    return ortho
 
 def all_angles_against_all(ortho1):
     oo1 = []
@@ -339,23 +267,22 @@ def all_angles_against_all(ortho1):
             oo1.append(co.angle(ortho1[:, i], ortho1[:, j].T))
     return oo1
 
-def benchmark_encryption(repeats, splits, n, m, filename):
+def benchmark_encryption(repeats, splits, n, m, filename, log=False):
     fn = filename+'_encryption'
-    filename1 = filename + '_angles_11.tsv'
-    filename2 = filename + '_angles_22.tsv'
-    filename12 = filename + '_angles_12.tsv'
-    filenameq1 = filename + '_angles_scipy_fed.tsv'
+    filename1 = filename + '_angles_all_against_all.tsv'
+    filename2 = filename + '_angles_all_against_all_encrypted.tsv'
+    filename12 = filename + '_angles_encrypted_vs_normal.tsv'
+    filenameq1 = filename + '_angles_scipy_vs_federated.tsv'
 
     for i in range(repeats):
-
+        print(i)
         for s in splits:
-            print(s)
             # generate an equal number of samples per site for all rounds
             data = sh.generate_random_gaussian(n*s, m)
             q, r = la.qr(data, mode='economic')
             data_list, choice = sh.partition_data_horizontally(data, s)
-            ortho1, G_list = simulate_federated_qr(data_list, encrypt=False, filename=fn, split=s, repeat=i)
-            ortho2, G_list = simulate_federated_qr(data_list, encrypt=True, filename=fn+'_encrypted', split=s, repeat=i)
+            ortho1, G_list = simulate_federated_qr(data_list, encrypt=False, filename=fn, split=s, repeat=i, log=True)
+            ortho2, G_list = simulate_federated_qr(data_list, encrypt=True, filename=fn+'_encrypted', split=s, repeat=i, log=True)
 
             # Compute angles between two consecutive columns,
             # they should be 90
@@ -383,14 +310,7 @@ def log_angles(filename, angles, encrypted, repeat, splits):
 if __name__ == '__main__':
 
     dirname = '/home/anne/Documents/featurecloud/pca/vertical-pca/results/qr_encryption'
+    os.makedirs(dirname, exist_ok=True)
     filename = 'benchmark_encryption_qr'
     filename = path.join(dirname, filename)
-
-    # data = sh.generate_random_gaussian(5000, 20)
-    # q, r = la.qr(data, mode='economic')
-    #
-    # data_list, choice = sh.partition_data_horizontally(data, 2, randomize=False)
-    # ortho1, G_list = simulate_federated_qr(data_list, encrypt=False)
-    # co.compute_angles(ortho1, ortho1[:, 1:])
-    # co.compute_angles(ortho1, q)
-    benchmark_encryption(100, [2,3,5,10], 10000, 20, filename)
+    benchmark_encryption(20, [2,3,5,10], 10000, 20, filename, log=True)

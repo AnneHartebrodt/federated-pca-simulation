@@ -38,6 +38,18 @@ def angle(v1, v2):
 
 
 def compute_angles(canonical, split, reported_angles=20):
+    """
+    Compute the angles of the vectors in a matrix with matching vectors
+    in a second matrix.
+
+    Args:
+        canonical: The first matrix of eigenvectors
+        split:  The second matrix of eigenvectors
+        reported_angles: Limit for number of angles to compute
+
+    Returns: A vector of angles
+
+    """
     angles = list()
     for i in range(min(reported_angles, min(canonical.shape[1], split.shape[1]))):
         a = angle(canonical[:, i], split[:, i])
@@ -45,6 +57,18 @@ def compute_angles(canonical, split, reported_angles=20):
     return angles
 
 def compute_correlations(canonical, split, reported_angles=20):
+    """
+        Compute the correlations of the vectors in a matrix with matching vectors
+        in a second matrix.
+
+        Args:
+            canonical: The first matrix of eigenvectors
+            split:  The second matrix of eigenvectors
+            reported_angles: Limit for number of correlations to compute
+
+        Returns: A vector of correlations
+
+        """
     correlations = list()
     for i in range(min(reported_angles, min(canonical.shape[1], split.shape[1]))):
         c = np.corrcoef(canonical[:, i], split[:, i])
@@ -130,17 +154,3 @@ def angle360(v1, v2):
         return a
     # return the canonical angle
     return a
-
-def compute_angles2(plinkfile, qrfile, scikitfile, outputfile):
-    angles = []
-    plink = pd.read_csv(plinkfile, sep = '\t', header=0)
-    qr = pd.read_csv(qrfile, sep='\t', header=None)
-    scikit = pd.read_csv(scikitfile, sep='\t', header=None)
-
-    for i in range(min(min(plink.shape[1], qr.shape[1]), scikit.shape[1])):
-        angles.append(['plink vs. qr', str(i), angle(plink.iloc[:, 2+i], qr.iloc[:, i])])
-        angles.append(['plink vs. scikit', str(i), angle(plink.iloc[:, 2+i], scikit.iloc[:, i])])
-        angles.append(['scikit vs. qr', str(i), angle(scikit.iloc[:, i], qr.iloc[:,i])])
-    angles = np.asarray(angles)
-    angles = pd.DataFrame(angles)
-    angles.to_csv(outputfile, sep='\t', header=None, index=None)

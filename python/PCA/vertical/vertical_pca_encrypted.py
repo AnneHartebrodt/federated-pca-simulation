@@ -19,12 +19,11 @@
 
 '''
 
-import python.PCA.vertical.vertical_pca_library as gv
 import python.PCA.shared_functions as sh
 import scipy.linalg as la
-#import import_export.easy_import as easy
 import scipy.sparse.linalg as lsa
 import python.PCA.comparison as co
+import python.PCA.convenience as cv
 import time as time
 import python.import_export.mnist_import as imnist
 from scipy.sparse import coo_matrix
@@ -32,7 +31,27 @@ import numpy as np
 from Pyfhel import Pyfhel
 import tempfile
 from pathlib import Path
+import python.PCA.vertical.federated_qr as qr
+import os
+import os.path as op
+import pandas as pd
 
+# Using a temporary dir as a "secure channel"
+# This can be changed into real communication using other python libraries.
+secure_channel = tempfile.TemporaryDirectory()
+sec_con = Path(secure_channel.name)
+pk_file = sec_con / "mypk.pk"
+contx_file = sec_con / "mycontx.con"
+
+##### CLIENT
+# HE Object Creation, including the public and private keys
+HE = Pyfhel()
+HE.contextGen(p=65537, m=2 ** 12)
+HE.keyGen()  # Generates both a public and a private key
+
+# Saving only the public key and the context
+HE.savepublicKey(pk_file)
+HE.saveContext(contx_file)
 
 def log_current_accuracy(u, G_i, eigenvals, conv, current_iteration, filename, choices, precomputed_pca=None,
                          current_ev=None, gi_delta_obj=None, v=None, H_i=None):
@@ -157,10 +176,15 @@ def log_time(logfile, algorithm, time, split, repeat):
         handle.write(algorithm + '\t' + str(split) + '\t' + str(repeat) + '\t' + str(time) + '\n')
 
 
+def log_costs(filename, action, duration, split, repeat):
+    with open(filename+'.encryption', 'a+') as handle:
+            handle.write(action+'\t'+str(split)+'\t'+str(repeat)+'\t'+str(duration)+'\n')
+
+
 
 ####### MATRIX POWER ITERATION SCHEME #######
-def simulate_subspace_iteration_ecncrypted(local_data, k, maxit, filename=None, u=None, choices=None, precomputed_pca=None, fractev=1.0,
-                           federated_qr=False, v=None, gradient=True, epsilon=10e-9, log=True):
+def simulate_subspace_iteration_encrypted(local_data, k, maxit, filename=None, u=None, choices=None, precomputed_pca=None, fractev=1.0,
+                           federated_qr=False, v=None, gradient=True, epsilon=10e-9, log=True, repeat=1):
     """
     Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.
 
@@ -173,22 +197,7 @@ def simulate_subspace_iteration_ecncrypted(local_data, k, maxit, filename=None, 
 
     """
 
-    # Using a temporary dir as a "secure channel"
-    # This can be changed into real communication using other python libraries.
-    secure_channel = tempfile.TemporaryDirectory()
-    sec_con = Path(secure_channel.name)
-    pk_file = sec_con / "mypk.pk"
-    contx_file = sec_con / "mycontx.con"
 
-    ##### CLIENT
-    # HE Object Creation, including the public and private keys
-    HE = Pyfhel()
-    HE.contextGen(p=65537, m=2 ** 12)
-    HE.keyGen()  # Generates both a public and a private key
-
-    # Saving only the public key and the context
-    HE.savepublicKey(pk_file)
-    HE.saveContext(contx_file)
 
 
     G_list = []
@@ -205,8 +214,6 @@ def simulate_subspace_iteration_ecncrypted(local_data, k, maxit, filename=None, 
     # send parts to local sites
     for i in range(len(local_data)):
         G_list.append(G_i[start:start + local_data[i].shape[1], :])
-        if log:
-            log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
         start = start + local_data[i].shape[1]
 
     # Initial guess
@@ -214,6 +221,8 @@ def simulate_subspace_iteration_ecncrypted(local_data, k, maxit, filename=None, 
     G_i_prev = G_i
     converged_eigenvals = []
     shape_H = H_i_prev.shape
+
+
     eigenvals_prev = None
     # Convergence can be reached when eigenvectors have converged, the maximal number of
     # iterations is reached or a predetermined number of eignevectors have converged.
@@ -221,33 +230,35 @@ def simulate_subspace_iteration_ecncrypted(local_data, k, maxit, filename=None, 
         iterations = iterations + 1
 
         # add up the H matrices
-        H_i = np.zeros((local_data[0].shape[0], k))
-        H_i = H_i.flatten()
-        H_i = [HE.encryptFrac(x) for x in H_i]
+        # first client
+        H_local = np.dot(local_data[i], G_list[i])
+        start = time.monotonic()
+        H_i = [HE.encryptFrac(H_local[x, y]) for x in range(H_local.shape[0]) for y in
+                       range(H_local.shape[1])]
+        end = time.monotonic()
+        if log:
+            log_costs(filename, 'matrix_encryption', end - start, split=1, repeat=iterations)
 
-        for i in range(len(local_data)):
+        # the other clients
+        for i in range(1,len(local_data)):
             # send local H matrices to server
             H_local = np.dot(local_data[i], G_list[i])
             start = time.monotonic()
             H_local_enc = [HE.encryptFrac(H_local[x, y]) for x in range(H_local.shape[0]) for y in
                            range(H_local.shape[1])]
             end = time.monotonic()
-            print('encrypted: ' + str(end - start))
+            if log:
+                log_costs(filename, 'matrix_encryption', end - start, split=1, repeat=iterations)
             start = time.monotonic()
             H_i = [H_i[x] + H_local_enc[x] for x in range(len(H_local_enc))]
-            print('added: ' + str(time.monotonic() - start))
-
             if log:
-                log_transmission(filename, "H_local=CS", iterations, i, H_local)
-            # add up H matrices at server and send them back to the clients
-            H_i = H_i + H_local
-        if log:
-            # Log only once for one site
-            log_transmission(filename, "H_global=SC", iterations, 1, H_i)
+                log_costs(filename, 'matrix_addition', time.monotonic() - start, split=1, repeat=iterations)
+
 
         H_i_dec = [HE.decryptFrac(x) for x in H_i]
         H_i = np.reshape(H_i_dec, shape_H)
-        print('decrypted: ' + str(time.monotonic() - start))
+        if log:
+            log_costs(filename, 'matrix_decryption', time.monotonic() - start, split=iterations, repeat=repeat)
 
         # free orthonormalisation in terms of transmission cost
         H_i, R = la.qr(H_i, mode='economic')
@@ -260,8 +271,6 @@ def simulate_subspace_iteration_ecncrypted(local_data, k, maxit, filename=None, 
             else:
                 # Use power iterations based update of the eigenvalue scheme
                 G_list[i] = np.dot(local_data[i].T, H_i)
-                if log and not federated_qr:
-                    log_transmission(filename, "Gi_local=CS", iterations, i, G_list[i])
 
         # This is just for logging purposes
         G_i = np.concatenate(G_list, axis=0)
@@ -274,19 +283,18 @@ def simulate_subspace_iteration_ecncrypted(local_data, k, maxit, filename=None, 
         eigenvals_prev = eigenvals
 
 
-        G_i, G_list = qr.simulate_federated_qr(G_list, encrypt=True, filename=filename, repeat=iterations, log=log)
+        G_i, G_list = qr.simulate_federated_qr(G_list, encrypt=True, filename=filename, repeat=repeat, log=log, split=iterations)
 
         convergedH, deltaH = sh.eigenvector_convergence_checker(H_i, H_i_prev, tolerance=epsilon)
         H_i_prev = H_i
         G_i_prev = G_i
-        log_current_accuracy(u=u, G_i=G_i, eigenvals=eigenvals, conv=deltaH, current_iteration=iterations,
-                             filename=filename, choices=choices, precomputed_pca=precomputed_pca,
-                             gi_delta_obj=deltaG, v=v, H_i=H_i)
+        #if log:
+            #log_current_accuracy(u=u, G_i=G_i, eigenvals=eigenvals, conv=deltaH, current_iteration=iterations,
+                            # filename=filename, choices=choices, precomputed_pca=precomputed_pca, v=v, H_i=H_i)
+
     G_i = np.concatenate(G_list)
     print(iterations)
-    return G_i, eigenvals, converged_eigenvals, H_i
-
-
+    return G_i
 
 
 if __name__ == '__main__':
@@ -313,6 +321,21 @@ if __name__ == '__main__':
     s = np.flip(s)
     v = np.flip(v.T, axis=1)
 
+    outdir = '/home/anne/Documents/featurecloud/pca/vertical-pca/results/encryption'
+    os.makedirs(outdir, exist_ok=True)
+    filename = op.join(outdir, 'mnist')
+
+    angles = []
     data_list, choices = sh.partition_data_vertically(data,2)
-    uu, ev= simulate_guo_benchmark_encrypt(data_list, k=2, maxit=100)
-    co.compute_angles(uu, u)
+    uu = simulate_subspace_iteration_encrypted(data_list, k=10, maxit=200, log=True, filename=filename, repeat=1)
+    angles.append(co.compute_angles(uu, u))
+
+    angles = np.concatenate(angles, axis=0)
+    pd.DataFrame(angles).to_csv(filename+".angles", sep='\t', header=False, index=False)
+
+
+
+
+
+
+

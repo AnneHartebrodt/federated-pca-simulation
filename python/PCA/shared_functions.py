@@ -76,6 +76,21 @@ def projection(scaled, sim, ndims):
 
 
 def partition_data_horizontally(data, splits=2, equal=True, randomize=False, perc = []):
+    """
+
+    Split a numpy matrix into horizontal chunks for testing.
+
+    Args:
+        data: The entire data set formatted as a numpy matrix
+        splits: The number of chunks to split the data into
+        equal: If true, equal chunks of data are returned
+        randomize: Randomize the data before splitting it
+        perc: if equal is False and a vector of percentages is provided, the data is
+                split into fractions accroding to this vector.
+
+    Returns: A list of numpy arrays with the horizontal chunks of data.
+
+    """
     n = data.shape[0]
     interval_end = []
     interval_end = []
@@ -111,6 +126,21 @@ def partition_data_horizontally(data, splits=2, equal=True, randomize=False, per
 
 
 def partition_data_vertically(data, splits=2, equal=True, randomize=False, perc=[]):
+    """
+
+    Split a numpy matrix into vertical chunks for testing.
+
+    Args:
+        data: The entire data set formatted as a numpy matrix
+        splits: The number of chunks to split the data into
+        equal: If true, equal chunks of data are returned
+        randomize: Randomize the data before splitting it
+        perc: if equal is False and a vector of percentages is provided, the data is
+                split into fractions accroding to this vector.
+
+    Returns: A list of numpy arrays with the vertical chunks of data.
+
+    """
     n = data.shape[1]
     # save the end of the interval
     # with 100 samples and 3 sites:[33,66,100]
@@ -133,6 +163,7 @@ def partition_data_vertically(data, splits=2, equal=True, randomize=False, perc=
         data = data[:, choice]
     else:
         choice = range(n)
+
     start = 0
     localdata = []
     for i in range(len(interval_end)):
@@ -145,19 +176,43 @@ def partition_data_vertically(data, splits=2, equal=True, randomize=False, perc=
 
 
 def eigenvalue(A, v):
+    """
+    Computes a single eigenvector based on a matrix and a corresponding
+    eigenvector
+    Args:
+        A: the matrix
+        v: the eigenvector
+
+    Returns: The eigenvalue
+
+    """
+
     Av = A.dot(v)
     return v.dot(Av)
 
 
 def eigenvalues(eigenvectors, cov):
+    """
+    Computes eigenvalues based on a covariance matrix and the corresponding
+    eigenvectors
+    Args:
+        eigenvectors: Eigenvectors of the covariance matrix
+        cov: Covariance matrix
+
+    Returns: All eigenvalues corresponding to the eigenvectors
+
+    """
+
     eigenvals = []
     for v in range(eigenvectors.shape[1]):
         eigenvals.append(eigenvalue(cov, eigenvectors[:, v]))
     return eigenvals
 
-def eigenvector_convergence_checker(current, previous, tolerance=1e-6, required=None):
+def eigenvector_convergence_checker(current, previous, tolerance=1e-9, required=None):
     '''
 
+    This function checks whether two sets of vectors are assymptotically collinear, up
+    to a tolerance of epsilon.
     Args:
         current: The current eigenvector estimate
         previous: The eigenvector estimate from the previous iteration
@@ -165,6 +220,7 @@ def eigenvector_convergence_checker(current, previous, tolerance=1e-6, required=
         required: optional parameter for the number of eigenvectors required to have converged
 
     Returns: True if the required numbers of eigenvectors have converged to the given precision, False otherwise
+                deltas, the current difference between the dot products
 
     '''
     nr_converged = 0
@@ -176,7 +232,6 @@ def eigenvector_convergence_checker(current, previous, tolerance=1e-6, required=
     while col < current.shape[1] and not converged:
         # check if the scalar product of the current and the previous eigenvectors
         # is 1, which means the vectors are 'parallel'
-        #print('angle' +str(co.angle(current[:, col], previous[:, col])))
         delta = np.abs(np.sum(np.dot(np.transpose(current[:, col]), previous[:, col])))
         deltas.append(delta)
         if delta >= 1 - tolerance:
@@ -188,14 +243,19 @@ def eigenvector_convergence_checker(current, previous, tolerance=1e-6, required=
 
 def convergence_checker_rayleigh(current, previous, alpha_current, alpha_prev, epsilon=1e-11, required=None):
     """
-    Convergence checked via Raleigh coefficient.
+    Convergence checked via Raleigh coefficient. which is the dot product of two consecutive eigenvectors
+    divided by the norm.
+    This function here implements the Rayleigh coefficient according to the definition in
+    'A covariance free iterative algorithm for principal component analysis' (Guo, 2012).
     Args:
-        current:
-        previous:
-        epsilon:
-        return_converged:
+        current: Current eigenvector estimate (H)
+        previous: Previous iterations' eigenvector estimate
+        alpha_current: Current norm of G
+        alpha_prev: previous norm of G
+        epsilon: tolerance ( Default value arbitrarily chosen, to approximate the same behaviour as
+                    angle based convergence checker)
 
-    Returns:
+    Returns: True if converged otherwise false, deltas the differences rayleigh coefficients
 
     """
 

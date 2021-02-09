@@ -5,6 +5,9 @@ import time as time
 import pandas as pd
 import numpy as np
 
+"""
+    A few convenience functions for data writing
+"""
 
 def collapse_array_to_string(a, study_id):
     res = study_id + '\t'
