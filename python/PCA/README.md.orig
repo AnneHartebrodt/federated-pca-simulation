@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+#Read this
+=======
 # Federated PCA
 
 ## vertical folder
@@ -8,3 +11,4 @@ If you are interested in a python code for the simulation, have a look at [simul
 ## horizontal folder
 
 The [horizontal](/horizontal) folder contains scripts for the simulation of federated principal component analysis for horizontally partionned data. 
+>>>>>>> f4433e435abf6973ed6e5c1924f64045b24b0fd6
