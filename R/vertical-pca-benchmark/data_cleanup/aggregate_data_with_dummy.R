@@ -24,6 +24,8 @@ outfile<-opt$outfile
 column<-opt$column
 print(infile)
 
+infile<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist/summaries/angles.u.tsv'
+column<-'angle'
 
 data<-fread(infile)
 data[, 9]<-as.numeric(unlist(data[, 9]))
@@ -32,6 +34,8 @@ data[, 9]<-as.numeric(unlist(data[, 9]))
 # matrix is as it should e
 data.ma <- data[matrix=='matrix']
 data.ve<-data[matrix=='vector']
+
+
 
 # add continuous iteration counts to the vector tale
 data.ve<-data[matrix=='vector'] %>% 
@@ -52,8 +56,27 @@ minit<-minit %>% uncount(minit) %>%
 minit<-as.data.table(minit)
 minit$angle<-90
 
+# find max iteration to fill the dataframe to get correct average
+maxit<-data.ve %>%
+  group_by(orientation, matrix, sites, eigenvector_update, qr_method, rank)%>%
+  summarise(maxit_all=max(iterations), angle=min(angle))
+maxit1<-as.data.table(maxit)
+
+maxit<-data.ve %>%
+  group_by(orientation, matrix, sites, eigenvector_update, qr_method, rank, filename)%>%
+  summarise(maxit=max(iterations))
+maxit<-as.data.table(maxit)
+
+maxit<-merge(maxit, maxit1)
+maxit[, diff:=maxit_all-maxit]
+maxit<- maxit %>% uncount(diff) %>% group_by(orientation, matrix, sites, eigenvector_update, qr_method, rank, filename) %>% mutate(iterations = row_number(filename)+ maxit)
+maxit<-as.data.table(maxit)
+
+maxit<-maxit %>% mutate(maxit_all=NULL, maxit=NULL)
+maxit<-as.data.table(maxit)
+
 # paste everything together again.
-data<-rbind(data.ma, minit, data.ve)
+data<-rbind(data.ma, minit, data.ve, maxit)
 
 # summarise
 summary<-data %>% 
@@ -62,9 +85,12 @@ summary<-data %>%
   summarise(mean_value = mean(get(column)))
 summary<-as.data.table(summary)
 
+ggplot(summary[sites==5 & qr_method=='central_qr' & matrix=='vector'& eigenvector_update=='gradient'], aes(iterations, mean_value))+geom_line()+facet_wrap(~rank)
+
 # create column wise output format
 wide.for.tikz <-summary[orientation=='vertical'] %>% pivot_wider(id_cols = c(iterations), names_from = c(matrix, sites, eigenvector_update, qr_method, rank), values_from = mean_value)
 wide.for.tikz<-as.data.table(wide.for.tikz)
+
 cols <- grep("matrix_5_power_central_qr|matrix_5_power_federated_qr|vector_5_gradient_central_qr", names(wide.for.tikz), value = TRUE)
 cols<-c('iterations', cols)
 wide.for.tikz <- wide.for.tikz %>% select(cols)
@@ -86,7 +112,7 @@ selection<-c("matrix_5_power_central_qr", "matrix_5_power_federated_qr","vector_
 # make the plot
 # angles.plot<-ggplot(d[name %in% selection], aes(iterations, value, col=as.factor(name)))+
 #   geom_line()+facet_wrap(~rank, scales = 'free')+
-#   my_theme+ylab('Mean angle [degree]')+ 
+#   my_theme+ylab('Mean angle [degree]')+
 #   xlab('#Iterations')+
 #   scale_color_manual('Configuration', values = palette_div)+
 #   theme(axis.line=element_line(),
@@ -100,3 +126,5 @@ selection<-c("matrix_5_power_central_qr", "matrix_5_power_federated_qr","vector_
 #   guides(color=guide_legend(keyheight = 0.5, title = element_text('Configuration', size = 8)))
 # 
 # angles.plot
+
+                             

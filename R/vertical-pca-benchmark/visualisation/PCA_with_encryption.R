@@ -25,9 +25,10 @@ my_theme <-
     legend.key.size = unit(1.5, 'lines'))
 
 
-data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/encryption/mnist.encryption')
-
-
+#data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/encryption/mnist10.encryption')
+#data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/encryption/mnist5.encryption')
+#data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/encryption/mnist.encryption')
+data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/encryption/mnist2.encryption')
 summarised <- data %>% group_by(V1) %>% summarise(time = sum(V4))
 summarised<- as.data.table((summarised))
 summarised$time <- summarised$time/max(data$V2)
@@ -39,4 +40,7 @@ summarised$time <- round(summarised$time, 2)
 selection<-c('matrix_encryption', 'matrix_addition', 'matrix_decryption', 'qr_encryption', 'qr_addition', 'qr_decryption')
 byiteration<-summarised[V1 %in% selection]
 colnames(byiteration)<-c('Step', 'Time [s]')
-fwrite(byiteration, file='/home/anne/Documents/featurecloud/pca/vertical-pca/results/encryption/mnist.encryption.summary', sep='\t')
+#fwrite(byiteration, file='/home/anne/Documents/featurecloud/pca/vertical-pca/results/encryption/mnist10.encryption.summary', sep='\t')
+#fwrite(byiteration, file='/home/anne/Documents/featurecloud/pca/vertical-pca/results/encryption/mnist5.encryption.summary', sep='\t')
+#fwrite(byiteration, file='/home/anne/Documents/featurecloud/pca/vertical-pca/results/encryption/mnist.encryption.summary', sep='\t')
+fwrite(byiteration, file='/home/anne/Documents/featurecloud/pca/vertical-pca/results/encryption/mnist2.encryption.summary', sep='\t')

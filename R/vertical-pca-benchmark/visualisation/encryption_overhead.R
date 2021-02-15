@@ -86,6 +86,14 @@ enc_vs_unenc<-as.data.table(enc_vs_unenc)
 enc_vs_unenc<- enc_vs_unenc[!is.na(value)]
 sum(enc_vs_unenc$value)/ncol(enc_vs_unenc)
 
+enc_vs_unenc<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/qr_encryption/benchmark_encryption_qr_angles_scipy_vs_federated_encrypted.tsv')
+enc_vs_unenc<- enc_vs_unenc %>% pivot_longer(-c(V1,V2, V3))
+enc_vs_unenc<-as.data.table(enc_vs_unenc)
+enc_vs_unenc<- enc_vs_unenc[!is.na(value)]
+sum(enc_vs_unenc$value)/ncol(enc_vs_unenc)
+
+
+
 transmission <-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/qr_encryption/benchmark_encryption_qr_encryption.transmission')
 transmission.encrpted <-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/qr_encryption/benchmark_encryption_qr_encryption_encrypted.transmission')
 
