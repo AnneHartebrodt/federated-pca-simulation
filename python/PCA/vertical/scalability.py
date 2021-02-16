@@ -3,7 +3,8 @@ import argparse as ap
 
 
 def run_scalability_test(data, dataset_name,outdir):
-    for p in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+    #for p in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+    for p in [0.6, 0.7, 0.8, 0.9]:
         od = op.join(outdir, str(p))
         os.makedirs(od, exist_ok=True)
         # repeat 10 times
@@ -24,6 +25,7 @@ if __name__ == '__main__':
 
     # read data
     input_dir = args.f
+    #data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
     data, test_labels = mi.load_mnist(input_dir, 'train')
     data = coo_matrix.asfptype(data)
 
