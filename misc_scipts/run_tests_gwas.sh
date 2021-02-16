@@ -11,7 +11,7 @@ do
 python3 $gwaspath/federated_dp_pca/python/PCA/vertical/vertical_pca_benchmark.py -f \
 $datapath/chr${e}/chr${e}.thin \
 --filetype 'gwas' --center -o $resultpath/chr${e} -r 10 -k 10 \
- -i 500 --sep '\t' --header 0 --rownames 0 --names chr${e} --scale \
+ -i 2000 --sep '\t' --header 0 --rownames 0 --names chr${e} --scale \
  --compare_pca $resultpath/chr${e}/plink/chr${e}.thin.eigenvec.values \
  --vert -s 2,5
 done

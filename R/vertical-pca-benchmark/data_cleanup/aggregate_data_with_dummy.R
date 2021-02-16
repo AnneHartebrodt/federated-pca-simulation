@@ -24,7 +24,7 @@ outfile<-opt$outfile
 column<-opt$column
 print(infile)
 
-infile<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist/summaries/angles.u.tsv'
+#infile<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist/summaries/angles.u.tsv'
 column<-'angle'
 
 data<-fread(infile)

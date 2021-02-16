@@ -8,7 +8,7 @@ outfile=$basepath'/results/mnist'
 mkdir -p $outfile
 python3 $scriptpath/python/PCA/vertical/vertical_pca_benchmark.py -f $basepath'/data/mnist/raw' \
 --filetype 'mnist' --center -o $outfile -r 20 -k 10 \
- -i 500 -s 5,2 --vert
+ -i 2000 -s 5,2 --vert
 
 echo "making summaries"
 cd $outfile
