@@ -18,6 +18,7 @@ option_list = list(
 opt = parse_args(OptionParser(option_list=option_list))
 
 scriptdir<-opt$scriptdir
+scriptdir<-'/home/anne/Documents/featurecloud/pca/federated_dp_pca/'
 source(file.path(scriptdir, "/R/vertical-pca-benchmark/data_cleanup/library.R"))
 
 
@@ -26,7 +27,9 @@ suffix <- opt$s
 column_name <- opt$c
 outfile<-opt$o
 print(basedir)
-#basedir<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/scalability2'
+
+
+basedir<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/scalability'
 
 data_orientation<-c('0.1','0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9')
 vector_or_subspace<-c('matrix', 'vector')
@@ -35,13 +38,18 @@ eigenvector_update<-c('power', 'gradient')
 qr_method<-c('central_qr', 'federated_qr')
 
 
+
 data <- read_all_files(basedir, 'transmission')
 data<- rbindlist(data)
 
+
+##
 colnames(data)<- c("operation","iteration","client","eigenvector","nr_floats","data_fraction","matrix","sites","eigenvector_update","qr_method","filename")
 
 summary <- data[client==1] %>% group_by(eigenvector, eigenvector_update, data_fraction, matrix, sites, qr_method, filename) %>% 
   summarise(max_it = max(iteration), sum_nr_floats = sum(nr_floats))
+
+summary.ma <- as.data.table(summary)[matrix=='matrix'] %>% group_by(eigenvector_update, data_fraction, matrix, sites, qr_method, filename) %>% summarise(max_it = max_it, nr_float=sum(sum_nr_floats))
 
 sumsum<-summary %>% group_by(eigenvector_update, data_fraction, matrix, sites, qr_method, filename) %>% summarise(max_it = sum(max_it), nr_float=sum(sum_nr_floats))
 sumsum <- sumsum %>% group_by(eigenvector_update, data_fraction, matrix, sites, qr_method) %>% mutate(counter = row_number(matrix))

@@ -24,8 +24,8 @@ outfile<-opt$outfile
 column<-opt$column
 print(infile)
 
-#infile<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist/summaries/angles.u.tsv'
-column<-'angle'
+#infile<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/1000g/chr2/summaries/angles.u.tsv'
+#column<-'angle'
 
 data<-fread(infile)
 data[, 9]<-as.numeric(unlist(data[, 9]))
@@ -75,8 +75,28 @@ maxit<-as.data.table(maxit)
 maxit<-maxit %>% mutate(maxit_all=NULL, maxit=NULL)
 maxit<-as.data.table(maxit)
 
+
+# find max iteration to fill the dataframe to get correct average
+maxit.ma<-data.ma %>%
+  group_by(orientation, matrix, sites, eigenvector_update, qr_method, rank)%>%
+  summarise(maxit_all=max(iterations), angle=min(angle))
+maxit1<-as.data.table(maxit.ma)
+
+maxit.ma<-data.ma %>%
+  group_by(orientation, matrix, sites, eigenvector_update, qr_method, rank, filename)%>%
+  summarise(maxit=max(iterations))
+maxit.ma<-as.data.table(maxit.ma)
+
+maxit.ma<-merge(maxit.ma, maxit1)
+maxit.ma[, diff:=maxit_all-maxit]
+maxit.ma<- maxit.ma %>% uncount(diff) %>% group_by(orientation, matrix, sites, eigenvector_update, qr_method, rank, filename) %>% mutate(iterations = row_number(filename)+ maxit)
+maxit.ma<-as.data.table(maxit.ma)
+
+maxit.ma<-maxit.ma %>% mutate(maxit_all=NULL, maxit=NULL)
+maxit.ma<-as.data.table(maxit.ma)
+
 # paste everything together again.
-data<-rbind(data.ma, minit, data.ve, maxit)
+data<-rbind(data.ma, minit, data.ve, maxit, maxit.ma)
 
 # summarise
 summary<-data %>% 
@@ -85,7 +105,8 @@ summary<-data %>%
   summarise(mean_value = mean(get(column)))
 summary<-as.data.table(summary)
 
-ggplot(summary[sites==5 & qr_method=='central_qr' & matrix=='vector'& eigenvector_update=='gradient'], aes(iterations, mean_value))+geom_line()+facet_wrap(~rank)
+ggplot(summary[sites==5 & qr_method=='central_qr' & matrix=="matrix" & eigenvector_update=='power'], 
+       aes(iterations, mean_value, col=as.factor(rank)))+geom_line()
 
 # create column wise output format
 wide.for.tikz <-summary[orientation=='vertical'] %>% pivot_wider(id_cols = c(iterations), names_from = c(matrix, sites, eigenvector_update, qr_method, rank), values_from = mean_value)

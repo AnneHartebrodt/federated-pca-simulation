@@ -28,12 +28,12 @@
   
   
   # read the data and transform into long
-  data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/mnist//summaries/wide.tikz.angles.u.summary.tsv')
+  data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/results_for_david/chr2.tsv')
   d <- data %>% pivot_longer(-c(iterations))
   d<-as.data.table(d)
   d<-d[!is.na(value)]
   # select the correct configuration
-  selection<-c("matrix_2_power_central_qr_6", "matrix_2_power_federated_qr_6","vector_2_gradient_central_qr_6")
+  selection<-c("matrix_5_power_central_qr_10", "matrix_5_power_federated_qr_10","vector_5_gradient_central_qr_10")
   #selection3<-c("matrix_3_power_central_qr", "matrix_3_power_federated_qr", "vector_3_power_central_qr", "vector_3_power_federated_qr")
   
   
@@ -41,11 +41,11 @@
   #selection3<-c("matrix_3_power_central_qr", "matrix_3_power_federated_qr", "vector_3_power_central_qr", "vector_3_power_federated_qr")
   
   # make the plot
-  angles.plot<-ggplot(d[name %in% selection], aes(iterations, value, col=as.factor(name)))+
+  angles.plot<-ggplot(d, aes(iterations, value, col=as.factor(name)))+
     geom_line()+
-    my_theme+ylab('Mean angle [degree]')+ 
+    my_theme+ylab('Mean angle [degree]')+   
     xlab('#Iterations')+
-    scale_color_manual('Configuration', values = palette_div)+
+   # scale_color_manual('Configuration', values = palette_div)+
     theme(axis.line=element_line(),
           strip.background = element_blank(),
           strip.text.x = element_blank(),
@@ -53,8 +53,8 @@
           legend.justification = c("right", "top"),
           legend.box.just = "right",
           legend.margin = margin(0.25, 0.25, 0.25, 0.25),
-          legend.title = element_text(size=10))+
-    guides(color=guide_legend(keyheight = 0.5, title = element_text('Configuration', size = 8)))
+          legend.title = element_text(size=10))#+
+    #guides(color=guide_legend(keyheight = 0.5, title = element_text('Configuration', size = 8)))
   
   angles.plot
   
