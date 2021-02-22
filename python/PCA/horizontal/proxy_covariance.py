@@ -69,9 +69,6 @@ def aggregate_partial_SVDs_means(svd_list, t1=10, weights=None, means = None):
         for svd in range(1, len(svd_list)):
             Ac = Ac + np.dot(svd_list[svd][0:t1, :].T, svd_list[svd][0:t1, :])
         Ac = 1 / s * Ac
-
-
-
     U, S, UT, nd = b.svd_sub(Ac, t1)
     S = np.sqrt(S)
     UT = UT.T

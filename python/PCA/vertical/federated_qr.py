@@ -273,6 +273,7 @@ def benchmark_encryption(repeats, splits, n, m, filename, log=False):
     filename2 = filename + '_angles_all_against_all_encrypted.tsv'
     filename12 = filename + '_angles_encrypted_vs_normal.tsv'
     filenameq1 = filename + '_angles_scipy_vs_federated.tsv'
+    filenameq2 = filename + '_angles_scipy_vs_federated_encrypted.tsv'
 
     for i in range(repeats):
         print(i)
@@ -296,6 +297,10 @@ def benchmark_encryption(repeats, splits, n, m, filename, log=False):
             # compute angles between scipy linalg and fed
             ooq1 = co.compute_angles(q, ortho1)
             log_angles(filenameq1, ooq1, 'fed_vs_scipy', i, s)
+
+            # compute angles between scipy linalg and fed
+            ooq2 = co.compute_angles(q, ortho2)
+            log_angles(filenameq2, ooq2, 'fed_encrypted_vs_scipy', i, s)
 
             # compute angles between encrypted run and decrypted run
             oo12 = co.compute_angles(ortho2, ortho1)

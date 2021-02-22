@@ -1,0 +1,52 @@
+
+metadata_folder="/home/anne/Documents/featurecloud/data/tcga/metadata/"
+supplement_folder="/home/anne/Documents/featurecloud/pca/horizontal-pca/paper_supplement"
+scripts="../"
+data_folder="/home/anne/Documents/featurecloud/data/tcga/data"
+study_folder="/home/anne/Documents/featurecloud/data/tcga/data/cancer_type"
+
+rule all:
+	input:
+		"/home/anne/Documents/featurecloud/data/tcga/metadata/cancer_type/studies.txt",
+		"/home/anne/Documents/featurecloud/data/tcga/metadata/cancer_type/done.txt"
+
+rule parse_metadata:
+	input:
+		json="/home/anne/Documents/featurecloud/data/tcga/cases.2021-02-11.json"
+	output:
+		tsv="/home/anne/Documents/featurecloud/data/tcga/metadata/sample_provenance.tsv"
+	shell:
+		"python organize_TCGA_metadata.py -f {input.json} -o {output.tsv}"
+
+
+rule split_studies:
+	input:
+		prov="{metadata_folder}/sample_provenance.tsv",
+		manifest="{metadata_folder}/gdc_manifest.2020-04-17.txt"
+	output:
+		#directory("/home/anne/Documents/featurecloud/data/tcga/metadata/cancer_type"),
+		file_list="{metadata_folder}/cancer_type/files.txt"
+	shell:
+		"Rscript /home/anne/Documents/featurecloud/code/data_preprocessing/TCGA_studies_by_cancertype.R -m {input.manifest} -s {supplement_folder} -o {metadata_folder} -p {input.prov} && ls {metadata_folder}/cancer_type/ >> {output.file_list}"
+
+rule folder_names:
+	input:
+		file_list="{metadata_folder}/cancer_type/files.txt"
+	output:
+		study_list="{metadata_folder}/cancer_type/studies.txt"
+	shell:
+		"bash horizontal/folder_names.sh {input.file_list} {output.study_list}"
+
+rule make_data_frames:
+	input:
+		file_list="{metadata_folder}/cancer_type/files.txt",	
+	output:
+		done="{metadata_folder}/cancer_type/done.txt"
+	params:
+		data_folder="/home/anne/Documents/featurecloud/data/tcga/data",
+		study_folder="/home/anne/Documents/featurecloud/data/tcga/cancer_type",
+		metadata_folder="/home/anne/Documents/featurecloud/data/tcga/metadata/cancer_type"
+	shell:
+		"bash /home/anne/Documents/featurecloud/code/data_preprocessing/run_preprocessing_TGCA.sh {input.file_list} {params.data_folder} {params.study_folder} {params.metadata_folder}\
+		 && touch {output.done}"
+	

@@ -316,22 +316,25 @@ if __name__ == '__main__':
     # args.k = 10
    # g = gv.standalone(data, k=2)
     #
-    u, s, v = lsa.svds(data.T,k=2)
-    u = np.flip(u, axis = 1)
-    s = np.flip(s)
-    v = np.flip(v.T, axis=1)
+    for p in [10,5, 2, 1]:
+    #for p in [2]:
+        data_part, choice = sh.partition_data_horizontally(data,p)
+        u, s, v = lsa.svds(data_part[0].T,k=2)
+        u = np.flip(u, axis = 1)
+        s = np.flip(s)
+        v = np.flip(v.T, axis=1)
 
-    outdir = '/home/anne/Documents/featurecloud/pca/vertical-pca/results/encryption'
-    os.makedirs(outdir, exist_ok=True)
-    filename = op.join(outdir, 'mnist')
+        outdir = '/home/anne/Documents/featurecloud/pca/vertical-pca/results/encryption'
+        os.makedirs(outdir, exist_ok=True)
+        filename = op.join(outdir, 'mnist'+str(p))
 
-    angles = []
-    data_list, choices = sh.partition_data_vertically(data,2)
-    uu = simulate_subspace_iteration_encrypted(data_list, k=10, maxit=200, log=True, filename=filename, repeat=1)
-    angles.append(co.compute_angles(uu, u))
+        angles = []
+        data_list, choices = sh.partition_data_vertically(data_part[0],2)
+        uu = simulate_subspace_iteration_encrypted(data_list, k=10, maxit=3, log=True, filename=filename, repeat=1)
+        angles.append(co.compute_angles(uu, u))
 
-    angles = np.concatenate(angles, axis=0)
-    pd.DataFrame(angles).to_csv(filename+".angles", sep='\t', header=False, index=False)
+        angles = np.concatenate(angles, axis=0)
+        pd.DataFrame(angles).to_csv(filename+".angles", sep='\t', header=False, index=False)
 
 
 

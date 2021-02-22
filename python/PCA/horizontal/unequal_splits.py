@@ -83,7 +83,7 @@ def unqeal_split_proxy_covariance(data, interval_end, ndims=100, exp_var=0.5, mu
         noisy_cov = dpca.compute_noisy_cov(data_sub, epsilon0=1, delta0=1, noise=False)
         start = int(interval_end[i])
         # return the local PCA with the maximal number of dimensions required.
-        A, vex = dpca.perform_SVD(noisy_cov, ndims=ndims, mult_dims_returned=max(mult_dims_ret), var_exp=exp_var)
+        A, vex = dpca.local_SVD(noisy_cov, ndims=ndims, mult_dims_returned=max(mult_dims_ret), var_exp=exp_var)
         Ac.append(A)
         variance_explained.append(vex)
 
@@ -139,7 +139,7 @@ def cluster_split(data, clusterfile, ndims=100, p=20, header_clu=None, sep='\t',
         if power_it:
             covs.append(noisy_cov)
         if proxy_cov:
-            A, vex = dpca.perform_SVD(noisy_cov, ndims=ndims, mult_dims_returned=ndims, var_exp=exp_var)
+            A, vex = dpca.local_SVD(noisy_cov, ndims=ndims, mult_dims_returned=ndims, var_exp=exp_var)
             Ac.append(A)
             weights.append(len(index) * 1.0 / clusters.shape[0])
 

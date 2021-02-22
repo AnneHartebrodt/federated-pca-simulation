@@ -86,7 +86,6 @@ def simulate_subspace_iteration(local_data, k, maxit, federated_qr=False,epsilon
     # iterations is reached or a predetermined number of eignevectors have converged.
     while not converged and iterations < maxit:
         iterations = iterations + 1
-        print(iterations)
         # add up the H matrices
         # init 0 matrix
         H_i = np.zeros((local_data[0].shape[0], k))
@@ -121,8 +120,8 @@ def simulate_subspace_iteration(local_data, k, maxit, federated_qr=False,epsilon
         converged, delta = sh.eigenvector_convergence_checker(H_i, H_i_prev, tolerance=epsilon)
         # save H to compare at next iteration
         H_i_prev = H_i
-
-    return G_i, eigenvals, H_i
+    print('converged: '+ str(iterations))
+    return G_i, eigenvals, H_i, iterations
 
 
 ####### BENCHMARK RUNNER #######

@@ -11,6 +11,7 @@ import python.PCA.comparison as co
 import os.path as path
 import sys
 
+
 if __name__ == '__main__':
     setup_time = time.monotonic()
     secure_channel = tempfile.TemporaryDirectory()

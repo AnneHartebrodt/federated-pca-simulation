@@ -5,18 +5,19 @@ import python.PCA.comparison as co
 
 
 
-def svd_sub(cov, ndims):
+def svd_sub(data, ndims):
     # the sparse matrix version of svd has better memory requirements, while being a little
     # slower
     # covariance matrix is positive semi definite so SVD= Eigenvalue decomposition
     # print(nd)
-    nd = min(cov.shape[1] - 1, ndims)
-    V, S, W = sc.sparse.linalg.svds(cov, nd)
+    nd = min(min(data.shape[1] - 1, data.shape[0] - 1), ndims)
+    print(nd)
+    u, s, v = lsa.svds(data, k=nd)
     # Sparse returns eigenvalues in ascending order
-    S, indx = extract_eigenvals(S)
-    W = np.flip(np.delete(W, indx, 0), axis=0)
-    nd = min(nd, len(S))
-    return V, S, W, nd
+    s = np.flip(s)
+    v = np.flip(v.T, axis=1)
+    u = np.flip(u, axis=1)
+    return u,s,v, nd
 
 
 def compute_cov(original):
