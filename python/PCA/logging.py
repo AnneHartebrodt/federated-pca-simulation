@@ -1,6 +1,7 @@
 import python.PCA.convenience as cv
 import python.PCA.comparison as co
 import numpy as np
+import os.path as op
 
 ####### LOGGING FUNCTIONS #######
 def create_filename(outdir, dataset_name, splits, counter, k, maxit, time):
