@@ -6,7 +6,7 @@ require("ggrepel")
 
 source('/home/anne/Documents/featurecloud/pca/federated_dp_pca/R/horizontal-pca-benchmark/library.R')
 
-outdir <- '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/k_variation/merged/2//'
+outdir <- '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/k_variation/merged/2/'
 
 read_cancer_types<-function(outdir){
   dirs<-list.files(outdir, no..=F)

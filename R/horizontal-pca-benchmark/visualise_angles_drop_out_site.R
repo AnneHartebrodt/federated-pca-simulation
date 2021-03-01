@@ -14,7 +14,7 @@ data_site <- read_cancer_types(outdir = outdir)
 data_site$experiment <- 'site'
 
 data<-rbind(data_random, data_site)
-leave1out<-ggplot(data, aes(name, value, fill=experiment))+geom_boxplot()+
+leave1out<-ggplot(data[name %in% paste0('',1:20)], aes(name, value, fill=experiment))+geom_boxplot()+
   xlab('Eigenvalue rank')+
   scale_shape_manual(values=c(1, 8))+
   scale_color_manual(values = c('#000000','#FF0000'))+

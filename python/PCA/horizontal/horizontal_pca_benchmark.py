@@ -313,39 +313,36 @@ if __name__ == '__main__':
     import python.PCA.horizontal.proxy_covariance as proxy
     import python.PCA.vertical.simulate_federated_vertically_partionned_pca as vertical
 
-    #check if it performs on mnist
+
+    outdir_presplit = '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/accuracy/pre_split'
+    outdir = '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/scaled_data'
+    outdir_k_var = '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/k_variation/pre_split'
+    outdir_presplit_merged = '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/accuracy/merged'
+    outdir_k_variation_merged = '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/k_variation/merged'
+
+    # check if it performs on mnist
     data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
     # data, test_labels = mi.load_mnist(input_dir, 'train')
     data = coo_matrix.asfptype(data)
     k = 20
     data_list, choices = sh.partition_data_horizontally(data, splits=20, randomize=False)
     data_list = scale_datasets(data_list)
-    u,s,v = compute_canonical(data_list, k=20)
-    outdir_presplit = '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/accuracy/pre_split'
+    u, s, v = compute_canonical(data_list, k=20)
     wrapper(data_list, outdir_presplit, precomputed_eigenvector=v, k=k, dataset_name='mnist')
+    wrapper_k_variation(data_list, outdir_k_var, k=k, min_factor_k=1, max_factor_k=5, dataset_name='mnist')
 
+
+    # the real deal
     basedir = '/home/anne/Documents/featurecloud/data/tcga/cancer_type/'
     datasets = os.listdir(basedir)
     data_dirs = [op.join(basedir, d, 'sites', 'data') for d in datasets]
 
-    #filenames = os.listdir('/home/anne/Documents/featurecloud/data/tcga/cancer_type/Bladder/sites/data')
-    #data_list = read_presplit_data_folders(filenames, '/home/anne/Documents/featurecloud/data/tcga/cancer_type/Bladder/sites/data')
-    #data_list = scale_datasets(data_list)
-
     # save scaled data
-    outdir = '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/scaled_data'
     #save_scaled_data(datasets, data_dirs, outdir, basedir)
 
     ## presplit test
-    k = 10
-    outdir_presplit = '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/accuracy/pre_split'
+    k = 20
     presplit(datasets, data_dirs, outdir_presplit, k)
-    #
-    outdir_k_var = '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/k_variation/pre_split'
-    #k_variation(datasets, data_dirs, outdir_k_var, k)
-    #
-
-    outdir_presplit_merged = '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/accuracy/merged'
-    outdir_k_variation_merged = '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/k_variation/merged'
-    #presplit_merge(datasets, data_dirs, outdir_presplit_merged, outdir_k_variation_merged, k)
+    k_variation(datasets, data_dirs, outdir_k_var, k)
+    presplit_merge(datasets, data_dirs, outdir_presplit_merged, outdir_k_variation_merged, k)
 

@@ -5,6 +5,7 @@ require(tidyr)
 require("ggrepel")
 require(gridExtra)
 library(ggpubr)
+require(GGally)
 
 read_iterations<-function(outdir){
   iteration_list<-list()
@@ -25,6 +26,11 @@ source('/home/anne/Documents/featurecloud/pca/federated_dp_pca/R/horizontal-pca-
 outdir1 <- '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/accuracy/pre_split//'
 data1<- read_cancer_types(outdir1)
 data1$experiment <- 'TCGA'
+data1$algorithm<-as.factor(data1$algorithm)
+#levels(data1$algorithm)<- c('Bai', 'Balcan', 'Power iteration', 'Proxy', 'Proxy naive', 'Proxy weighted', 'Vertical power iteration')
+#data3<-data1
+
+
 
 outdir2 <- '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/accuracy/merged/5'
 data2<- read_cancer_types(outdir2)
@@ -36,9 +42,10 @@ data3$experiment <- '2'
 
 data3 <- rbind(data1,data2, data3)
 data3$algorithm<-as.factor(data3$algorithm)
-levels(data3$algorithm)<- c('Bai', 'Balcan', 'Power iteration', 'Proxy', 'Proxy naive', 'Proxy Qi', 'Proxy weighted', 'Vertical power iteration')
+levels(data3$algorithm)<- c('Bai', 'Balcan', 'Power iteration', 'Proxy', 'Proxy naive', 'Vertical power iteration')
 data3$experiment<-ordered(data3$experiment, levels = c('TCGA', '5', '2'))
 
+data3<-data3[algorithm != 'Vertical power iteration']
 
 comparison<- ggplot(data3[name %in% paste0('', 1:10)], aes(name, value, fill=as.factor(algorithm)))+
   geom_boxplot(outlier.shape = NA)+
@@ -47,13 +54,48 @@ comparison<- ggplot(data3[name %in% paste0('', 1:10)], aes(name, value, fill=as.
   scale_color_manual(values = c('#000000','#FF0000'))+
   guides(color=F)+
   my_theme+
-  scale_fill_manual('Algorithm', values =palette_div[c(2,3,4,5,6,7,8,9)])+
-  ylab('Angle w.r.t reference [degree]')+facet_wrap(~experiment)+
+  scale_fill_manual('Algorithm', values =palette_div[c(2,9,4,8,6,7,5,3)])+
+  ylab('Angle w.r.t reference [degree]')+facet_wrap(~experiment, ncol = 2)+
+  guides(fill=guide_legend(ncol=2))
+
+c1<- ggplot(data3[name %in% paste0('', 1:10) & experiment=='TCGA'], aes(name, value, fill=as.factor(algorithm)))+
+  geom_boxplot(outlier.shape = NA)+
+  xlab('Eigenvalue rank')+
+  scale_shape_manual(values=c(1, 8))+
+  scale_color_manual(values = c('#000000','#FF0000'))+
+  guides(color=F)+
+  my_theme+
+  facet_wrap(~experiment)+
+  scale_fill_manual('Algorithm', values =palette_div[c(2,9,4,8,6,7,5,3)])+
+  ylab('Angle w.r.t reference [degree]')+
   theme(legend.position = 'bottom')
-
+c2<- ggplot(data3[name %in% paste0('', 1:10) & experiment==5], aes(name, value, fill=as.factor(algorithm)))+
+  geom_boxplot(outlier.shape = NA)+
+  xlab('Eigenvalue rank')+
+  scale_shape_manual(values=c(1, 8))+
+  scale_color_manual(values = c('#000000','#FF0000'))+
+  facet_wrap(~experiment)+
+  my_theme+
+  scale_fill_manual('Algorithm', values =palette_div[c(2,9,4,8,6,7,5,3)])+
+  ylab('Angle w.r.t reference [degree]')
+c3<- ggplot(data3[name %in% paste0('', 1:10) & experiment==2], aes(name, value, fill=as.factor(algorithm)))+
+    geom_boxplot(outlier.shape = NA)+
+    xlab('Eigenvalue rank')+
+    scale_shape_manual(values=c(1, 8))+
+    scale_color_manual(values = c('#000000','#FF0000'))+
+    my_theme+
+  facet_wrap(~experiment)+
+    scale_fill_manual('Algorithm', values =palette_div[c(2,9,4,8,6,7,5,3)])+
+    ylab('Angle w.r.t reference [degree]')
 comparison
+l<-grab_legend(comparison)
 
-ggsave(comparison, file='/home/anne/Documents/featurecloud/pca/horizontal-pca/figures/comparison_angles_all_methods.pdf', width = 20, height = 15, units = 'cm')
+gm<-ggmatrix(list(c1,c2,c3, l), nrow=2, ncol=2, 
+             xlab = 'Eigenvector rank', ylab = 'Angle [degree] w.r.t. reference',
+            showStrips = TRUE)
+  
+
+ggsave(gm, file='/home/anne/Documents/featurecloud/pca/horizontal-pca/figures/comparison_angles_all_methods.pdf', width = 20, height = 15, units = 'cm')
 
 
 mn<-data1[dataset=='mnist' & name %in% paste0('', 1:10)]
@@ -70,8 +112,9 @@ iterations3$experiment <- '2'
 iterations<-rbind(iterations, iterations2, iterations3)
 iterations$experiment<-ordered(iterations$experiment, levels = c('TCGA', '5', '2'))
 iterations$algorithm<-as.factor(iterations$algorithm)
-levels(iterations$algorithm)<- c('Bai', 'Balcan', 'Power iteration', 'Proxy', 'Proxy_naive', 'Qi', 'Vertical power iteration')
+levels(iterations$algorithm)<-c('Bai', 'Balcan', 'Power iteration', 'Proxy', 'Proxy naive', 'Vertical power iteration')
 
+iterations<-iterations[algorithm != 'Vertical power iteration']
 
 gp<-ggplot(iterations, aes(algorithm, iterations, fill=experiment))+geom_boxplot()+
   my_theme+
@@ -85,12 +128,18 @@ ggsave(gp, file='/home/anne/Documents/featurecloud/pca/horizontal-pca/figures/co
 
 
 sample_sizes<-fread('/home/anne/Documents/featurecloud/data/tcga/metadata/sample_provenance_300_10_summary.tsv')
-sample_sizes<-sample_sizes[, .(primary_site, samples)]
+sample_sizes[, nr_sites := .N, by=primary_site]
+sample_sizes<-sample_sizes[, .(primary_site, samples, nr_sites)]
+sample_sizes$a <- '&'
+sample_sizes$b <- '&'
+sample_sizes$c <- '\\'
 sample_sizes<-unique(sample_sizes)
+sample_sizes[, .(primary_site, a, samples, b, nr_sites, c)]
+
 
 d <- 20269
 k <- 10
-algorithms <- c('Bai', 'Balcan', 'Power iteration', 'Proxy', 'Proxy_naive', 'Qi', 'Vertical power iteration')
+algorithms <- c('Bai', 'Balcan', 'Power iteration', 'Proxy', 'Proxy naive', 'Proxy weighted', 'Vertical power iteration')
 bai<-0.5*d*d+d*k
 balcan_proxy<-d*k*2
 powerit<-d*k*2
@@ -100,7 +149,7 @@ communication_factor_d <-c (bai, balcan_proxy, powerit, balcan_proxy, bai, 1, ve
 communication_factor_n <-c (0,0,0,0,0,0,k*2)
 
 communication_factor<-data.table(algorithm=algorithms, 
-                                 communication=communication_cost, 
+                                 communication=communication_factor_d, 
                                  communication_factor_n=communication_factor_n)
 real_com <- merge(iterations, communication_factor, by.x = 'algorithm', by.y = 'algorithm')
 real_com<-merge(real_com, sample_sizes, by.x = 'dataset', by.y = 'primary_site')

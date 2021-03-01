@@ -124,9 +124,9 @@ if __name__ == '__main__':
             data_list = scale_datasets(data_list)
             leave1out_random_subset(data_list=data_list, outdir_name=outdir_leave1site_random, k=k, dataset_name=name)
 
-            data_list, row_list = read_presplit_data_folders(filenames, d)
-            data_list = scale_datasets(data_list)
-            leave1out_random_sample_balcan(data_list, outdir_leave1site_balcan ,dataset_name=name, row_list=row_list, k=k)
+        #     data_list, row_list = read_presplit_data_folders(filenames, d)
+        #     data_list = scale_datasets(data_list)
+        #     leave1out_random_sample_balcan(data_list, outdir_leave1site_balcan ,dataset_name=name, row_list=row_list, k=k)
         except FileNotFoundError:
             print('File not found')
 
