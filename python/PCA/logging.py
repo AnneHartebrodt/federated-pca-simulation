@@ -84,6 +84,7 @@ def log_current_accuracy(u, G_i, eigenvals, conv, current_iteration, filename, c
             conv = cv.collapse_array_to_string(gi_delta_obj, info_string)
             handle.write(conv)
 
+
 def log_choices(logfile, filename, choices):
     """
     Log the permutation of the data sets.

@@ -2,13 +2,13 @@ basepath=$1
 scriptpath=$2
 export PYTHONPATH=$PYTHONPATH:$scriptpath
 
-outfile=$basepath'/results/mnist'
+outfile=$basepath'/results-new-tests/mnist'
 
 
-mkdir -p $outfile
-python3 $scriptpath/python/PCA/vertical/vertical_pca_benchmark.py -f $basepath'/data/mnist/raw' \
---filetype 'mnist' --center -o $outfile -r 20 -k 10 \
- -i 2000 -s 5,2 --vert
+#mkdir -p $outfile
+#python3 $scriptpath/python/PCA/vertical/vertical_pca_benchmark.py -f $basepath'/data/mnist/raw' \
+#--filetype 'mnist' --center -o $outfile -r 20 -k 10 \
+# -i 2000 -s 5 --vert --ortho_freq 100
 
 echo "making summaries"
 cd $outfile

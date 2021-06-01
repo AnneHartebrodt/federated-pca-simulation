@@ -48,10 +48,10 @@ if(scalabililty){
 data_orientation<-c('vertical', 'horizontal')
 }
 vector_or_subspace<-c('matrix')
-nr_sites<- c(2,3,5,10)
+nr_sites<- c(5)
 eigenvector_update<-c('power', 'gradient')
 qr_method<-c('central_qr', 'federated_qr')
-
+g_ortho<-c(1, 100)
 
 
 mf_m<-read_all_files(basedir, suffix)
@@ -59,18 +59,23 @@ mf_m<-rbindlist(mf_m)
 # rename
 colnames(mf_m)<-c( 'iterations', 1:10, 'empty', 
                   'orientation', 'matrix', 'sites', 'eigenvector_update',
-                  'qr_method', 'filename')
+                  'qr_method', 'orthonormalisation_skip', 'filename')
 
 # remove the one empty column and transform into long format
 # use characters as column names!
 mf_m <- mf_m %>% select('iterations', paste0(1:10, ''), 
                         'orientation', 'matrix', 'sites', 'eigenvector_update',
-                        'qr_method', 'filename')%>%  
+                        'qr_method','orthonormalisation_skip', 'filename')%>%  
                 pivot_longer(-c('iterations',
                                    'orientation', 'matrix', 'sites', 'eigenvector_update',
-                                   'qr_method', 'filename'), values_to = column_name, names_to = 'rank')
+                                   'qr_method','orthonormalisation_skip', 'filename'), 
+                             values_to = column_name, names_to = 'rank')
+
+print('Matrix read')
 
 if (!opt$matrix_only){
+g_ortho<-c(1)
+qr_method<-c('central_qr')
 # all data frames need to have the same shape
 vector_or_subspace<-c('vector')
 mf_v<-read_all_files(basedir, suffix)
@@ -79,11 +84,11 @@ mf_v<-rbindlist(mf_v)
 colnames(mf_v)
 colnames(mf_v)<-c('rank', 'iterations', column_name, 'empty', 
                   'orientation', 'matrix', 'sites', 'eigenvector_update',
-                  'qr_method', 'filename')
+                  'qr_method', 'orthonormalisation_skip', 'filename')
 # remove the empty column.
 mf_v<- mf_v %>% select('rank', 'iterations',
                        'orientation', 'matrix', 'sites', 'eigenvector_update',
-                       'qr_method', 'filename', column_name)
+                       'qr_method', 'orthonormalisation_skip', 'filename', column_name)
 
 #combine data
 data<-rbind(mf_m, mf_v)
@@ -91,4 +96,4 @@ data<-rbind(mf_m, mf_v)
 data<-mf_m
 }
 fwrite(data, file = file.path(basedir, outfile), sep='\t', quote = F)
-
+print('Done')

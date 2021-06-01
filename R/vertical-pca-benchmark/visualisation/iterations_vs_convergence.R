@@ -10,6 +10,7 @@
   require(R.utils)
   library(ggforce)
   require(stringr)
+  require(viridis)
   
   # make custom palettes
   palette_div<-c('#062865', '#2f497d', '#4c6d96', '#6793af', '#81bac8', '#ffc4b3', '#f68888', '#d75161', '#ab203f', '#720022')
@@ -28,33 +29,40 @@
   
   
   # read the data and transform into long
-  data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results/results_for_david/chr2.tsv')
-  d <- data %>% pivot_longer(-c(iterations))
-  d<-as.data.table(d)
-  d<-d[!is.na(value)]
+  data<-fread('/home/anne/Documents/featurecloud/pca/vertical-pca/results-new-tests/mnist/long.dummy.angles.u.summary.tsv')
+  #d <- data %>% pivot_longer(-c(iterations))
+  #d<-as.data.table(d)
+  #d<-d[!is.na(value)]
   # select the correct configuration
-  selection<-c("matrix_5_power_central_qr_10", "matrix_5_power_federated_qr_10","vector_5_gradient_central_qr_10")
+  #selection<-c("matrix_5_power_central_qr_10", "matrix_5_power_federated_qr_10","vector_5_gradient_central_qr_10")
   #selection3<-c("matrix_3_power_central_qr", "matrix_3_power_federated_qr", "vector_3_power_central_qr", "vector_3_power_federated_qr")
   
   
   #selection<-c("vector_2_gradient_central_qr")
   #selection3<-c("matrix_3_power_central_qr", "matrix_3_power_federated_qr", "vector_3_power_central_qr", "vector_3_power_federated_qr")
-  
+  #selection<-c("matrix_5_power_central_qr_1", "matrix_5_power_federated_qr_1","vector_5_gradient_central_qr_1")
   # make the plot
-  angles.plot<-ggplot(d, aes(iterations, value, col=as.factor(name)))+
-    geom_line()+
-    my_theme+ylab('Mean angle [degree]')+   
-    xlab('#Iterations')+
-   # scale_color_manual('Configuration', values = palette_div)+
+  data$rank <-as.factor(data$rank)
+  data[, facet_title:=paste('Eigenvector', rank)]
+  data$facet_title <- as.ordered(data$facet_title)
+  levels(data$facet_title)<- paste('Eigenvector', unique(sort(data$rank)))
+  data[, name_qr := paste0(matrix, eigenvector_update, qr_method, orthonormalisation_skip)]
+  data$rank <-as.factor(data$rank)
+  data$name_qr<-as.factor(data$name_qr)
+  data$name_qr<- recode(data$name_qr, matrixpowerfederated_qr1='FED-GS', matrixpowerfederated_qr100='NO-GS', vectorgradientcentral_qr1='GUO')
+  data <- as.data.table(data)
+  angles.plot<-ggplot(data, aes(iterations, mean_value, col=as.factor(name_qr)))+
+    geom_line(size=0.75)+
+    theme_bw()+ylab('angle w.r.t reference')+   
+    xlab('iterations')+
+    scale_color_manual(values = viridis(4)[1:3])+
     theme(axis.line=element_line(),
           strip.background = element_blank(),
-          strip.text.x = element_blank(),
-          legend.position = c(1, 1),
           legend.justification = c("right", "top"),
           legend.box.just = "right",
-          legend.margin = margin(0.25, 0.25, 0.25, 0.25),
-          legend.title = element_text(size=10))#+
-    #guides(color=guide_legend(keyheight = 0.5, title = element_text('Configuration', size = 8)))
-  
+          legend.title = element_blank(),
+          panel.grid = element_blank())+
+    facet_wrap('facet_title', nrow=2, scales = 'free_x')+
+    guides(color=guide_legend(keyheight = 0.6, title = element_text('Configuration', size = 8)))
   angles.plot
   

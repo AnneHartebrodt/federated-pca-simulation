@@ -46,7 +46,7 @@ from python.PCA.logging import *
 
 ####### MATRIX POWER ITERATION SCHEME #######
 def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, choices=None, precomputed_pca=None, fractev=1.0,
-                           federated_qr=False, v=None, gradient=True, epsilon=10e-9, log=True):
+                           federated_qr=False, v=None, gradient=True, epsilon=10e-9, log=True, g_ortho_freq=1):
     """
     Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.
 
@@ -58,7 +58,7 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
     Returns: A column vector array containing the global eigenvectors
 
     """
-
+    print('Orthonormalisation frequency'+ str(ortho_freq))
     G_list = []
     iterations = 0
     convergedH = False
@@ -124,20 +124,23 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
         # Save eigenvalues
         eigenvals_prev = eigenvals
 
-        if not federated_qr:
-            # Centralised QR, just send the eigenvectors to the aggregator and orthonormalise
-            # Concatenation happend
-            G_i, R = la.qr(G_i, mode='economic')
-            start = 0
-            # redistribute
-            for i in range(len(G_list)):
-                G_list[i] = G_i[start:start + local_data[i].shape[1], :]
-                if log:
-                    log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
-                start = start + local_data[i].shape[1]
-        else:
-            # This logs into the same file
-            G_i, G_list = qr.simulate_federated_qr(G_list, encrypt=False, filename=filename, repeat=iterations, log=log)
+        # sporadic orthonormalisation
+        if iterations % g_ortho_freq == 0:
+            print('Current iteration='+str(iterations))
+            if not federated_qr:
+                # Centralised QR, just send the eigenvectors to the aggregator and orthonormalise
+                # Concatenation happend
+                G_i, R = la.qr(G_i, mode='economic')
+                start = 0
+                # redistribute
+                for i in range(len(G_list)):
+                    G_list[i] = G_i[start:start + local_data[i].shape[1], :]
+                    if log:
+                        log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
+                    start = start + local_data[i].shape[1]
+            else:
+                # This logs into the same file
+                G_i, G_list = qr.simulate_federated_qr(G_list, encrypt=False, filename=filename, repeat=iterations, log=log)
 
         convergedH, deltaH = sh.eigenvector_convergence_checker(H_i, H_i_prev, tolerance=epsilon)
         # use guos convergence criterion for comparison
@@ -345,7 +348,7 @@ def compute_k_eigenvectors(data_list, k, maxit, filename=None, u=None, choices=N
 
 ####### BENCHMARK RUNNER #######
 def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, epsilon=1e-9, precomputed_pca=None,
-                  unequal=False, horizontal=False, guo_epsilon=1e-11):
+                  unequal=False, horizontal=False, guo_epsilon=1e-11, ortho_freq=1):
     """
     run the simulation of a federated run of vertical power iteration
     Args:
@@ -394,56 +397,72 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, epsi
             logftime = op.join(outdir, 'time.log')
 
             # # simulate the run
-            for fedqr, mode in zip([True, False], ['federated_qr', 'central_qr']):
 
-                start = time.monotonic()
+            start = time.monotonic()
 
-                # run power iteration benchmark
-                # simultaneous
-                grad = False
-                grad_name = 'power'
-                print('power - matrix - '+ mode)
-                outdir_gradient = op.join(outdir, 'matrix', str(s), grad_name, mode)
-                os.makedirs(outdir_gradient, exist_ok=True)
-                filename = create_filename(outdir_gradient, dataset_name + '_' + mode, s, c, k, maxit, start)
-                simulate_subspace_iteration(data_list, k, maxit=maxit, u=u, filename=filename, choices=choice,
-                                       precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad, epsilon=epsilon)
-                end = time.monotonic()
-                log_time(logftime, 'qr_scheme' + '_' + mode, end - start, s, c)
+            # run power iteration benchmark
+            # simultaneous fully federated QR
+            grad = False
+            grad_name = 'power'
+            mode = 'federated_qr'
+            fedqr = True
+            print('power - matrix - '+ mode)
+            outdir_gradient = op.join(outdir, 'matrix', str(s), grad_name, mode, str(1))
+            os.makedirs(outdir_gradient, exist_ok=True)
+            filename = create_filename(outdir_gradient, dataset_name + '_' + mode, s, c, k, maxit, start)
+            simulate_subspace_iteration(data_list, k, maxit=maxit, u=u, filename=filename, choices=choice,
+                                   precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
+                                        epsilon=epsilon, g_ortho_freq=1)
+            end = time.monotonic()
+            log_time(logftime, 'qr_scheme' + '_' + mode, end - start, s, c)
 
+            # simultaneous only H
+            grad = False
+            grad_name = 'power'
+            print('power - matrix - ' + mode)
+            outdir_gradient = op.join(outdir, 'matrix', str(s), grad_name, mode, str(ortho_freq))
+            os.makedirs(outdir_gradient, exist_ok=True)
+            filename = create_filename(outdir_gradient, dataset_name + '_' + mode, s, c, k, maxit, start)
+            simulate_subspace_iteration(data_list, k, maxit=maxit, u=u, filename=filename, choices=choice,
+                                        precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
+                                        epsilon=epsilon, g_ortho_freq=ortho_freq)
+            end = time.monotonic()
+            log_time(logftime, 'qr_scheme' + '_' + mode, end - start, s, c)
 
-                # Run power iteration based benchmark
-                # Sequential
-                print('power - sequential - '+ mode)
-                outdir_gradient = op.join(outdir, 'vector', str(s), grad_name, mode)
-                os.makedirs(outdir_gradient, exist_ok=True)
-                filename = create_filename(outdir_gradient, dataset_name_guo + '_' + mode, s, c, k, maxit, start)
+            # Run power iteration based benchmark
+            # Sequential
+            #print('power - sequential - '+ mode)
+            #outdir_gradient = op.join(outdir, 'vector', str(s), grad_name, mode)
+            #os.makedirs(outdir_gradient, exist_ok=True)
+            #filename = create_filename(outdir_gradient, dataset_name_guo + '_' + mode, s, c, k, maxit, start)
 
-                start = time.monotonic()
-                compute_k_eigenvectors(data_list, k=k, maxit=maxit, u=u, filename=filename, choices=choice,
-                                       precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad, epsilon=epsilon, guo_epsilon=guo_epsilon)
-                end = time.monotonic()
-                log_time(logftime, 'guo_single' + '_' + mode, end - start, s, c)
+            #start = time.monotonic()
+            #compute_k_eigenvectors(data_list, k=k, maxit=maxit, u=u, filename=filename, choices=choice,
+            #                      precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
+            #                       epsilon=epsilon, guo_epsilon=guo_epsilon)
+            #end = time.monotonic()
+            #log_time(logftime, 'guo_single' + '_' + mode, end - start, s, c)
 
-                # Run Guo version
-                # Sequention
-                grad = True
-                grad_name = 'gradient'
-                print('gradient - sequential - '+ mode)
-                outdir_gradient = op.join(outdir, 'vector', str(s), grad_name, mode)
-                os.makedirs(outdir_gradient, exist_ok=True)
+            # Run Guo version
+            # Sequention
+            grad = True
+            grad_name = 'gradient'
+            mode = 'central_qr'
+            print('gradient - sequential - '+ mode)
+            outdir_gradient = op.join(outdir, 'vector', str(s), grad_name, mode, str(1))
+            os.makedirs(outdir_gradient, exist_ok=True)
 
-                filename = create_filename(outdir_gradient, dataset_name_guo + '_' + mode, s, c, k, maxit, start)
+            filename = create_filename(outdir_gradient, dataset_name_guo + '_' + mode, s, c, k, maxit, start)
 
-                start = time.monotonic()
-                compute_k_eigenvectors(data_list, k=k, maxit=maxit, u=u, filename=filename, choices=choice,
-                                       precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
-                                       epsilon=epsilon, guo_epsilon=guo_epsilon)
-                end = time.monotonic()
-                log_time(logftime, 'guo_single' + '_' + mode, end - start, s, c)
+            start = time.monotonic()
+            compute_k_eigenvectors(data_list, k=k, maxit=maxit, u=u, filename=filename, choices=choice,
+                                   precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
+                                   epsilon=epsilon, guo_epsilon=guo_epsilon)
+            end = time.monotonic()
+            log_time(logftime, 'guo_single' + '_' + mode, end - start, s, c)
 
-                logf = op.join(outdir, 'log_choices.log')
-                log_choices(logf, filename, choice)
+            logf = op.join(outdir, 'log_choices.log')
+            log_choices(logf, filename, choice)
 
             if horizontal:
                 start = time.monotonic()
@@ -482,6 +501,7 @@ if __name__ == '__main__':
     parser.add_argument('--unequal', default=None, type=str, help='split unequal, load split file')
     parser.add_argument('--vert', action='store_true', help='run vertical split test')
     parser.add_argument('--hor', action='store_true', help='run horizontal split test')
+    parser.add_argument('--ortho_freq',type=int, default=1, help='orthonormalisatio frequency for G')
     args = parser.parse_args()
 
     np.random.seed(95)
@@ -490,6 +510,7 @@ if __name__ == '__main__':
     filetype = args.filetype
     sep = args.sep
     k = args.k
+
     if args.names is None:
         dataset_name = os.path.basename(args.f)
     else:
@@ -514,6 +535,7 @@ if __name__ == '__main__':
     outdir = args.o
     scale = args.variance
     center = args.center
+    ortho_freq=args.ortho_freq
 
     print(outdir)
     nr_samples = 0
@@ -575,7 +597,7 @@ if __name__ == '__main__':
         vertical = op.join(outdir, 'vertical')
         os.makedirs(vertical, exist_ok=True)
         the_epic_loop(data=data, dataset_name=dataset_name, maxit=maxit, nr_repeats=nr_repeats, k=k, splits=splits,
-                      outdir=vertical, precomputed_pca=precomputed_pca, unequal=unequal)
+                      outdir=vertical, precomputed_pca=precomputed_pca, unequal=unequal, ortho_freq=ortho_freq)
 
     # horizontal test
     if args.hor:

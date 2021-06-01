@@ -13,7 +13,7 @@ $datapath/chr${e}/chr${e}.thin \
 --filetype 'gwas' --center -o $resultpath/chr${e} -r 10 -k 10 \
  -i 2000 --sep '\t' --header 0 --rownames 0 --names chr${e} --scale \
  --compare_pca $resultpath/chr${e}/plink/chr${e}.thin.eigenvec.values \
- --vert -s 2,5
+ --vert -s 5 --ortho_freq 100
 done
 echo "summaries"
 for e in {1..2} :

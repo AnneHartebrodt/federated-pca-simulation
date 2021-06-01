@@ -30,7 +30,7 @@ print(infile)
 data<-fread(infile)
 data[, 9]<-as.numeric(unlist(data[, 9]))
 
-summary<-data %>% group_by(iterations,orientation, matrix, sites, eigenvector_update, qr_method, rank) %>%
+summary<-data %>% group_by(iterations,orientation, matrix, sites, eigenvector_update, qr_method, orthonormalisation_skip, rank) %>%
         summarise(mean_value = mean(get(column)))
 summary<-as.data.table(summary)
 
@@ -38,10 +38,10 @@ fwrite(summary, outfile, sep='\t')
 
 ## tranform to wide format
 ## split into vertical and horizontal
-wide.vertical<-summary[orientation=='vertical'] %>% pivot_wider(id_cols = c(iterations, rank), names_from = c(matrix, sites, eigenvector_update, qr_method), values_from = mean_value)
+wide.vertical<-summary[orientation=='vertical'] %>% pivot_wider(id_cols = c(iterations, rank), names_from = c(matrix, sites, eigenvector_update, qr_method,orthonormalisation_skip), values_from = mean_value)
 wide.vertical<-as.data.table(wide.vertical)
 fwrite(wide.vertical, paste0('wide.vertical.', outfile), sep='\t')
-
+print('Done')
 
 #wide.hori<-summary[orientation=='horizontal'] %>% pivot_wider(id_cols = c(iterations, rank), names_from = c(matrix, sites, eigenvector_update, qr_method), values_from = mean_value)
 #wide.hori<-as.data.table(wide.hori)
