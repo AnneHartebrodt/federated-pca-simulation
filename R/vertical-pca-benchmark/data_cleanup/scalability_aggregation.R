@@ -18,7 +18,7 @@ option_list = list(
 opt = parse_args(OptionParser(option_list=option_list))
 
 scriptdir<-opt$scriptdir
-scriptdir<-'/home/anne/Documents/featurecloud/pca/federated_dp_pca/'
+#scriptdir<-'/home/anne/Documents/featurecloud/pca/federated_dp_pca/'
 source(file.path(scriptdir, "/R/vertical-pca-benchmark/data_cleanup/library.R"))
 
 
@@ -29,14 +29,14 @@ outfile<-opt$o
 print(basedir)
 
 
-basedir<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/scalability'
+#basedir<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results/scalability'
 
 data_orientation<-c('0.1','0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9')
 vector_or_subspace<-c('matrix', 'vector')
 nr_sites<- c(2,3,5,10)
 eigenvector_update<-c('power', 'gradient')
 qr_method<-c('central_qr', 'federated_qr')
-
+g_ortho<-c(1, 100)
 
 
 data <- read_all_files(basedir, 'transmission')
@@ -44,45 +44,47 @@ data<- rbindlist(data)
 
 
 ##
-colnames(data)<- c("operation","iteration","client","eigenvector","nr_floats","data_fraction","matrix","sites","eigenvector_update","qr_method","filename")
+colnames(data)<- c("operation","iteration","client","eigenvector","nr_floats","data_fraction","matrix","sites","eigenvector_update","qr_method", "orthonormalisation_skip","filename")
 
-summary <- data[client==1] %>% group_by(eigenvector, eigenvector_update, data_fraction, matrix, sites, qr_method, filename) %>% 
+summary <- data[client==1] %>% group_by(eigenvector, eigenvector_update, data_fraction, matrix, sites, qr_method, orthonormalisation_skip, filename) %>% 
   summarise(max_it = max(iteration), sum_nr_floats = sum(nr_floats))
 
-summary.ma <- as.data.table(summary)[matrix=='matrix'] %>% group_by(eigenvector_update, data_fraction, matrix, sites, qr_method, filename) %>% summarise(max_it = max_it, nr_float=sum(sum_nr_floats))
+summary.ma <- as.data.table(summary)[matrix=='matrix'] %>% group_by(eigenvector_update, data_fraction, matrix, sites, qr_method, orthonormalisation_skip, filename) %>% summarise(max_it = max_it, nr_float=sum(sum_nr_floats))
 
-sumsum<-summary %>% group_by(eigenvector_update, data_fraction, matrix, sites, qr_method, filename) %>% summarise(max_it = sum(max_it), nr_float=sum(sum_nr_floats))
-sumsum <- sumsum %>% group_by(eigenvector_update, data_fraction, matrix, sites, qr_method) %>% mutate(counter = row_number(matrix))
+sumsum<-summary %>% group_by(eigenvector_update, data_fraction, matrix, sites, qr_method, orthonormalisation_skip, filename) %>% summarise(max_it = sum(max_it), nr_float=sum(sum_nr_floats))
+sumsum <- sumsum %>% group_by(eigenvector_update, data_fraction, matrix, sites, orthonormalisation_skip, qr_method) %>% mutate(counter = row_number(matrix))
 sumsum<-as.data.table(sumsum)
+fwrite(sumsum, paste0('summary.', outfile), sep='\t')
 
-selection<-c("matrix_3_power_central_qr", "matrix_3_power_federated_qr","vector_3_gradient_central_qr")
+print('DONE')
+#selection<-c("matrix_3_power_central_qr", "matrix_3_power_federated_qr","vector_3_gradient_central_qr")
 
 
-wide.for.tikz<-sumsum %>% pivot_wider(id_cols = c(counter), names_from = c(matrix, sites, eigenvector_update, qr_method, data_fraction), values_from = c(max_it))
-wide.for.tikz<-as.data.table(wide.for.tikz)
-cols <- grep("matrix_3_power_central_qr|matrix_3_power_federated_qr|vector_3_gradient_central_qr", names(wide.for.tikz), value = TRUE)
-cols<-c('counter', cols)
-wide.for.tikz <- wide.for.tikz %>% select(cols)
-fwrite(wide.for.tikz, paste0('wide.tikz.iterations.', outfile), sep='\t')
+#wide.for.tikz<-sumsum %>% pivot_wider(id_cols = c(counter), names_from = c(matrix, sites, eigenvector_update, qr_method, data_fraction), values_from = c(max_it))
+#wide.for.tikz<-as.data.table(wide.for.tikz)
+#cols <- grep("matrix_3_power_central_qr|matrix_3_power_federated_qr|vector_3_gradient_central_qr", names(wide.for.tikz), value = TRUE)
+#cols<-c('counter', cols)
+#wide.for.tikz <- wide.for.tikz %>% select(cols)
+#fwrite(wide.for.tikz, paste0('wide.tikz.iterations.', outfile), sep='\t')
 
 # make a summary for the maximal iteration
-wide.maxit<-sumsum %>% pivot_wider(id_cols = c(data_fraction, counter), names_from = c(matrix, sites, eigenvector_update, qr_method), values_from = c(max_it))
-wide.maxit<-as.data.table(wide.maxit)
-long.maxit<-wide.maxit %>% pivot_longer(-data_fraction)
-long.maxit<-as.data.table(long.maxit)
-ggplot(long.maxit[name %in% selection], aes(as.factor(data_fraction), value, fill=name))+geom_boxplot()
+#wide.maxit<-sumsum %>% pivot_wider(id_cols = c(data_fraction, counter), names_from = c(matrix, sites, eigenvector_update, qr_method), values_from = c(max_it))
+#wide.maxit<-as.data.table(wide.maxit)
+#long.maxit<-wide.maxit %>% pivot_longer(-data_fraction)
+#long.maxit<-as.data.table(long.maxit)
+#ggplot(long.maxit[name %in% selection], aes(as.factor(data_fraction), value, fill=name))+geom_boxplot()
 
 
-wide.for.tikz<-sumsum %>% pivot_wider(id_cols = c(counter), names_from = c(matrix, sites, eigenvector_update, qr_method, data_fraction), values_from = c(nr_float))
-wide.for.tikz<-as.data.table(wide.for.tikz)
-cols <- grep("matrix_3_power_central_qr|matrix_3_power_federated_qr|vector_3_gradient_central_qr", names(wide.for.tikz), value = TRUE)
-cols<-c('counter', cols)
-wide.for.tikz <- wide.for.tikz %>% select(cols)
-fwrite(wide.for.tikz, paste0('wide.tikz.transmission.', outfile), sep='\t')
+#wide.for.tikz<-sumsum %>% pivot_wider(id_cols = c(counter), names_from = c(matrix, sites, eigenvector_update, qr_method, data_fraction), values_from = c(nr_float))
+#wide.for.tikz<-as.data.table(wide.for.tikz)
+#cols <- grep("matrix_3_power_central_qr|matrix_3_power_federated_qr|vector_3_gradient_central_qr", names(wide.for.tikz), value = TRUE)
+#cols<-c('counter', cols)
+#wide.for.tikz <- wide.for.tikz %>% select(cols)
+#fwrite(wide.for.tikz, paste0('wide.tikz.transmission.', outfile), sep='\t')
 
 # make a summary for the transmission cost
-wide.transmission<-sumsum %>% pivot_wider(id_cols = c(counter), names_from = c(matrix, sites, eigenvector_update, qr_method, data_fraction), values_from = c(nr_float))
-wide.transmission<-as.data.table(wide.transmission)
-long.transmission<-wide.transmission %>% pivot_longer(-data_fraction)
-long.transmission<-as.data.table(long.transmission)
-ggplot(long.transmission[name %in% selection], aes(as.factor(data_fraction), value, fill=name))+geom_boxplot()+scale_y_log10()
+#wide.transmission<-sumsum %>% pivot_wider(id_cols = c(counter), names_from = c(matrix, sites, eigenvector_update, qr_method, data_fraction), values_from = c(nr_float))
+#wide.transmission<-as.data.table(wide.transmission)
+#long.transmission<-wide.transmission %>% pivot_longer(-data_fraction)
+#long.transmission<-as.data.table(long.transmission)
+#ggplot(long.transmission[name %in% selection], aes(as.factor(data_fraction), value, fill=name))+geom_boxplot()+scale_y_log10()
