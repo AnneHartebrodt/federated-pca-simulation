@@ -86,7 +86,6 @@
           legend.position = 'none',
           legend.justification = c("right", "top"),
           legend.box.just = "right",
-          legend.box.background = element_rect(color = "black"),
           
           legend.title = element_blank(),
           panel.grid = element_blank(),
@@ -109,7 +108,6 @@
     theme(axis.line=element_line(),
           legend.position = 'none',
           strip.background = element_blank(),
-          legend.box.background = element_rect(color = "black"),
           panel.grid = element_blank(),
           axis.text = element_text(size=7),
           plot.margin=unit(c(-0.1,0.1,-0.1,0.1), "cm"))+
@@ -131,7 +129,6 @@
           strip.background = element_blank(),
           legend.position = 'bottom',
           legend.box.just = "right",
-          legend.box.background = element_rect(color = "black"),
           legend.title = element_blank(),
           panel.grid = element_blank(),
           axis.text = element_text(size=7),
@@ -143,6 +140,6 @@
   mnist.plot
   
   full.plot<- ggarrange(chr1.plot, chr2.plot, mnist.plot, nrow=3, common.legend=TRUE)
-  
-  ggsave(full.plot, filename = '/home/anne/Documents/featurecloud/pca/vertical-pca/figures/angles_mnist.pdf', width=20, height=10, units = 'cm')
+  full.plot
+  ggsave(full.plot, filename = '/home/anne/Documents/featurecloud/pca/vertical-pca/figures/angles_all.pdf', width=20, height=15, units = 'cm')
   
