@@ -13,7 +13,7 @@ def run_scalability_test(data, dataset_name,outdir):
             data_list, choices = sh.partition_data_vertically(data, splits=2, randomize=True, perc=[p, 1-p], equal=False)
             # run all algorithms once
             the_epic_loop(data=data_list[0], dataset_name=dataset_name, maxit=500, nr_repeats=1, k=10, splits=[3],
-                          outdir=od)
+                          outdir=od,ortho_freq=100)
 
 if __name__ == '__main__':
 
