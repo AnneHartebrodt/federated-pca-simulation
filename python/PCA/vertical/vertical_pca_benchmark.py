@@ -58,7 +58,7 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
     Returns: A column vector array containing the global eigenvectors
 
     """
-    print('Orthonormalisation frequency'+ str(ortho_freq))
+    #print('Orthonormalisation frequency'+ str(ortho_freq))
     G_list = []
     iterations = 0
     convergedH = False
@@ -225,6 +225,7 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
     for i in range(len(local_data)):
         G_list.append(G_i[start:start + local_data[i].shape[1], :])
         if log:
+            # Assume first matrix is generated at th server
             log_transmission(filename, "G_i=SC", iterations, i, G_list[i], id+1)
         if V_k is not None:
             Vk_list.append(V_k[start:start + local_data[i].shape[1], :])
@@ -304,6 +305,8 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
             for i in range(len(G_list)):
                 G_list[i] = G_list[i] / gi_norm
                 if log:
+                    # subsequent orthonormalisation at agrgegator
+                    # (only current G_i because rest is assumed to be stored at agrgegator)
                     log_transmission(filename, "ALT_G_i_local=CS", iterations, i, G_list[i], id+1)
                     log_transmission(filename, "ALT_G_i=SC", iterations, i, G_list[i], id+1)
 
@@ -446,6 +449,7 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, epsi
             # Run Guo version
             # Sequention
             grad = True
+            fedqr = False
             grad_name = 'gradient'
             mode = 'central_qr'
             print('gradient - sequential - '+ mode)
