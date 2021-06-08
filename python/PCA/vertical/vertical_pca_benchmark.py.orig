@@ -58,7 +58,11 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
     Returns: A column vector array containing the global eigenvectors
 
     """
+<<<<<<< HEAD
     print('Orthonormalisation frequency'+ str(g_ortho_freq))
+=======
+    #print('Orthonormalisation frequency'+ str(ortho_freq))
+>>>>>>> 6d87215ba74b2c562c0810795b0b4805de1606b3
     G_list = []
     iterations = 0
     convergedH = False
