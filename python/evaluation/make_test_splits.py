@@ -5,6 +5,7 @@ import numpy as np
 
 from python.import_export.mnist_import import load_mnist
 from python.import_export.spreadsheet_import import scale_center_data_columnwise
+
 def split_mnist():
     dirname = '/home/anne/Documents/featurecloud/dev/pca-tool/fed-pca-client/test_datasets/mnist'
     os.makedirs(dirname, exist_ok=True)
