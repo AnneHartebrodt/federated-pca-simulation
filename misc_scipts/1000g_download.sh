@@ -15,28 +15,28 @@ cd $datapath
 for e in {1..22} ; do
 # make chromosome result folder
 mkdir -p $resultpath/chr${e}/plink
-#wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
-#wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz.tbi
+wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
+wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz.tbi
 mkdir -p chr${e}
-#mv ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz chr${e}
-#mv ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz.tbi chr${e}
+mv ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz chr${e}
+mv ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz.tbi chr${e}
 # you are in data chromosome now
 cd chr${e}
-#$plink1path --vcf ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz --make-bed --out chr${e};
+$plink1path --vcf ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz --make-bed --out chr${e};
 # LD pruning with plink default values
 # change maf filtering to here.
-#$plink2path --bfile chr${e} --maf 0.01 --rm-dup exclude-all --make-bed --out chr${e}.rmdup
-#$plink2path --bfile chr${e}.rmdup --indep-pairwise 50 5 0.5 --out chr${e}.ld.indep;
+$plink2path --bfile chr${e} --maf 0.01 --rm-dup exclude-all --make-bed --out chr${e}.rmdup
+$plink2path --bfile chr${e}.rmdup --indep-pairwise 50 5 0.5 --out chr${e}.ld.indep;
 # downsampling to 100,000 SNPs for reasonable runtime.
 
 if [ ! -e "chr${e}.ld.indep.out" ] ; then
     touch "chr${e}.ld.indep.out"
 fi
 
-#$plink2path --bfile chr${e}.rmdup --exclude chr${e}.ld.indep.out --thin-count 100000 --make-bed --out chr${e}.thin;
+$plink2path --bfile chr${e}.rmdup --exclude chr${e}.ld.indep.out --thin-count 100000 --make-bed --out chr${e}.thin;
 
 #make a file that can be read as a spreadsheet for the pca runs
-#$plink1path --bfile chr${e}.thin --recode A-transpose --out chr${e}.thin
+$plink1path --bfile chr${e}.thin --recode A-transpose --out chr${e}.thin
 # cut the phenotypic information out.
 #cut -d$'\t' -f1-6 --complement chr${e}.thin.traw > chr${e}.thin.traw.values
 
