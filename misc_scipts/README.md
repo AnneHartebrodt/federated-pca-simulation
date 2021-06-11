@@ -20,10 +20,10 @@ cd federated_dp_pca
 conda env create -f ../environment.yml
 conda activate federated_dp_pca
 cd ..
-``
+```
 
 ## Get the data
-``
+```
 mkdir -p data/mnist/raw
 cd data/mnist/raw
 #wget http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
@@ -59,7 +59,7 @@ unzip plink2_linux_x86_64_20210608.zip
 plink1path=$basepath/software/plink
 plink2path=$basepath/software/plink2
 cd ..
-
+```
 
 ### Get the data
 ```
