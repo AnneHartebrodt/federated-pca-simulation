@@ -36,10 +36,7 @@ cd $basedir
 ## Run mnist test
 ```
 export PYTHONPATH=$PYTHONPATH:$scriptpath
-
 outfile=$basepath'/results/mnist'
-
-
 mkdir -p $outfile
 python3 $scriptpath/python/PCA/vertical/vertical_pca_benchmark.py -f $basepath'/data/mnist/raw' \
 --filetype 'mnist' --center -o $outfile -r 20 -k 10 \
@@ -80,11 +77,11 @@ bash $scriptpath/misc_scipts/run_tests_gwas.sh
 mkdir -p $basepath/figures
 Rscript $scriptpath/R/vertical-pca-benchmark/visualisation/iterations_vs_convergence.R -f '$outfile/1000g/chr1.tsv,$outfile/1000g/chr2.tsv,$outfile/mnist/long.dummy.angles.u.summary.tsv' \
  -o $basepath/figures/angles_all.pdf -n 'Chromosome 1,Chromosome 2,MNIST'
-
-# MNIST only
-#mkdir -p $basepath/figures
-#Rscript $scriptpath/R/vertical-pca-benchmark/visualisation/iterations_vs_convergence.R -f '$outfile/mnist/long.dummy.angles.u.summary.tsv' -o $basepath/figures/angles_all.pdf -n 'MNIST'
-
+```
+#### MNIST only
+```
+mkdir -p $basepath/figures
+Rscript $scriptpath/R/vertical-pca-benchmark/visualisation/iterations_vs_convergence.R -f '$outfile/mnist/long.dummy.angles.u.summary.tsv' -o $basepath/figures/angles_all.pdf -n 'MNIST'
 ```
 
 ## Run scalability tests
@@ -92,7 +89,7 @@ Rscript $scriptpath/R/vertical-pca-benchmark/visualisation/iterations_vs_converg
 outdir=$basepath'/results/scalability'
 mkdir -p $outdir
 indir=$basepath'/data/mnist/raw'
-#python3 $scriptpath/python/PCA/vertical/scalability.py -f $indir -o $outdir
+python3 $scriptpath/python/PCA/vertical/scalability.py -f $indir -o $outdir
 
 cd $outdir
 echo $scriptpath/R/vertical-pca-benchmark/data_cleanup/scalability_aggregation.R
