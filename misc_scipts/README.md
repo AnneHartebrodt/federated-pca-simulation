@@ -4,6 +4,10 @@ This is the workflow followed to benchmark federated vertically partitioned PCA.
 
 Careful: GWAS data can be large and some steps might not run (or at least not very fast) on a standard desktop computer. Since this is a simulation environment, the tests are repeated several times and therefore it will run several hours.
 
+If you want to read code for the simulation of federated vertically partitioned PCA, here is a nice simulation script: [Federated PCA](../python/PCA/vertical/simulate_federated_vertically_partionned_pca.py)
+
+There is also one for federated Gram Schmidt orthonormalisation: [Gram-Schmidt](../python/PCA/vertical/simulate_federated_qr_orthonormalisation.py)
+
 ## Create an environment
 ```
 basepath=$pwd/vertical-pca
