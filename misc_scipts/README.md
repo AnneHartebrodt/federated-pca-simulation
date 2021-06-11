@@ -1,9 +1,8 @@
 # Scripts for benchmark of vertically-federated Principal Component Analysis
 
-This is the workflow followed to benchmark federated vertically partitioned PCA. 
+This is the workflow followed to benchmark federated vertically partitioned PCA. Library code is available in the folder [vertical](../python/PCA/vertical) in this repository.
 
-Careful: GWAS data can be large and some steps might not run (or at least not very fast) on a standard desktop computer. Since this is a simulation environment, the tests are repeated several times and therefor it will run a while.
-
+Careful: GWAS data can be large and some steps might not run (or at least not very fast) on a standard desktop computer. Since this is a simulation environment, the tests are repeated several times and therefore it will run several hours.
 
 ## Create an environment
 ```
