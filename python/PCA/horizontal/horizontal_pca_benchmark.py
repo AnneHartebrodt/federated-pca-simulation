@@ -6,10 +6,15 @@ import scipy.sparse.linalg as lsa
 from python.PCA.logging import *
 import time
 import os.path as op
-
+import python.PCA.horizontal.horizontal_pca_power_iteration as h
+import python.PCA.horizontal.balcan as b
+import python.PCA.horizontal.bai as bai
+import python.PCA.horizontal.proxy_covariance as proxy
+import python.PCA.vertical.simulate_federated_vertically_partionned_pca as vertical
 import python.import_export.mnist_import as mi
 import python.PCA.shared_functions as sh
 from scipy.sparse.coo import coo_matrix
+
 import python.import_export.spreadsheet_import as si
 
 def read_presplit_data_folders(file_list, basedir):
@@ -39,16 +44,21 @@ def wrapper_k_variation(data_list, outdir_name, k,  min_factor_k=2, max_factor_k
     outdir = op.join(outdir_name, dataset_name)
     os.makedirs(outdir, exist_ok=True)
     filename = op.join(outdir, dataset_name+'_angles.tsv')
+    filename_sre = op.join(outdir, dataset_name+'_sre.tsv')
+
 
     for ik in range(min_factor_k, max_factor_k):
         u, s, precomputed_eigenvector = compute_canonical(data_list, k)
 
         # balcan version
-        print ('intermediate dimenions: '+ str(ik))
+        #print ('intermediate dimenions: '+ str(ik))
         xx, ee = b.simulate_federated_horizontal_pca(data_list, k=k, factor_k=ik)
         angles2 = co.compute_angles(xx, precomputed_eigenvector, reported_angles=k)
+        sre2 = co.subspace_reconstruction_error(np.concatenate(data_list, axis=0), xx)
         with open(filename, 'a') as handle:
             handle.write(cv.collapse_array_to_string(angles2, 'balcan\t'+str(ik)))
+        with open(filename_sre, 'a') as handle:
+            handle.write(cv.collapse_array_to_string(sre2, 'balcan\t'+str(ik)))
 
         # proxy covaraince
         sample_count = [d.shape[0] for d in data_list]
@@ -56,8 +66,12 @@ def wrapper_k_variation(data_list, outdir_name, k,  min_factor_k=2, max_factor_k
         xx, ee = proxy.simulate_federated_horizontal_pca_Qu(data_list, local_sums, sample_count,
                                                             k=k, k_factor=ik, weighted=False, qu=False)
         angles2 = co.compute_angles(xx, precomputed_eigenvector, reported_angles=k)
+        sre2 = co.subspace_reconstruction_error(np.concatenate(data_list, axis=0), xx)
+
         with open(filename, 'a') as handle:
             handle.write(cv.collapse_array_to_string(angles2, 'proxy\t'+str(ik)))
+        with open(filename_sre, 'a') as handle:
+            handle.write(cv.collapse_array_to_string(sre2, 'proxy\t'+str(ik)))
 
 
 
@@ -68,51 +82,73 @@ def wrapper(data_list, outdir_name, precomputed_eigenvector, k=20, dataset_name=
     os.makedirs(outdir, exist_ok=True)
     filename = op.join(outdir, dataset_name+'_angles.tsv')
     filename_iteration = op.join(outdir, dataset_name+'_iterations.tsv')
+    filename_sre = op.join(outdir, dataset_name+'_sre.tsv')
 
 
     # standard distributed power iteration
     x, e, count = h.simulate_distributed_horizontal(data_list, k, maxit=maxit)
     angles = co.compute_angles(x, precomputed_eigenvector)
+    sre = co.subspace_reconstruction_error(np.concatenate(data_list, axis=0), x)
     with open(filename, 'a') as handle:
         handle.write(cv.collapse_array_to_string(angles, 'power_iteration'))
     with open(filename_iteration, 'a') as handle:
         handle.write('power_iteration' +'\t' + str(count)+'\n')
+    with open(filename_sre, 'a') as handle:
+        handle.write(cv.collapse_array_to_string(sre, 'power_iteration\t' + str(count)))
 
     # balcan version
     xx, ee = b.simulate_federated_horizontal_pca(data_list, k)
     angles2 = co.compute_angles(xx, precomputed_eigenvector)
+    sre2 = co.subspace_reconstruction_error(np.concatenate(data_list, axis=0), xx)
+
     with open(filename, 'a') as handle:
         handle.write(cv.collapse_array_to_string(angles2, 'balcan_proxy'))
     with open(filename_iteration, 'a') as handle:
         handle.write('balcan_proxy' +'\t' + str(1)+'\n')
+    with open(filename_sre, 'a') as handle:
+        handle.write(cv.collapse_array_to_string(sre2, 'balcan_proxy\t' + str(1)))
 
+    # bal
     # vertical power iteration
     data_list_T = [d.T for d in data_list]
     u, s, vt, count = vertical.simulate_subspace_iteration(data_list_T, k, maxit=maxit)
     angles2 = co.compute_angles(vt, precomputed_eigenvector)
+    sre2 = co.subspace_reconstruction_error(np.concatenate(data_list, axis=0), vt)
+
     with open(filename, 'a') as handle:
         handle.write(cv.collapse_array_to_string(angles2, 'vertical_pca'))
     with open(filename_iteration, 'a') as handle:
         handle.write('vertical_pca' +'\t' + str(count)+'\n')
+    with open(filename_sre, 'a') as handle:
+        handle.write(cv.collapse_array_to_string(sre2, 'vertical_pca\t' + str(count)))
+
+    # bal
 
     #bai version
     u1, s1, v1 = bai.simulate_bai(data_list, k=k)
     angles3 = co.compute_angles(v1, precomputed_eigenvector)
+    sre3 = co.subspace_reconstruction_error(np.concatenate(data_list, axis=0), v1)
+
     with open(filename, 'a') as handle:
         handle.write(cv.collapse_array_to_string(angles3, 'bai_qr'))
     with open(filename_iteration, 'a') as handle:
         handle.write('bai_qr' +'\t' + str(1)+'\n')
+    with open(filename_sre, 'a') as handle:
+        handle.write(cv.collapse_array_to_string(sre3, 'bai_qr\t' + str(count)))
 
 
     local_sums = [np.sum(d, axis=0) for d in data_list]
     sample_count = [d.shape[0] for d in data_list]
     x4, e = proxy.simulate_federated_horizontal_pca_Qu(data_list, local_sums=local_sums, sample_count=sample_count, qu=False, k=k, weighted=False)
-    ang2 = co.compute_angles(x4, precomputed_eigenvector)
+    ang4 = co.compute_angles(x4, precomputed_eigenvector)
+    sre4 = co.subspace_reconstruction_error(np.concatenate(data_list, axis=0), x4)
+
     with open(filename, 'a') as handle:
-        handle.write(cv.collapse_array_to_string(ang2, 'proxy'))
+        handle.write(cv.collapse_array_to_string(ang4, 'proxy'))
     with open(filename_iteration, 'a') as handle:
         handle.write('proxy' + '\t' + str(1) + '\n')
-
+    with open(filename_sre, 'a') as handle:
+        handle.write(cv.collapse_array_to_string(sre4, 'proxy\t' + str(1)))
 
     # x4, e = proxy.simulate_federated_horizontal_pca_Qu(data_list, local_sums=local_sums, sample_count=sample_count, qu=False, k=k, weighted=True)
     # ang2 = co.compute_angles(x4, precomputed_eigenvector)
@@ -124,10 +160,15 @@ def wrapper(data_list, outdir_name, precomputed_eigenvector, k=20, dataset_name=
     # proxy covariance naive
     un, sn, vn = proxy.simulate_proxy_naive(data_list, k=k)
     ang3 = co.compute_angles(vn, precomputed_eigenvector)
+    sre3 = co.subspace_reconstruction_error(np.concatenate(data_list, axis=0), vn)
+
     with open(filename, 'a') as handle:
         handle.write(cv.collapse_array_to_string(ang3, 'proxy_naive'))
     with open(filename_iteration, 'a') as handle:
         handle.write('proxy_naive' + '\t' + str(1) + '\n')
+    with open(filename_sre, 'a') as handle:
+        handle.write(cv.collapse_array_to_string(sre3, 'proxy_naive\t' + str(1)))
+
 
 def wrapper_qi(data_list, outdir_name, precomputed_eigenvector, k=20, dataset_name="simulation", maxit=2000):
     # run power iteration benchmark
@@ -307,11 +348,6 @@ def save_scaled_data(datasets, data_dirs, outdir, basedir):
             print('File not found')
 
 if __name__ == '__main__':
-    import python.PCA.horizontal.horizontal_pca_power_iteration as h
-    import python.PCA.horizontal.balcan as b
-    import python.PCA.horizontal.bai as bai
-    import python.PCA.horizontal.proxy_covariance as proxy
-    import python.PCA.vertical.simulate_federated_vertically_partionned_pca as vertical
 
 
     outdir_presplit = '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/accuracy/pre_split'

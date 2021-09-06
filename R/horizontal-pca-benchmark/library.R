@@ -19,13 +19,32 @@ my_theme <-
     plot.subtitle = element_text(size = 10, hjust = 0.5),
     legend.key.size = unit(1.5, 'lines'))
 
-read_cancer_types<-function(outdir){
+read_cancer_types<-function(outdir, suffix='angles'){
   dirs<-list.files(outdir, no..=F)
   data_list<-list()
   for (d in dirs){
-    data<-fread(file.path(outdir,d, paste0(d, '_angles.tsv')), sep='\t', fill=TRUE)
+    data<-fread(file.path(outdir,d, paste0(d, '_', suffix,'.tsv')), sep='\t', fill=TRUE)
     
     colnames(data)<- c('algorithm', 1:(ncol(data)-1))
+    data$dataset<-d
+    data<- data %>% pivot_longer(-c(algorithm,dataset))
+    data<-as.data.table(data)
+    data_list[[d]]<-data
+  }
+  data <- rbindlist(data_list)
+  data<-data[!is.na(value)]
+  data$name<-as.factor(as.numeric(data$name))
+  return(data)
+}
+
+
+read_sre<-function(outdir, suffix='sre'){
+  dirs<-list.files(outdir, no..=F)
+  data_list<-list()
+  for (d in dirs){
+    data<-fread(file.path(outdir,d, paste0(d, '_', suffix,'.tsv')), sep='\t', fill=TRUE)
+    
+    colnames(data)<- c('algorithm', 'iterations',  1:(ncol(data)-2))
     data$dataset<-d
     data<- data %>% pivot_longer(-c(algorithm,dataset))
     data<-as.data.table(data)

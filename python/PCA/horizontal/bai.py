@@ -1,8 +1,6 @@
 import pandas as pd
 import scipy.sparse.linalg as lsa
-from python.PCA.vertical.vertical_pca_benchmark import *
 
-from python.PCA.horizontal.horizontal_pca_benchmark import read_presplit_data_folders, compute_canonical, scale_datasets
 def combine_subroutine(data_list):
     """ avoid as many QR factorisations as possible to
     reduce numerical issues."""
@@ -45,6 +43,7 @@ def simulate_bai(data_list, k=10):
 
 if __name__ == '__main__':
     from python.PCA.horizontal.horizontal_pca_benchmark import read_presplit_data_folders, compute_canonical,scale_datasets
+    from python.PCA.vertical.vertical_pca_benchmark import *
 
     # MNIST for reference
     data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
