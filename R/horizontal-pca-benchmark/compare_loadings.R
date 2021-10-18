@@ -16,14 +16,13 @@ my_theme <-
     plot.subtitle = element_text(size = 10, hjust = 0.5),
     legend.key.size = unit(1.5, 'lines'))
 
-top<-fread('/home/anne/Documents/featurecloud/pca/horizontal-pca/results/single-cell/overlap_top.tsv', header=T)
-low<-fread('/home/anne/Documents/featurecloud/pca/horizontal-pca/results/single-cell/overlap_bottom.tsv', header=T)
-low.paga <-fread('/home/anne/Documents/featurecloud/pca/horizontal-pca/results/single-cell/paga_overlap_bottom.tsv', header=T)
-top.paga<-fread('/home/anne/Documents/featurecloud/pca/horizontal-pca/results/single-cell/paga_overlap_top.tsv', header=T)
-
+top<-fread('/home/anne/Documents/featurecloud/pca/horizontal-pca/results/single-cell/overlap_top_s30.tsv', header=T)
+low<-fread('/home/anne/Documents/featurecloud/pca/horizontal-pca/results/single-cell/overlap_bottom_s30.tsv', header=T)
+top.40<-fread('/home/anne/Documents/featurecloud/pca/horizontal-pca/results/single-cell/overlap_top_s40.tsv', header=T)
+low.40<-fread('/home/anne/Documents/featurecloud/pca/horizontal-pca/results/single-cell/overlap_bottom_s40.tsv', header=T)
 require(dplyr)
 require(tidyr)
-df<-data.table(count = 1:nrow(top), PBMC.top=top$`0`, PBMC.low=low$`0`, PAUL.top = top.paga$`0`, PAUL.low = low.paga$`0`)
+df<-data.table(count = 1:nrow(top), PBMC.1.top=top$`0`, PBMC.1.low=low$`0`, PBMC.top = top.40$`0`, PBMC.low = low.40$`0`)
 df<- as.data.table(df %>% pivot_longer(-count))
 
 colnames(df)<- c('count', 'name', 'Genes')

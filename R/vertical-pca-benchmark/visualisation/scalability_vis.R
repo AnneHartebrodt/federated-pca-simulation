@@ -17,9 +17,9 @@ option_list = list(
 opt = parse_args(OptionParser(option_list=option_list))
 
 infile<-opt$infile
-# infile <- '/home/anne/Documents/featurecloud/pca/vertical-pca/results-new-tests/scalability/summary.transmission_cost.tsv'
+infile <- '/home/anne/Documents/featurecloud/pca/vertical-pca/results-new-tests/scalability/summary.transmission_cost.tsv'
 outfile<-opt$outfile
-#outfile<- '/home/anne/Documents/featurecloud/pca/vertical-pca/figures/transmission_cost.pdf'
+outfile<- '/home/anne/Documents/featurecloud/pca/vertical-pca/figures/transmission_cost.pdf'
 column<-opt$column
 print(infile)
 
@@ -46,14 +46,16 @@ cost<- ggplot(data, aes(as.factor(data_fraction), cost, fill=name_qr))+
       axis.text = element_text(size=6), 
       legend.title = element_blank(),
       title = element_text(size=8),
-      legend.text = element_text(size = 6))+
+      legend.text = element_text(size = 6),
+      ,
+      text=element_text(family = 'Arial'))+
   ylab('transmitted data volume in MB')+
   xlab('percentage of samples')+
   ggtitle('Estimated size of transmitted data')+
   scale_fill_manual(values = viridis(4)[1:3])+ guides(color=guide_legend(keyheight = 0.6, title = element_text('Configuration', size = 8)))
 cost
 
-ggsave(cost, filename = outfile , height = 6, units = 'cm', width = 10)
+ggsave(cost, filename = outfile , height = 6, units = 'cm', width = 10, device = cairo_pdf)
 
 iterations <-ggplot(data, aes(as.factor(data_fraction), max_it, fill=name_qr))+
   geom_boxplot()+

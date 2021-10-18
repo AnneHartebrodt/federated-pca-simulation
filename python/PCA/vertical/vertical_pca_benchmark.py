@@ -46,7 +46,7 @@ from python.PCA.logging import *
 
 ####### MATRIX POWER ITERATION SCHEME #######
 def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, choices=None, precomputed_pca=None, fractev=1.0,
-                           federated_qr=False, v=None, gradient=True, epsilon=10e-9, log=True, g_ortho_freq=1):
+                           federated_qr=False, v=None, gradient=True, epsilon=10e-9, log=True, g_ortho_freq=1, g_init = None):
     """
     Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.
 
@@ -67,8 +67,13 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
     for d in local_data:
         total_len = total_len + d.shape[1]
     start = 0
-    G_i = sh.generate_random_gaussian(total_len, k)
-    G_i, R = la.qr(G_i, mode='economic')
+
+    if g_init is None:
+        G_i = sh.generate_random_gaussian(total_len, k)
+        G_i, R = la.qr(G_i, mode='economic')
+    else:
+        G_i = g_init
+        iterations = 1
 
     # send parts to local sites
     for i in range(len(local_data)):

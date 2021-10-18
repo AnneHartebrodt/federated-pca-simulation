@@ -80,17 +80,17 @@ data_all<-rbind(data_all, data3)
 
 my_theme <-
   theme_classic() + theme(
-    axis.title = element_text(size = 12),
+    axis.title = element_text(size = 9),
     legend.title = element_text(size = 12),
     plot.title = element_text(size = 22, hjust = 0.5),
-    axis.text.x = element_text(size = 12),
-    axis.text.y = element_text(size = 12),
+    axis.text.x = element_text(size = 9),
+    axis.text.y = element_text(size = 9),
     strip.text = element_text(size = 9),
-    legend.text = element_text(size = 12),
+    legend.text = element_text(size = 9),
     plot.subtitle = element_text(size = 12, hjust = 0.5),
     legend.key.size = unit(1, 'lines'))
 
-comparison<- ggplot(data_all[name %in% paste0('', 1:19)], aes(name, value, fill=as.factor(algorithm)))+
+comparison<- ggplot(data_all[name %in% paste0('', 1:10) &algorithm!='Vertical power iteration'], aes(name, value, fill=as.factor(algorithm)))+
   geom_boxplot(outlier.size = 0.5)+
   xlab('Eigenvalue rank')+
   scale_shape_manual(values=c(1, 8))+
@@ -104,7 +104,7 @@ comparison<- ggplot(data_all[name %in% paste0('', 1:19)], aes(name, value, fill=
 
 comparison
 
-ggsave(comparison, file='/home/anne/Documents/manuscripts/TCBB/horizontal-pca/figures/comparison_angles_all_methods.pdf', width = 20, height = 10, units = 'cm')
+ggsave(comparison, file='/home/anne/Documents/manuscripts/horizontal-pca/figures/comparison_angles_all_methods.pdf', width = 20, height = 10, units = 'cm')
 
 
 mn<-data1[dataset=='mnist' & name %in% paste0('', 1:10)]
@@ -169,7 +169,7 @@ my_theme <-
     plot.subtitle = element_text(size = 24, hjust = 0.5),
     legend.key.size = unit(2, 'lines'))
 
-cost<- ggplot(runstats,  aes(iterations,as.factor(algorithm), fill=experiment))+
+cost<- ggplot(runstats[algorithm!='Vertical power iteration'],  aes(iterations,as.factor(algorithm), fill=experiment))+
   geom_boxplot()+
   my_theme +
   scale_fill_manual('Experiment', values = palette_div[c(2,5,8)])+
@@ -178,6 +178,6 @@ cost<- ggplot(runstats,  aes(iterations,as.factor(algorithm), fill=experiment))+
   facet_wrap(~score)
 cost
 
-ggsave(cost, file='/home/anne/Documents/manuscripts/TCBB/horizontal-pca//figures/comparison_iterations_and_cost_all_methods.pdf', width = 20, height = 10, units = 'cm')
+ggsave(cost, file='/home/anne/Documents/manuscripts/horizontal-pca//figures/comparison_iterations_and_cost_all_methods.pdf', width = 20, height = 10, units = 'cm')
 
 

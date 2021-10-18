@@ -47,7 +47,7 @@ def simulate_federated_qr(local_data):
 
     alist = []
     ortho = []
-    sum = 0
+    sum = 1e-16
 
     # Compute first squared eigenvector norm
     for d in range(len(local_data)):
@@ -74,7 +74,7 @@ def simulate_federated_qr(local_data):
             o = ortho[di]
             # eigenvector norms
             nn = norms[di]
-            n = nn
+            n = nn + 1e-16
             sum = 0
             # iterate over the local data sets
             # combined with the local eigenvector snippets
@@ -102,7 +102,7 @@ def simulate_federated_qr(local_data):
             se = np.dot(ap, ap)
             norm = norm + se
             aplist.append(ap)
-        norms.append(norm)
+        norms.append(norm+1e-15)
         ortho.append(aplist)
 
     G_list = []
@@ -112,6 +112,7 @@ def simulate_federated_qr(local_data):
         oo = []
         for i in range(len(ortho)):
             # norms are still squared
+            print(i)
             oo.append(ortho[i][d] / np.sqrt(norms[i]))
         oo = np.stack(oo, axis = 1)
         G_list.append(oo)
