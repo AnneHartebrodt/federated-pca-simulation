@@ -45,24 +45,33 @@ def simulate_federated_qr(local_data):
 
     """
 
-    alist = []
+    aplist = []
     ortho = []
     sum = 1e-16
 
+    glist = []
+    r = np.zeros((local_data[0].shape[1], local_data[0].shape[1]))
+    rl = [np.zeros((local_data[0].shape[1], local_data[0].shape[1])) for d in local_data]
     # Compute first squared eigenvector norm
     for d in range(len(local_data)):
         se = np.dot(local_data[d][:, 0], local_data[d][:,0])
         sum = sum+se
-        alist.append(local_data[d][:,0])
-    ortho.append(alist)
-
+        aplist.append(local_data[d][:,0])
+    ortho.append(aplist)
 
     # ortho [eigenvector rank] [data set]
     # list of lists containing the already
     #  orthogonal eigenvectors
     norms = [sum]
     # iterate over the eigenvectors
+
     for i in range(1,local_data[0].shape[1]):
+        glist.append([a / np.sqrt(norms[i-1]) for a in aplist])
+        for j in range(i):
+            for d in range(len(local_data)):
+                ind = i-1
+                r[j, ind] = r[j, ind] + np.dot(local_data[d][:, ind], glist[j][d])
+                rl[d][j, ind] = np.dot(local_data[d][:, ind], glist[j][d])
         # conorms we want to calculate
         sums = []
         aplist = []
@@ -105,6 +114,13 @@ def simulate_federated_qr(local_data):
         norms.append(norm+1e-15)
         ortho.append(aplist)
 
+    i = local_data[0].shape[1]
+    ind = i - 1
+    glist.append([a /  np.sqrt(norms[i-1]) for a in aplist])
+    for d in range(len(local_data)):
+        for j in range(i):
+            r[j, ind] = r[j, ind] + np.dot(local_data[d][:, ind], glist[j][d])
+            rl[d][j, ind] = np.dot(local_data[d][:, ind], glist[j][d])
     G_list = []
 
     # normalise the vector norms to unit norm.
@@ -112,22 +128,41 @@ def simulate_federated_qr(local_data):
         oo = []
         for i in range(len(ortho)):
             # norms are still squared
-            print(i)
             oo.append(ortho[i][d] / np.sqrt(norms[i]))
         oo = np.stack(oo, axis = 1)
         G_list.append(oo)
 
     # just for convenience stack the data
     ortho = np.concatenate(G_list, axis=0)
-    return ortho, G_list
+    #r = computeR(local_data, G_list)
+    return ortho, G_list, r, rl
+
+def computeR(data_list, q_list):
+    for a in range(data_list[0].shape[1]):
+        for e in range(q_list[0].shape[1]):
+            for d,g in zip(data_list, q_list):
+                r[e,a] = r[e,a] + np.dot(d[:, a], g[:,e])
+    return r
 
 
 if __name__ == '__main__':
 
-
-    data = sh.generate_random_gaussian(50000, 10)
+    import scipy.sparse.linalg as lsa
+    data = sh.generate_random_gaussian(500, 10)
     q, r = la.qr(data, mode='economic')
     data_list, choice = sh.partition_data_horizontally(data, 3)
-    ortho, G_list = simulate_federated_qr(data_list)
+    ortho, G_list, r2, rl = simulate_federated_qr(data_list)
     angles = co.compute_angles(q, ortho)
+    angles2 = co.compute_angles(r, r2)
     print(angles)
+    np.sum(np.abs(r2)-np.abs(r))
+
+    uu, ss, vv = lsa.svds(data, k=9)
+    vv = np.flip(vv.T, axis=1)
+    uu = np.flip(uu, axis=1)
+    np.sum(np.abs(r) - np.abs(r2))
+
+    u,s,v = lsa.svds(rl[0])
+    uu, ss, vv = lsa.svds(data_list[0])
+
+    co.compute_angles(vv,v)

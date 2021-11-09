@@ -27,6 +27,7 @@
 ##########################################################################################
 
 import numpy as np
+import pandas as pd
 import scipy.sparse.linalg as lsa
 import scipy.linalg as la
 from scipy.sparse import coo_matrix
@@ -112,11 +113,11 @@ def simulate_subspace_iteration(local_data, k, maxit, federated_qr=False,epsilon
         for col in range(G_i.shape[1]):
             eigenvals.append(np.linalg.norm(G_i[:, col]))
 
-        if iterations % 10 == 0:
-            if federated_qr:
-                G_i, G_list = qr.simulate_federated_qr(G_list)
-            else:
-                G_i, R = la.qr(G_i, mode='economic')
+        # if iterations % 10 == 0:
+        #     if federated_qr:
+        #         G_i, G_list, r, rl = qr.simulate_federated_qr(G_list)
+        #     else:
+        #         G_i, R = la.qr(G_i, mode='economic')
 
         # check convergence
         converged, delta = sh.eigenvector_convergence_checker(H_i, H_i_prev, tolerance=epsilon)
@@ -130,14 +131,16 @@ def simulate_subspace_iteration(local_data, k, maxit, federated_qr=False,epsilon
 
 if __name__ == '__main__':
 
-    path = '/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw'
-    data, test_lables = mi.load_mnist(path, 'train')
-    data = coo_matrix.asfptype(data)
+    path = '~/Documents/featurecloud/test-environment/controller/data/app_test/data/11/data.tsv'
+    #data, test_lables = mi.load_mnist(path, 'train')
+    #data = coo_matrix.asfptype(data)
+
+    data = pd.read_csv(path, sep='\t').values
     # Transpose data such, that
     data = si.scale_center_data_columnwise(data)
     data = data.T
 
-    u, s, v = lsa.svds(data, k=10)
+    u, s, v = lsa.svds(data, k=9)
 
     v = np.flip(v.T, axis = 1)
 
