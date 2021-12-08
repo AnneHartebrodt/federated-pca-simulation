@@ -2,23 +2,22 @@ import pandas as pd
 import scipy.sparse.linalg as lsa
 from python.PCA.vertical.vertical_pca_benchmark import *
 
-from python.PCA.horizontal.horizontal_pca_benchmark import read_presplit_data_folders, compute_canonical, scale_datasets
-def combine_subroutine(data_list):
+
+def combine_subroutine(data_list, m_list):
     """ avoid as many QR factorisations as possible to
     reduce numerical issues."""
     i = 0
     qr_list = []
-    while i < len(data_list)-1:
+    for d, m in zip(data_list, m_list):
         print('hello')
-        q, r = la.qr(data_list[i], mode='economic')
-        qi, ri = la.qr(data_list[i + 1], mode='economic')
-        q, r = la.qr(np.concatenate([r, ri], axis=0), mode='economic')
+        q, r = la.qr(d, mode='economic')
+        m = np.atleast_2d(np.nanmean(data, axis=0))
+        #r = np.concatenate([r, m], axis=0)
         qr_list.append(r)
-        i = i + 2
-    if len(data_list) % 2 == 1:
-        qr_list.append(data_list[len(data_list)-1])
-    return qr_list
+    g, gl, r, rl = simulate_federated_qr(qr_list)
+    return r
 
+from python.PCA.vertical.simulate_federated_qr_orthonormalisation import simulate_federated_qr
 def simulate_bai(data_list, k=10):
 
     local_sums = [np.sum(d, axis=0) for d in data_list]
@@ -28,23 +27,20 @@ def simulate_bai(data_list, k=10):
     global_means = np.sum(local_sums, axis=0)
     global_means = global_means/(sum(sample_count))
 
-    m = [np.sqrt(sample_count[i])* local_means[i]-global_means[i] for i in range(len(sample_count))]
-    l = len(data_list)
+    m = [np.sqrt(sample_count[i])* (local_means[i]-global_means[i]) for i in range(len(sample_count))]
 
-    qr_list = data_list
-    while l > 1:
-        qr_list = combine_subroutine(qr_list)
-        l = len(qr_list)
-
-    r= qr_list[0]
-    q, r = la.qr(np.concatenate([m, r], axis=0), mode='economic')
+    r= combine_subroutine(data_list, m)
     u, s, v = lsa.svds(r, k=k)
     v = np.flip(v.T, axis=1)
     s = np.flip(s)
-    return u, s, v
+    u = np.flip(u)
+    ul = [np.dot(d,v) for d in data_list]
+    return ul, s, v
+
 
 if __name__ == '__main__':
     from python.PCA.horizontal.horizontal_pca_benchmark import read_presplit_data_folders, compute_canonical,scale_datasets
+
 
     # MNIST for reference
     data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
@@ -52,10 +48,8 @@ if __name__ == '__main__':
     data = coo_matrix.asfptype(data)
     data = si.scale_center_data_columnwise(data, center=True, scale_variance=False)
     data_list, choices = sh.partition_data_horizontally(data, splits=4, randomize=False)
-    u, s,v = simulate_bai(data_list, k=10)
-
+    u, s, v = simulate_bai(data_list, k=10)
     data = np.concatenate(data_list, axis=0)
-    #data = si.scale_center_data_columnwise(data, center=True)
     uu, ss, vv = lsa.svds(data, k=10)
     vv = np.flip(vv.T, axis=1)
     ang = co.compute_angles(vv, v)

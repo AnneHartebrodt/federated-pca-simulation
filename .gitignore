@@ -107,3 +107,5 @@ venv.bak/
 /federated-qn/connexion-example
 
 .Rhistory
+/python/sandbox/cache
+/python/sandbox/data

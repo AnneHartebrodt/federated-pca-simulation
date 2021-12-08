@@ -22,8 +22,8 @@ def create_filename(outdir, dataset_name, splits, counter, k, maxit, time):
     return fn
 
 
-def log_current_accuracy(u, G_i, eigenvals, conv, current_iteration, filename, choices, precomputed_pca=None,
-                         current_ev=None, gi_delta_obj=None, v=None, H_i=None):
+def log_current_accuracy(u, G_i, current_iteration, filename, choices=None, precomputed_pca=None,
+                         current_ev=None, gi_delta_obj=None, v=None, H_i=None, eigenvals=None, conv=None,):
     """
     Log the current iterations angle to the canonical
     Args:
@@ -59,10 +59,10 @@ def log_current_accuracy(u, G_i, eigenvals, conv, current_iteration, filename, c
             if angles is not None and len(angles) > 0:
                 info = cv.collapse_array_to_string(angles, info_string)
                 handle.write(info)
-
-    with open(filename + '.eigenval', 'a+') as handle:
-        info = cv.collapse_array_to_string(eigenvals, info_string)
-        handle.write(info)
+    if eigenvals is not None:
+        with open(filename + '.eigenval', 'a+') as handle:
+            info = cv.collapse_array_to_string(eigenvals, info_string)
+            handle.write(info)
 
     if conv is not None:
         with open(filename + '.conv', 'a+') as handle:

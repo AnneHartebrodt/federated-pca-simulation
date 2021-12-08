@@ -11,7 +11,7 @@ def svd_sub(data, ndims):
     # covariance matrix is positive semi definite so SVD= Eigenvalue decomposition
     # print(nd)
     nd = min(min(data.shape[1] - 1, data.shape[0] - 1), ndims)
-    print(nd)
+    #print(nd)
     u, s, v = lsa.svds(data, k=nd)
     # Sparse returns eigenvalues in ascending order
     s = np.flip(s)

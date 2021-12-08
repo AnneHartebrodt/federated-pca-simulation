@@ -29,7 +29,7 @@ ou<-lapply(3:6, function (m) data.table(ol=unique(as.numeric(unlist(apply(x[,1:1
 ou<-rbindlist(ou)
 ou[, count:=.N, by=.(ol)]
 
-ou.names<-x[ou]$name
+ou.names<-x[ou$ol]$name
 ou<-data.table(name = ou.names, method = 'mad')
 ol$method<-'angle'
 ol1<-right_join(ol, ou, by= c('algorithm'='name'))
@@ -44,8 +44,8 @@ g<-ggplot(x, aes(PC1, PC2, col=as.factor(tss), shape=tss))+
   scale_shape_manual(name = 'TSS',values = c(1:40))+
   guides(color=guide_legend(ncol=3))+theme(legend.key.size = unit(5, 'mm'), 
                                            legend.title = element_text(size = 10))+
-  geom_label_repel(data = subset(x, name %in% ol1$algorithm),
-                   aes(label=id, fill=ol1$col), size=2)+
+  geom_label_repel(data = subset(x, name %in% ol$algorithm),
+                   aes(label=id, fill=ol$col), size=2)+
   scale_fill_manual("Outlier\nidentification", values = c('#fde600','#fffac5','#fcf27e' ))
 
 
