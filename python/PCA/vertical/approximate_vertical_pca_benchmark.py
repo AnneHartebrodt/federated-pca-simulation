@@ -66,6 +66,45 @@ def benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k,
             fedqr = False
 
             # # # simulate the run
+            start = time.monotonic()
+            print('test')
+            mode = 'randomized-1'
+            outdir_approx = op.join(outdir, 'matrix', str(s), grad_name, mode, str(ortho_freq))
+            os.makedirs(outdir_approx, exist_ok=True)
+            filename = create_filename(outdir_approx, dataset_name + '_' + mode, s, c, k, maxit, start)
+
+            run_randomized(data_list, k, I=10, maxit=maxit, u=u, filename=filename, choices=choice,
+                           precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
+                           epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=None)
+            end = time.monotonic()
+            log_time(logftime, 'qr_scheme' + '_' + mode, end - start, s, c)
+            print(mode + ' ' + str(end - start))
+            start = time.monotonic()
+            print('test')
+            mode = 'randomized-2'
+            outdir_approx = op.join(outdir, 'matrix', str(s), grad_name, mode, str(ortho_freq))
+            os.makedirs(outdir_approx, exist_ok=True)
+            filename = create_filename(outdir_approx, dataset_name + '_' + mode, s, c, k, maxit, start)
+
+            run_randomized(data_list, k, I=10, maxit=maxit, u=u, filename=filename, choices=choice,
+                           precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
+                           epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=None)
+            end = time.monotonic()
+            log_time(logftime, 'qr_scheme' + '_' + mode, end - start, s, c)
+            print(mode + ' ' + str(end - start))
+            start = time.monotonic()
+            print('test')
+            mode = 'randomized-3'
+            outdir_approx = op.join(outdir, 'matrix', str(s), grad_name, mode, str(ortho_freq))
+            os.makedirs(outdir_approx, exist_ok=True)
+            filename = create_filename(outdir_approx, dataset_name + '_' + mode, s, c, k, maxit, start)
+
+            run_randomized(data_list, k, I=10, maxit=maxit, u=u, filename=filename, choices=choice,
+                           precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
+                           epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=None, use_approximate=False)
+            end = time.monotonic()
+            log_time(logftime, 'qr_scheme' + '_' + mode, end - start, s, c)
+            print(mode + ' ' + str(end - start))
 
             print('power - matrix - ' + mode)
             outdir_gradient = op.join(outdir, 'matrix', str(s), grad_name, mode, str(ortho_freq))
@@ -149,44 +188,7 @@ def benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k,
             end = time.monotonic()
             log_time(logftime, 'qr_scheme' + '_' + mode, end - start, s, c)
             print(mode + ' ' + str(end - start))
-            start = time.monotonic()
-            print('test')
-            mode = 'randomized-1'
-            outdir_approx = op.join(outdir, 'matrix', str(s), grad_name, mode, str(ortho_freq))
-            os.makedirs(outdir_approx, exist_ok=True)
-            filename = create_filename(outdir_approx, dataset_name + '_' + mode, s, c, k, maxit, start)
 
-            run_randomized(data_list, k, I=10, maxit=maxit, u=u, filename=filename, choices=choice,
-                                        precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
-                                        epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=None)
-            end = time.monotonic()
-            log_time(logftime, 'qr_scheme' + '_' + mode, end - start, s, c)
-            print(mode + ' ' + str(end - start))
-            start = time.monotonic()
-            print('test')
-            mode = 'randomized-2'
-            outdir_approx = op.join(outdir, 'matrix', str(s), grad_name, mode, str(ortho_freq))
-            os.makedirs(outdir_approx, exist_ok=True)
-            filename = create_filename(outdir_approx, dataset_name + '_' + mode, s, c, k, maxit, start)
-
-            run_randomized(data_list, k, I=10, maxit=maxit, u=u, filename=filename, choices=choice,
-                           precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
-                           epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=None)
-            end = time.monotonic()
-            log_time(logftime, 'qr_scheme' + '_' + mode, end - start, s, c)
-            print(mode + ' ' + str(end - start))
-            start = time.monotonic()
-            print('test')
-            mode = 'randomized-3'
-            outdir_approx = op.join(outdir, 'matrix', str(s), grad_name, mode, str(ortho_freq))
-            os.makedirs(outdir_approx, exist_ok=True)
-            filename = create_filename(outdir_approx, dataset_name + '_' + mode, s, c, k, maxit, start)
-
-            run_randomized(data_list, k, I=10, maxit=maxit, u=u, filename=filename, choices=choice,
-                           precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
-                           epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=None, use_approximate=False)
-            end = time.monotonic()
-            log_time(logftime, 'qr_scheme' + '_' + mode, end - start, s, c)
             #
 
 
