@@ -1,7 +1,7 @@
 gwaspath=$1
 export PYTHONPATH=$PYTHONPATH:$gwaspath/federated_dp_pca
 echo $PYTHONPATH
-conda activate federated-pca
+#conda activate federated-pca
 datapath=$gwaspath/data/1000g/raw
 resultpath=$gwaspath/results/1000g
 
