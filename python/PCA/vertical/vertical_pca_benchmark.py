@@ -100,6 +100,7 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
     while not convergedH and iterations < maxit and len(converged_eigenvals) < k * fractev:
         iterations = iterations + 1
         print(iterations)
+        t = time.monotonic()
         # add up the H matrices
         H_i = np.zeros((local_data[0].shape[0], k))
         for i in range(len(local_data)):
@@ -115,7 +116,8 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
 
         # free orthonormalisation in terms of transmission cost
         H_i, R = la.qr(H_i, mode='economic')
-
+        tt = time.monotonic()
+        print(t-tt)
         # Eigenvector update
         for i in range(len(G_list)):
             # Use gradient based update of the Eigenvectors
@@ -153,8 +155,12 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
         #             start = start + local_data[i].shape[1]
         #     else:
         #         # This logs into the same file
+        t = time.monotonic()
+        print(tt-t)
         G_i, G_list = qr.simulate_federated_qr(G_list, encrypt=False, filename=filename, repeat=iterations, log=log)
 
+        tt = time.monotonic()
+        print(t - tt)
         # G_i, R = la.qr(G_i, mode='economic')
         convergedH, deltaH = sh.eigenvector_convergence_checker(H_i, H_i_prev, tolerance=epsilon)
         # use guos convergence criterion for comparison
