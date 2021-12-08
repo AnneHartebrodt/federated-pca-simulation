@@ -46,7 +46,8 @@ from python.PCA.logging import *
 
 ####### MATRIX POWER ITERATION SCHEME #######
 def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, choices=None, precomputed_pca=None, fractev=1.0,
-                           federated_qr=False, v=None, gradient=True, epsilon=10e-9, log=True, g_ortho_freq=1, g_init = None):
+                           federated_qr=False, v=None, gradient=True, epsilon=10e-9, log=True, g_ortho_freq=1, g_init = None,
+                                previous_iterations=None):
     """
     Simulate a federated run of principal component analysis using Guo et als algorithm in a modified version.
 
@@ -60,7 +61,8 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
     """
     print('Orthonormalisation frequency'+ str(g_ortho_freq))
     G_list = []
-    iterations = 0
+
+
     convergedH = False
     total_len = 0
     # generate an intitial  orthogonal noise matrix
@@ -71,9 +73,13 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
     if g_init is None:
         G_i = sh.generate_random_gaussian(total_len, k)
         G_i, R = la.qr(G_i, mode='economic')
+        iterations = 0
     else:
         G_i = g_init
         iterations = 1
+
+    if previous_iterations is not None:
+        iterations = previous_iterations
 
     # send parts to local sites
     for i in range(len(local_data)):
@@ -86,6 +92,7 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
     H_i_prev = sh.generate_random_gaussian(local_data[0].shape[0], k)
     G_i_prev = G_i
     converged_eigenvals = []
+    H_stack = []
     eigenvals_prev = None
     # Convergence can be reached when eigenvectors have converged, the maximal number of
     # iterations is reached or a predetermined number of eignevectors have converged.
@@ -130,23 +137,24 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
         eigenvals_prev = eigenvals
 
         # sporadic orthonormalisation
-        if iterations % g_ortho_freq == 0:
-            print('Current iteration='+str(iterations))
-            if not federated_qr:
-                # Centralised QR, just send the eigenvectors to the aggregator and orthonormalise
-                # Concatenation happend
-                G_i, R = la.qr(G_i, mode='economic')
-                start = 0
-                # redistribute
-                for i in range(len(G_list)):
-                    G_list[i] = G_i[start:start + local_data[i].shape[1], :]
-                    if log:
-                        log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
-                    start = start + local_data[i].shape[1]
-            else:
-                # This logs into the same file
-                G_i, G_list = qr.simulate_federated_qr(G_list, encrypt=False, filename=filename, repeat=iterations, log=log)
+        # if iterations % g_ortho_freq == 0:
+        #     print('Current iteration='+str(iterations))
+        #     if not federated_qr:
+        #         # Centralised QR, just send the eigenvectors to the aggregator and orthonormalise
+        #         # Concatenation happend
+        #         G_i, R = la.qr(G_i, mode='economic')
+        #         start = 0
+        #         # redistribute
+        #         for i in range(len(G_list)):
+        #             G_list[i] = G_i[start:start + local_data[i].shape[1], :]
+        #             if log:
+        #                 log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
+        #             start = start + local_data[i].shape[1]
+        #     else:
+        #         # This logs into the same file
+        G_i, G_list = qr.simulate_federated_qr(G_list, encrypt=False, filename=filename, repeat=iterations, log=log)
 
+        # G_i, R = la.qr(G_i, mode='economic')
         convergedH, deltaH = sh.eigenvector_convergence_checker(H_i, H_i_prev, tolerance=epsilon)
         # use guos convergence criterion for comparison
         #convergedH, deltaH = sh.convergence_checker_rayleigh(H_i, H_i_prev, eigenvals, eigenvals_prev, epsilon=1e-11)
@@ -154,15 +162,13 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
         convergedG, deltaG = sh.eigenvector_convergence_checker(G_i, G_i_prev, tolerance=epsilon)
         H_i_prev = H_i
         G_i_prev = G_i
-        log_current_accuracy(u=u, G_i=G_i, eigenvals=eigenvals, conv=deltaH, current_iteration=iterations,
-                             filename=filename, choices=choices, precomputed_pca=precomputed_pca,
-                             gi_delta_obj=deltaG, v=v, H_i=H_i)
-    G_i = np.concatenate(G_list)
-    print(iterations)
-    print(epsilon)
-    print(deltaH)
-    #print(eigenvals)
-    return G_i, eigenvals, converged_eigenvals, H_i
+        if iterations < 10:
+            H_stack.append(H_i)
+        if log:
+            log_current_accuracy(u=u, G_i=G_i, eigenvals=eigenvals, conv=deltaH, current_iteration=iterations,
+                                 filename=filename, choices=choices, precomputed_pca=precomputed_pca,
+                                 gi_delta_obj=deltaG, v=v, H_i=H_i)
+    return G_i, eigenvals, converged_eigenvals, H_i, H_stack, iterations, G_list
 
 
 ####### ORIGINAL POWER ITERATION SCHEME #######

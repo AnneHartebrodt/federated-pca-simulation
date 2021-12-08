@@ -366,8 +366,13 @@ if __name__ == '__main__':
     u, s, v = compute_canonical(data_list, k=20)
     wrapper(data_list, outdir_presplit, precomputed_eigenvector=v, k=k, dataset_name='mnist')
     wrapper_k_variation(data_list, outdir_k_var, k=k, min_factor_k=1, max_factor_k=5, dataset_name='mnist')
+    #basedir = '/home/anne/Documents/featurecloud/data/tcga/cancer_type/'
+    datasets = os.listdir(basedir)
+    data_dirs = [op.join(basedir, d, 'sites', 'data') for d in datasets]
 
-
+    # save scaled data
+    #save_scaled_data(datasets, data_dirs, outdir, basedir)
+    #
     # the real deal
     basedir = '/home/anne/Documents/featurecloud/data/tcga/cancer_type/'
     datasets = os.listdir(basedir)
