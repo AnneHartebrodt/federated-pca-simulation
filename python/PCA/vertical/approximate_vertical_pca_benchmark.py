@@ -360,7 +360,7 @@ def run_randomized_2(data_list, k, I,maxit, factor_k=2, filename=None, u=None, c
 
 if __name__ == '__main__':
     print('test')
-    local=False
+    local=True
     if local:
         start = time.monotonic()
         import pnumpy as pn

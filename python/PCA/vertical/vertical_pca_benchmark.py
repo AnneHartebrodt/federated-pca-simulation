@@ -68,6 +68,7 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
     # generate an intitial  orthogonal noise matrix
     for d in local_data:
         total_len = total_len + d.shape[1]
+        print(d.shape)
     start = 0
 
     if g_init is None:
