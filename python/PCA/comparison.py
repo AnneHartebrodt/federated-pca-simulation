@@ -53,7 +53,7 @@ def compute_angles(canonical, split, reported_angles=20):
     angles = list()
     for i in range(min(reported_angles, min(canonical.shape[1], split.shape[1]))):
         a = angle(canonical[:, i], split[:, i])
-        angles.append(a)
+        angles.append(np.around(a, 2))
     return angles
 
 def compute_correlations(canonical, split, reported_angles=20):
@@ -118,12 +118,11 @@ def subspace_reconstruction_error(data, eigenvectors):
     for i in range(eigenvectors.shape[1]):
         proj = np.dot(data, eigenvectors[:, 0:i])
         rec = np.dot(proj, eigenvectors[:, 0:i].T)
-        res.append(np.linalg.norm(data - rec))
+        res.append(np.round(np.linalg.norm(data - rec),2))
     return res
 
 def mev(u, truth):
     k = min(truth.shape[1], u.shape[1])  # number of eigenvectors in subspace
-    print(k)
     m = np.dot(u.T, truth)
     sum = 0
     for i in range(k):

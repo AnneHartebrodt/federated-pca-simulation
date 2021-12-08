@@ -77,29 +77,28 @@ def leek_the_sneaky_leaker(xl1, xl2, d,  dim):
 def leek_the_sneaky_leaker_with_loop(xl1, xl2, d,  dim):
     total_vars = 0
     a = []
-
     b = []
     i=0
     j=0
-    while total_vars < dim:
+    while total_vars < xl1[0].shape[1]*len(xl1):
         i = i % (len(xl2)-1)
-        j = j % (xl1[i].shape[1]-1)
+        if i==0:
+            j = j+1
+            j = j % (xl1[i].shape[1]-1)
         a.append(xl2[i][:, j])
         b.append(xl1[i][d, j])
         i = i+1
-        j = j+1
         total_vars = total_vars + 1
     a = np.stack(a, axis=0)
-    #print(a)
     print(a.shape)
     a = a[0:dim, :]
     b = np.array(b[0:dim])
     x = np.linalg.lstsq(a, b)
-    return x
+    return x[0]
 
 if __name__ == '__main__':
-    mat = np.random.random((90,43))
-    mat2 = np.random.random((90,43))
+    mat = np.random.random((90,10))
+    mat2 = np.random.random((90,10))
     l = [mat, mat2]
 
     u, s, vt = la.svd(np.concatenate(l, axis=0))
@@ -107,34 +106,61 @@ if __name__ == '__main__':
 
     v , e, coutn, xlist, x2list = simulate_distributed_horizontal(l, maxit=800)
 
-    dd = 43
-    x = leek_the_sneaky_leaker(xlist, x2list, d=0, dim=dd)
-    x1 = leek_the_sneaky_leaker(xlist, x2list, d=1, dim=dd)
-    x2 = leek_the_sneaky_leaker(xlist, x2list, d=2, dim=dd)
-    c1 = np.stack([x,x1,x2])
-    cov = np.dot(np.concatenate(l).T,np.concatenate(l))
-    xt = x.T
+    dd = 10
+    # x = leek_the_sneaky_leaker(xlist, x2list, d=0, dim=dd)
+    # x1 = leek_the_sneaky_leaker(xlist, x2list, d=1, dim=dd)
+    # x2 = leek_the_sneaky_leaker(xlist, x2list, d=2, dim=dd)
+    # c1 = np.stack([x,x1,x2])
+    # cov = np.dot(np.concatenate(l).T,np.concatenate(l))
+    # xt = x.T
 
-    l = []
+    ll = []
+    dd = 10
     for d in range(dd):
         x = leek_the_sneaky_leaker_with_loop(xlist, x2list, d=d, dim=dd)
-        l.append(l)
-    c1 = np.stack(l)
+        ll.append(x)
+    c1 = np.stack(ll, axis=0)
+    cc = np.tril(c1)
+    cc1 = np.tril(c1, -1).T +np.tril(c1)
     cov = np.dot(np.concatenate(l).T, np.concatenate(l))
+    print(np.nansum(np.abs(cc1)-np.abs(cov)))
+    print(np.nansum(np.abs(c1) - np.abs(cov)))
+    a = c1-cov
+    b =cc1-cov
+    from sklearn import datasets
 
-    np.sum(c1-cov)
+
+    from sklearn.decomposition import PCA
+
+    # import some data to play with
+    iris = datasets.load_iris()
+    iris = iris.data.T
+    v, e, coutn, xlist, x2list = simulate_distributed_horizontal([iris], maxit=800)
+    ll = []
+    cov = np.dot(iris.T, iris)
+    dd = iris.shape[1]
+    for d in range(dd):
+        x = leek_the_sneaky_leaker_with_loop(xlist, x2list, d=d, dim=dd)
+        ll.append(x)
+    c1 = np.stack(ll, axis=0)
+    print(np.nansum(c1 - cov))
+    #
+    x = leek_the_sneaky_leaker_with_loop(xlist, x2list, d=2, dim=dd)
 
     data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
     # data, test_labels = mi.load_mnist(input_dir, 'train')
     data = coo_matrix.asfptype(data)
+    data = np.delete(data, np.where(np.nansum(data, axis=0)==0), axis=1)
     cov = np.dot(data.T, data)
-    v, e, coutn, xlist, x2list = simulate_distributed_horizontal([data], maxit=80)
+    v, e, coutn, xlist, x2list = simulate_distributed_horizontal([data], maxit=800)
     ll = []
-    x = leek_the_sneaky_leaker_with_loop(xlist, x2list, d=0, dim=v.shape[0])
-    ll.append(x)
-    print(x)
-    print(cov[0,:])
+    dd = data.shape[1]
+    for d in range(50):
+        x = leek_the_sneaky_leaker_with_loop(xlist, x2list, d=d, dim=dd)
+        ll.append(x)
+    c1 = np.stack(ll, axis=0)
+    np.nansum(c1-cov)
 
-    x = leek_the_sneaky_leaker_with_loop(xlist, x2list, d=45, dim=v.shape[0])
-    print(x[0]-cov[45, :])
-    np.nansum(x[0]-cov[45, :])
+# x = leek_the_sneaky_leaker_with_loop(xlist, x2list, d=45, dim=v.shape[0])
+    # print(x[0]-cov[45, :])
+    # np.nansum(x[0]-cov[45, :])

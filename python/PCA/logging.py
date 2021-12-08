@@ -46,6 +46,10 @@ def log_current_accuracy(u, G_i, current_iteration, filename, choices=None, prec
             if angles is not None and len(angles) > 0:
                 info = cv.collapse_array_to_string(angles, info_string)
                 handle.write(info)
+        with open(filename + '.mev.u', 'a+') as handle:
+            mev = co.mev(u[choices, :], G_i)
+            info_mev = info_string+'\t'+str(mev)+'\n'
+            handle.write(info_mev)
 
         with open(filename + '.cor', 'a+') as handle:
             correlations = co.compute_correlations(u[choices, :], G_i)
@@ -59,6 +63,12 @@ def log_current_accuracy(u, G_i, current_iteration, filename, choices=None, prec
             if angles is not None and len(angles) > 0:
                 info = cv.collapse_array_to_string(angles, info_string)
                 handle.write(info)
+
+        with open(filename + '.mev.v', 'a+') as handle:
+            mev = co.mev(v, H_i)
+            info_mev = info_string + '\t' + str(mev) + '\n'
+            handle.write(info_mev)
+
     if eigenvals is not None:
         with open(filename + '.eigenval', 'a+') as handle:
             info = cv.collapse_array_to_string(eigenvals, info_string)

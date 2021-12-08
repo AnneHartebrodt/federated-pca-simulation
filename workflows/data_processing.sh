@@ -8,6 +8,8 @@ supplement_folder="/home/anne/Documents/featurecloud/pca/horizontal-pca/paper_su
 scripts="/home/anne/Documents/featurecloud/pca/federated_dp_pca"
 preprocessing_scripts="/home/anne/Documents/featurecloud/code/data_preprocessing"
 
+fed_output_folder="/home/anne/Documents/featurecloud/data/tcga/cancer_type_site/"
+
 data_folder=$tcga_folder/data
 study_folder=$tcga_folder/cancer_type
 
@@ -26,10 +28,9 @@ casefile="$metadata_folder/cases.2021-02-11.json"
 for file in $(cat $metadata_folder/cancer_type/files.txt)
 do
 	echo $file
-	
-	#Rscript /home/anne/Documents/featurecloud/code/data_preprocessing/organize_data.R \
+	#Rscript $preprocessing_scripts/organize_data.R \
 	#-f $metadata_folder/cancer_type/$file -o 'output.txt' -b $data_folder -d $study_folder 
-	#Rscript ../../../featurecloud-test/data_preprocessing/TCGA_rename_columns.R -f 'output.txt' -m $2 -o 'output_named.txt'
+	#Rscript $preprocessing_scripts/TCGA_rename_columns.R -f 'output.txt' -m $2 -o 'output_named.txt'
 done
 
 #mkdir -p $study_folder
@@ -38,11 +39,13 @@ do
 	echo $study_folder/$folder
 	cd $study_folder/$folder
 	echo $metadata_folder/samples"$folder".tsv
-	#Rscript /home/anne/Documents/featurecloud/code/data_preprocessing/transpose_data.R -f output.txt -o output_transposed.txt
+	#Rscript $preprocessing_scripts/transpose_data.R -f output.txt -o output_transposed.txt
 	#rm output_named.txt
 	#rm output.txt
 	#rm final_*
 	#Rscript $preprocessing_scripts/codingGenesfromGTF.R  -f output_transposed.txt -c $datadir/genome/coding_genes.tsv -o coding_only.tsv  &> workflow.log
-	Rscript $preprocessing_scripts/create_site_data_frames.R -f coding_only.tsv -m $metadata_folder/cancer_type/samples"$folder".tsv
+	Rscript $preprocessing_scripts/create_site_data_frames.R -f $(pwd)/coding_only.tsv -m $metadata_folder/cancer_type/samples"$folder".tsv \
+	 -r $fed_output_folder/$folder
+	 python /home/anne/Documents/featurecloud/apps/fc-federated-pca/app/test/scale_data.py -d '/home/anne/Documents/featurecloud/data/tcga/cancer_type_site/'
 	cd ..
 done

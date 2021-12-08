@@ -3,18 +3,21 @@ import scipy.sparse.linalg as lsa
 from python.PCA.vertical.vertical_pca_benchmark import *
 
 
-def combine_subroutine(data_list, m_list):
+def combine_subroutine(data_list, m_list, fed_qr=False):
     """ avoid as many QR factorisations as possible to
     reduce numerical issues."""
     i = 0
     qr_list = []
     for d, m in zip(data_list, m_list):
-        print('hello')
         q, r = la.qr(d, mode='economic')
-        m = np.atleast_2d(np.nanmean(data, axis=0))
+        m = np.atleast_2d(np.nanmean(d, axis=0))
         #r = np.concatenate([r, m], axis=0)
         qr_list.append(r)
-    g, gl, r, rl = simulate_federated_qr(qr_list)
+    if fed_qr:
+        g, gl, r, rl = simulate_federated_qr(qr_list)
+    else:
+        qr_list = np.concatenate(qr_list, axis=0)
+        q, r = la.qr(qr_list, mode='economic')
     return r
 
 from python.PCA.vertical.simulate_federated_qr_orthonormalisation import simulate_federated_qr

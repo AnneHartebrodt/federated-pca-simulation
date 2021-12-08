@@ -27,6 +27,7 @@ outdir1 <- '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/accurac
 data1<- read_cancer_types(outdir1)
 data1$experiment <- 'TCGA'
 data1$algorithm<-as.factor(data1$algorithm)
+
 #levels(data1$algorithm)<- c('Bai', 'Balcan', 'Power iteration', 'Proxy', 'Proxy naive', 'Proxy weighted', 'Vertical power iteration')
 #data3<-data1
 
@@ -39,8 +40,10 @@ data3<- read_cancer_types(outdir3)
 data3$experiment <- '2'
 
 data_all <- rbind(data1,data2, data3)
+data_all<-data_all[algorithm!='vertical_pca']
 data_all$algorithm<-as.factor(data_all$algorithm)
-levels(data_all$algorithm)<- c('Bai', 'Balcan', 'Power iteration', 'Proxy', 'Proxy naive', 'Vertical power iteration')
+algorithms <- c('QR-PCA', 'APSTACK', 'SIT', 'APCOV', 'PCOV', 'VSIT')
+levels(data_all$algorithm)<- algorithms
 data_all$experiment<-ordered(data_all$experiment, levels = c('TCGA', '5', '2'))
 data_all$score <- 'Angle w.r.t reference'
 #data_all<-data_all[algorithm != 'Vertical power iteration']
@@ -48,7 +51,7 @@ data_all$score <- 'Angle w.r.t reference'
 outdir1 <- '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/accuracy/pre_split//'
 data1<- read_sre(outdir1)
 data1$experiment <- 'TCGA'
-data1$algorithm<-as.factor(data1$algorithm)
+#data1$algorithm<-as.factor(data1$algorithm)
 #levels(data1$algorithm)<- c('Bai', 'Balcan', 'Power iteration', 'Proxy', 'Proxy naive', 'Proxy weighted', 'Vertical power iteration')
 #data3<-data1
 
@@ -63,12 +66,14 @@ data3<- read_sre(outdir3)
 data3$experiment <- '2'
 
 data3 <- rbind(data1,data2, data3)
+
+data3<-data3[algorithm!='vertical_pca']
 data3$algorithm<-as.factor(data3$algorithm)
-levels(data3$algorithm)<- c('Bai', 'Balcan', 'Power iteration', 'Proxy', 'Proxy naive', 'Vertical power iteration')
+levels(data3$algorithm)<- algorithms
 data3$experiment<-ordered(data3$experiment, levels = c('TCGA', '5', '2'))
 
 #data3<-data3[algorithm != 'Vertical power iteration' & dataset == 'Liver_and_intrahepatic_bile_ducts']
-baseline <- unique(data3[algorithm=='Power iteration', .(dataset, value, name)])
+baseline <- unique(data3[algorithm=='SIT', .(dataset, value, name)])
 colnames(baseline)<- c('dataset', 'baseline', 'name')
 data3 <- data3 %>% left_join(baseline)
 data3<-as.data.table(data3)
@@ -136,7 +141,7 @@ sample_sizes[, .(primary_site, a, samples, b, nr_sites, c)]
 
 d <- 20269
 k <- 10
-algorithms <- c('Bai', 'Balcan', 'Power iteration', 'Proxy', 'Proxy naive', 'Proxy weighted', 'Vertical power iteration')
+algorithms <- c('QR-PCA', 'APSTACK', 'SIT', 'APCOV', 'PCOV')
 bai<-0.5*d*d+d*k
 balcan_proxy<-d*k*2
 powerit<-d*k*2
@@ -156,6 +161,8 @@ real_com[, cost_mb:=cost*4/(1000*1000)]
 iterations$score<-'Number of iterations'
 real_com$score <- 'Transmission cost [MB]'
 runstats <- rbind(iterations, real_com[, .(algorithm, cost_mb, dataset, experiment, score)], use.names=F)
+runstats$algorithm<-as.factor(runstats$algorithm)
+levels(runstats$algorithm)<- c('QR-PCA', 'APSTACK', 'SIT', 'APCOV', 'PCOV', 'VSIT')
 
 my_theme <-
   theme_classic() + theme(
@@ -169,7 +176,7 @@ my_theme <-
     plot.subtitle = element_text(size = 24, hjust = 0.5),
     legend.key.size = unit(2, 'lines'))
 
-cost<- ggplot(runstats[algorithm!='Vertical power iteration'],  aes(iterations,as.factor(algorithm), fill=experiment))+
+cost<- ggplot(runstats[algorithm!='VSIT'],  aes(iterations,as.factor(algorithm), fill=experiment))+
   geom_boxplot()+
   my_theme +
   scale_fill_manual('Experiment', values = palette_div[c(2,5,8)])+

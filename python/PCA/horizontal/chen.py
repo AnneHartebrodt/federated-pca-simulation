@@ -83,23 +83,29 @@ if __name__ == '__main__':
     from python.PCA.horizontal.horizontal_pca_benchmark import read_presplit_data_folders, compute_canonical,scale_datasets
 
     import matplotlib.pyplot as pyp
-
+    import seaborn as sns
     # generate data according to Chen et al.
-    data = np.random.normal(1, 0, 200*50*50).reshape( 200*50,50)
-    # Eigengaps
-    diag = [7,5,3,1,1]+[1]*45
-    data = si.scale_center_data_columnwise(data, center=True, scale_variance=False)
-    data_list, choices = sh.partition_data_horizontally(data, splits=200, randomize=False)
-    # Orthonormalise matrices
-    data_list = [la.qr(d, mode='economic')[0] for d in data_list]
-    data_list = [np.dot(np.dot(d, np.diag(diag)), d.T) for d in data_list]
-    data = np.concatenate(data_list, axis=0)
-     #Compute canonical solution
-    uu, ss, vv = lsa.svds(data, k=10)
-    vv = np.flip(vv.T, axis=1)
-    u, conv = simulate_chen(data_list, vv[:, 0], k=10,T=300, TT=5)
-    # Does converge on small simulated data
-    pyp.plot(conv)
+    convergence_list  = []
+    for i in range(5):
+        data = np.random.normal(1, 0, 200*50*50).reshape( 200*50,50)
+        # Eigengaps
+        diag = [7,5,3,1,1]+[1]*45
+        data = si.scale_center_data_columnwise(data, center=True, scale_variance=False)
+        data_list, choices = sh.partition_data_horizontally(data, splits=200, randomize=False)
+        # Orthonormalise matrices
+        data_list = [la.qr(d, mode='economic')[0] for d in data_list]
+        data_list = [np.dot(np.dot(d, np.diag(diag)), d.T) for d in data_list]
+        data = np.concatenate(data_list, axis=0)
+         #Compute canonical solution
+        uu, ss, vv = lsa.svds(data, k=10)
+        vv = np.flip(vv.T, axis=1)
+        u, conv = simulate_chen(data_list, vv[:, 0], k=10,T=300, TT=5)
+        convergence_list.append(conv)
+        # Does converge on small simulated data
+    convergence_list = np.stack(convergence_list, axis=0)
+    mean = np.nanmean(convergence_list, axis=0)
+    sd = np.nanstd(convergence_list, axis=0)
+    sns.lineplot(x=range(len(mean)),y=mean, ci=sd)
     pyp.show()
 
     # Same test
