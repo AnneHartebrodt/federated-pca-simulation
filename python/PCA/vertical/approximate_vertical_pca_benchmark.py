@@ -360,141 +360,144 @@ def run_randomized_2(data_list, k, I,maxit, factor_k=2, filename=None, u=None, c
 
 if __name__ == '__main__':
     print('test')
-    start = time.monotonic()
-    import pnumpy as pn
+    local=False
+    if local:
+        start = time.monotonic()
+        import pnumpy as pn
 
-    data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
-    # data, test_labels = mi.load_mnist(input_dir, 'train')
-    data = coo_matrix.asfptype(data)
+        data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
+        # data, test_labels = mi.load_mnist(input_dir, 'train')
+        data = coo_matrix.asfptype(data)
 
-    dataset_name = 'mnist'
-    maxit = 250
-    nr_repeats = 1
-    k = 10
-    splits = [5, 10]
-    outdir = '/home/anne/Documents/featurecloud/pca/approximative-vertical/results'
-    benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k, splits, outdir, epsilon=1e-9,
-                                       unequal=False, precomputed_pca=None)
-    print(time.monotonic() - start)
-    # parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
-    # parser.add_argument('-f', metavar='file', type=str, help='filename of data file; default tab separated')
-    # parser.add_argument('--filetype', metavar='filetype', type=str, help='Type of the dataset')
-    # parser.add_argument('--sep', metavar='sep', type=str, help='spreadsheet separator, default tab', default='\t')
-    # parser.add_argument('--variance', action='store_true', help='spreadsheet separator, default tab')
-    # parser.add_argument('--center', action='store_true', help='center data')
-    # parser.add_argument('-o', metavar='outfile', type=str, help='output directory')
-    # parser.add_argument('-r', metavar='repeats', type=int, default=20, help='Number of times to repeat experiment')
-    # parser.add_argument('-k', metavar='dim', default=10, type=int, help='Number of PCs to calculate')
-    # parser.add_argument('-t', metavar='tolerance', default=1e-9, type=float, help='Convergence tolerance')
-    # parser.add_argument('-s', metavar='sites', default='2,3,5,10', type=str,
-    #                     help='comma separated list of number of sites to simulate, parsed as string')
-    # parser.add_argument('-i', metavar='iteration', default=2000, type=int, help='Maximum number of iterations')
-    # parser.add_argument('--header', metavar='iteration', default=None, type=int, help='header lines')
-    # parser.add_argument('--rownames', metavar='iteration', default=None, type=int, help='rownames')
-    # parser.add_argument('--names', metavar='iteration', default=None, type=str, help='names')
-    # parser.add_argument('--compare_pca', metavar='compare', default=None, type=str,
-    #                     help='filename of precomputed pca to be compared to')
-    # parser.add_argument('--orthovector', metavar='compare', default=None, type=str,
-    #                     help='filename of orthogonal file')
-    # parser.add_argument('--scaled', action='store_true', help='data is prescaled')
-    # parser.add_argument('--unequal', default=None, type=str, help='split unequal, load split file')
-    # parser.add_argument('--vert', action='store_true', help='run vertical split test')
-    # parser.add_argument('--hor', action='store_true', help='run horizontal split test')
-    # parser.add_argument('--ortho_freq', type=int, default=1, help='orthonormalisatio frequency for G')
-    # args = parser.parse_args()
-    #
-    # np.random.seed(95)
-    # # import scaled SNP file
-    # path = args.f
-    # filetype = args.filetype
-    # sep = args.sep
-    # k = args.k
-    #
-    # if args.names is None:
-    #     dataset_name = os.path.basename(args.f)
-    # else:
-    #     dataset_name = args.names
-    #
-    # if args.unequal is None:
-    #     s = args.s
-    #     splits = s.strip().split(',')
-    #     splits = np.int8(splits)
-    #     unequal = False
-    # else:
-    #     unequal = True
-    #     split_data = pd.read_csv(args.unequal, sep='\t', header=None)
-    #     splits = []
-    #     for i in range(split_data.shape[0]):
-    #         l = split_data.iloc[i, :].tolist()
-    #         cleanedList = [x for x in l if not np.isnan(x)]
-    #         splits.append(cleanedList)
-    #
-    # maxit = args.i
-    # nr_repeats = args.r
-    # outdir = args.o
-    # scale = args.variance
-    # center = args.center
-    # ortho_freq = args.ortho_freq
-    #
-    # print(outdir)
-    # nr_samples = 0
-    # nr_features = 0
-    # if filetype == 'delim-list':
-    #     data_list = []
-    #     for f in path.split(','):
-    #         data, sample_ids, variable_names = si.data_import(f, sep=sep)
-    #         if scale or center:
-    #             data = si.scale_center_data_columnwise(data, center=center, scale_variance=scale)
-    #         nr_samples += data.shape[0]
-    #         nr_features += data.shape[1]
-    #         data_list.append(data)
-    #     data = data_list
-    #
-    #
-    #
-    # elif filetype == 'delim':
-    #     data, sample_ids, variable_names = si.data_import(path, sep=sep, header=args.header, rownames=args.rownames)
-    #     if scale or center:
-    #         data = si.scale_center_data_columnwise(data, center=center, scale_variance=scale)
-    #         nr_samples = data.shape[0]
-    #         nr_features = data.shape[1]
-    #
-    # elif filetype == 'mnist':
-    #     data, test_lables = mi.load_mnist(path, 'train')
-    #     data = coo_matrix.asfptype(data)
-    #     if scale or center:
-    #         data = si.scale_center_data_columnwise(data, center=center, scale_variance=scale)
-    #         nr_samples = data.shape[0]
-    #         nr_features = data.shape[1]
-    #     data = data.T
-    #
-    # elif filetype == 'gwas':
-    #     bim = path + '.bim'
-    #     traw = path + '.traw'
-    #
-    #     if not args.scaled:
-    #         traw_nosex = gi.remove_non_autosomes(bim, traw)
-    #
-    #         data = gi.read_scale_write(infile=traw_nosex, outfile=path + '.traw.scaled', maf=0.01)
-    #
-    #     else:
-    #         data = pd.read_table(path + '.traw.scaled', header=None, sep='\t')
-    #         data = data.values
-    #     nr_samples = data.shape[0]
-    #     nr_features = data.shape[1]
-    # else:
-    #     raise Exception("Filetype not supported")
-    #
-    # if args.compare_pca is not None:
-    #     precomputed_pca = pd.read_table(args.compare_pca, header=0, sep='\t')
-    #     precomputed_pca = precomputed_pca.values
-    # else:
-    #     precomputed_pca = None
-    #
-    # # vertical test
-    # if args.vert:
-    #     vertical = op.join(outdir, 'vertical')
-    #     os.makedirs(vertical, exist_ok=True)
-    #     benchmark_vertical_approximate_pca(data=data, dataset_name=dataset_name, maxit=maxit, nr_repeats=nr_repeats, k=k, splits=splits,
-    #                   outdir=vertical, precomputed_pca=precomputed_pca, unequal=unequal)
+        dataset_name = 'mnist'
+        maxit = 250
+        nr_repeats = 1
+        k = 10
+        splits = [5, 10]
+        outdir = '/home/anne/Documents/featurecloud/pca/approximative-vertical/results'
+        benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k, splits, outdir, epsilon=1e-9,
+                                           unequal=False, precomputed_pca=None)
+        print(time.monotonic() - start)
+    else:
+        parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
+        parser.add_argument('-f', metavar='file', type=str, help='filename of data file; default tab separated')
+        parser.add_argument('--filetype', metavar='filetype', type=str, help='Type of the dataset')
+        parser.add_argument('--sep', metavar='sep', type=str, help='spreadsheet separator, default tab', default='\t')
+        parser.add_argument('--variance', action='store_true', help='spreadsheet separator, default tab')
+        parser.add_argument('--center', action='store_true', help='center data')
+        parser.add_argument('-o', metavar='outfile', type=str, help='output directory')
+        parser.add_argument('-r', metavar='repeats', type=int, default=20, help='Number of times to repeat experiment')
+        parser.add_argument('-k', metavar='dim', default=10, type=int, help='Number of PCs to calculate')
+        parser.add_argument('-t', metavar='tolerance', default=1e-9, type=float, help='Convergence tolerance')
+        parser.add_argument('-s', metavar='sites', default='2,3,5,10', type=str,
+                            help='comma separated list of number of sites to simulate, parsed as string')
+        parser.add_argument('-i', metavar='iteration', default=2000, type=int, help='Maximum number of iterations')
+        parser.add_argument('--header', metavar='iteration', default=None, type=int, help='header lines')
+        parser.add_argument('--rownames', metavar='iteration', default=None, type=int, help='rownames')
+        parser.add_argument('--names', metavar='iteration', default=None, type=str, help='names')
+        parser.add_argument('--compare_pca', metavar='compare', default=None, type=str,
+                            help='filename of precomputed pca to be compared to')
+        parser.add_argument('--orthovector', metavar='compare', default=None, type=str,
+                            help='filename of orthogonal file')
+        parser.add_argument('--scaled', action='store_true', help='data is prescaled')
+        parser.add_argument('--unequal', default=None, type=str, help='split unequal, load split file')
+        parser.add_argument('--vert', action='store_true', help='run vertical split test')
+        parser.add_argument('--hor', action='store_true', help='run horizontal split test')
+        parser.add_argument('--ortho_freq', type=int, default=1, help='orthonormalisatio frequency for G')
+        args = parser.parse_args()
+
+        np.random.seed(95)
+        # import scaled SNP file
+        path = args.f
+        filetype = args.filetype
+        sep = args.sep
+        k = args.k
+
+        if args.names is None:
+            dataset_name = os.path.basename(args.f)
+        else:
+            dataset_name = args.names
+
+        if args.unequal is None:
+            s = args.s
+            splits = s.strip().split(',')
+            splits = np.int8(splits)
+            unequal = False
+        else:
+            unequal = True
+            split_data = pd.read_csv(args.unequal, sep='\t', header=None)
+            splits = []
+            for i in range(split_data.shape[0]):
+                l = split_data.iloc[i, :].tolist()
+                cleanedList = [x for x in l if not np.isnan(x)]
+                splits.append(cleanedList)
+
+        maxit = args.i
+        nr_repeats = args.r
+        outdir = args.o
+        scale = args.variance
+        center = args.center
+        ortho_freq = args.ortho_freq
+
+        print(outdir)
+        nr_samples = 0
+        nr_features = 0
+        if filetype == 'delim-list':
+            data_list = []
+            for f in path.split(','):
+                data, sample_ids, variable_names = si.data_import(f, sep=sep)
+                if scale or center:
+                    data = si.scale_center_data_columnwise(data, center=center, scale_variance=scale)
+                nr_samples += data.shape[0]
+                nr_features += data.shape[1]
+                data_list.append(data)
+            data = data_list
+
+
+
+        elif filetype == 'delim':
+            data, sample_ids, variable_names = si.data_import(path, sep=sep, header=args.header, rownames=args.rownames)
+            if scale or center:
+                data = si.scale_center_data_columnwise(data, center=center, scale_variance=scale)
+                nr_samples = data.shape[0]
+                nr_features = data.shape[1]
+
+        elif filetype == 'mnist':
+            data, test_lables = mi.load_mnist(path, 'train')
+            data = coo_matrix.asfptype(data)
+            if scale or center:
+                data = si.scale_center_data_columnwise(data, center=center, scale_variance=scale)
+                nr_samples = data.shape[0]
+                nr_features = data.shape[1]
+            data = data.T
+
+        elif filetype == 'gwas':
+            bim = path + '.bim'
+            traw = path + '.traw'
+
+            if not args.scaled:
+                traw_nosex = gi.remove_non_autosomes(bim, traw)
+
+                data = gi.read_scale_write(infile=traw_nosex, outfile=path + '.traw.scaled', maf=0.01)
+
+            else:
+                data = pd.read_table(path + '.traw.scaled', header=None, sep='\t')
+                data = data.values
+            nr_samples = data.shape[0]
+            nr_features = data.shape[1]
+        else:
+            raise Exception("Filetype not supported")
+
+        if args.compare_pca is not None:
+            precomputed_pca = pd.read_table(args.compare_pca, header=0, sep='\t')
+            precomputed_pca = precomputed_pca.values
+        else:
+            precomputed_pca = None
+
+        # vertical test
+        if args.vert:
+            vertical = op.join(outdir, 'vertical')
+            os.makedirs(vertical, exist_ok=True)
+            benchmark_vertical_approximate_pca(data=data, dataset_name=dataset_name, maxit=maxit, nr_repeats=nr_repeats, k=k, splits=splits,
+                          outdir=vertical, precomputed_pca=precomputed_pca, unequal=unequal)
 
