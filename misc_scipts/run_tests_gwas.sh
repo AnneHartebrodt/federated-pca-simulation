@@ -10,11 +10,11 @@ mkdir -p $resultpath
 for e in {1..2} ;
 do
 mkdir -p $resultpath/chr${e}
-python3 $gwaspath/federated_dp_pca/python/PCA/vertical/vertical_pca_benchmark.py -f \
+python3 $gwaspath/federated_dp_pca/python/PCA/vertical/approximate_vertical_pca_benchmark.py -f \
 $datapath/chr${e}/chr${e}.thin \
---filetype 'gwas' --center -o $resultpath/chr${e} -r 10 -k 10 \
- -i 2000 --sep '\t' --header 0 --rownames 0 --names chr${e} --scale \
- --vert -s 5 --ortho_freq 100
+--filetype 'gwas' --center -o $resultpath/chr${e}.1 -r 1 -k 10 \
+ -i 200 --sep '\t' --header 0 --rownames 0 --names chr${e}.1 --scale \
+ --vert -s 5 --ortho_freq 1000
 done
 echo "summaries"
 for e in {1..2} :

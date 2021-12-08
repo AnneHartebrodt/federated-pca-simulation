@@ -98,7 +98,7 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
     # iterations is reached or a predetermined number of eignevectors have converged.
     while not convergedH and iterations < maxit and len(converged_eigenvals) < k * fractev:
         iterations = iterations + 1
-
+        print(iterations)
         # add up the H matrices
         H_i = np.zeros((local_data[0].shape[0], k))
         for i in range(len(local_data)):
