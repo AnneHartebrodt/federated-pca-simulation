@@ -157,7 +157,7 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
         #         # This logs into the same file
         t = time.monotonic()
         print(tt-t)
-        G_i, G_list = qr.simulate_federated_qr(G_list, encrypt=False, filename=filename, repeat=iterations, log=log)
+        #G_i, G_list = qr.simulate_federated_qr(G_list, encrypt=False, filename=filename, repeat=iterations, log=log)
 
         tt = time.monotonic()
         print(t - tt)
