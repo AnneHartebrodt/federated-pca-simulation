@@ -551,3 +551,11 @@ if __name__ == '__main__':
             benchmark_vertical_approximate_pca(data=data, dataset_name=dataset_name, maxit=maxit, nr_repeats=nr_repeats, k=k, splits=splits,
                           outdir=vertical, precomputed_pca=precomputed_pca, unequal=unequal)
 
+            outd = ['matrix', 'vector']
+            for od in outd:
+                basepath = op.join(outdir,od)
+                create_dataframe(basepath=vertical, suffix='.angles.u')
+                create_dataframe(basepath=vertical, suffix='.angles.v')
+                create_dataframe(basepath=vertical, suffix='.mev.u')
+                create_dataframe(basepath=vertical, suffix='.mev.v')
+
