@@ -1,5 +1,5 @@
-from python.PCA.vertical.vertical_pca_benchmark import simulate_subspace_iteration
-
+from python.PCA.vertical.vertical_pca_benchmark import simulate_subspace_iteration, simulate_guo, compute_k_eigenvectors
+from python.evaluation.data_aggregation import create_dataframe
 import argparse as ap
 import os
 import os.path as op
@@ -41,6 +41,8 @@ def benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k,
     v = np.flip(v.T, axis=1)
 
     current_split = 0
+    dataset_name_guo = dataset_name + '_guo'
+    guo_epsilon = 1e-11
     for c in range(nr_repeats):
         for s in splits:
             # split the data
@@ -67,7 +69,6 @@ def benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k,
 
             # # # simulate the run
             start = time.monotonic()
-            print('test')
             mode = 'randomized-1'
             outdir_approx = op.join(outdir, 'matrix', str(s), grad_name, mode, str(ortho_freq))
             os.makedirs(outdir_approx, exist_ok=True)
@@ -81,7 +82,6 @@ def benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k,
             print(mode + ' ' + str(end - start))
 
             start = time.monotonic()
-            print('test')
             mode = 'randomized-2'
             outdir_approx = op.join(outdir, 'matrix', str(s), grad_name, mode, str(ortho_freq))
             os.makedirs(outdir_approx, exist_ok=True)
@@ -94,7 +94,7 @@ def benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k,
             log_time(logftime, 'qr_scheme' + '_' + mode, end - start, s, c)
             print(mode + ' ' + str(end - start))
             start = time.monotonic()
-            print('test')
+
             mode = 'randomized-3'
             outdir_approx = op.join(outdir, 'matrix', str(s), grad_name, mode, str(ortho_freq))
             os.makedirs(outdir_approx, exist_ok=True)
@@ -136,7 +136,6 @@ def benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k,
 
             #Compute full decomposition using approximative PCA as seed
             start = time.monotonic()
-            print('test')
             simulate_subspace_iteration(data_list, k, maxit=maxit, u=u, filename=filename, choices=choice,
                                         precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
                                         epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=g[:, 0:k])
@@ -159,20 +158,22 @@ def benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k,
             print(mode + ' ' + str(end - start))
             #Compute full decomposition using approximative PCA as seed
             start = time.monotonic()
-            print('test')
+
             simulate_subspace_iteration(data_list, k, maxit=maxit, u=u, filename=filename, choices=choice,
                                         precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
                                         epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=g[:, 0:k])
             end = time.monotonic()
             log_time(logftime, 'qr_scheme' + '_' + mode, end - start, s, c)
             print(mode + ' ' + str(end - start))
-            # Compute federated approximate PCA
+            # # Compute federated approximate PCA
             start = time.monotonic()
             mode = 'approximative-smpc'
             outdir_approx = op.join(outdir, 'matrix', str(s), grad_name, mode, str(ortho_freq))
             os.makedirs(outdir_approx, exist_ok=True)
             filename = create_filename(outdir_approx, dataset_name + '_' + mode, s, c, k, maxit, start)
-            g, h = approximate_vertical_smpc(data_list, k, factor_k=2)
+            g, h = approximate_vertical_smpc(data_list, k, factor_k=2, u=u, filename=filename, choices=choice,
+                                        precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
+                                        epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=None)
             g = np.concatenate(g, axis=0)
             log_current_accuracy(u=u, G_i=g, current_iteration=1,
                                  filename=filename, precomputed_pca=precomputed_pca, v=v, H_i=h, choices=choice)
@@ -182,7 +183,6 @@ def benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k,
 
             # Compute full decomposition using approximative PCA as seed
             start = time.monotonic()
-            print('test')
             simulate_subspace_iteration(data_list, k, maxit=maxit, u=u, filename=filename, choices=choice,
                                         precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
                                         epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=g[:, 0:k])
@@ -190,7 +190,24 @@ def benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k,
             log_time(logftime, 'qr_scheme' + '_' + mode, end - start, s, c)
             print(mode + ' ' + str(end - start))
 
-            #
+            # Run Guo version
+            # Sequention
+            grad = True
+            fedqr = False
+            grad_name = 'gradient'
+            mode = 'central_qr'
+            print('gradient - sequential - ' + mode)
+            outdir_gradient = op.join(outdir, 'vector', str(s), grad_name, mode, str(1))
+            os.makedirs(outdir_gradient, exist_ok=True)
+
+            filename = create_filename(outdir_gradient, dataset_name_guo + '_' + mode, s, c, k, maxit, start)
+
+            start = time.monotonic()
+            compute_k_eigenvectors(data_list, k=k, maxit=maxit, u=u, filename=filename, choices=choice,
+                                   precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
+                                   epsilon=epsilon, guo_epsilon=guo_epsilon)
+            end = time.monotonic()
+            log_time(logftime, 'guo_single' + '_' + mode, end - start, s, c)
 
 
 def approximate_vertical(data_list, k=10, factor_k=2):
@@ -199,19 +216,45 @@ def approximate_vertical(data_list, k=10, factor_k=2):
     g = [np.dot(d, v) for d in data_list]
     return g, v
 
-def approximate_vertical_smpc(data_list, k=10, factor_k=2):
+def approximate_vertical_smpc(data_list, k=10, factor_k=2,filename=None, u=None, choices=None, precomputed_pca=None, fractev=1.0,
+                           federated_qr=False, v=None, gradient=True, epsilon=10e-9, log=True, g_ortho_freq=1, g_init = None):
     data_list = [d.T for d in data_list]
-    v = smpc_enabled_approx_vertical(data_list, k=k, factor_k=factor_k)
+    v = smpc_enabled_approx_vertical(data_list, k=k, factor_k=factor_k,filename=filename,
+                                                u=u,
+                                                choices=choices,
+                                                precomputed_pca=precomputed_pca,
+                                                fractev=fractev,
+                                                federated_qr=federated_qr,
+                                                v=v,
+                                                gradient=gradient,
+                                                epsilon=epsilon,
+                                                log=log,
+                                                g_ortho_freq=g_ortho_freq,
+                                                g_init=g_init)
     g = [np.dot(d, v) for d in data_list]
     return g, v
 
-def smpc_enabled_approx_vertical(datasets, k=10, factor_k=2):
+def smpc_enabled_approx_vertical(datasets, k=10, factor_k=2,filename=None, u=None, choices=None, precomputed_pca=None, fractev=1.0,
+                           federated_qr=False, v=None, gradient=True, epsilon=10e-9, log=True, g_ortho_freq=1, g_init = None):
 
     partial = []
     for d in datasets:
         # d = np.float32(d)
         partial.append(local_SVD(d, k=factor_k * k).T)
-    G_i, eigenvals, converged_eigenvals, H_i, H_stack, iterations, G_list = simulate_subspace_iteration(partial, k=k, maxit=20, log=False)
+    G_i, eigenvals, converged_eigenvals, H_i, H_stack, iterations, G_list = simulate_subspace_iteration(partial, k=k, maxit=20,
+                                                                                                        filename=filename,
+                                                                                                        u=None,
+                                                                                                        choices=choices,
+                                                                                                        precomputed_pca=precomputed_pca,
+                                                                                                        fractev=fractev,
+                                                                                                        federated_qr=federated_qr,
+                                                                                                        v=None,
+                                                                                                        gradient=gradient,
+                                                                                                        epsilon=epsilon,
+                                                                                                        log=log,
+                                                                                                        g_ortho_freq=g_ortho_freq,
+                                                                                                        g_init=g_init,
+                                                                                                        previous_iterations=0)
     return H_i
 
 def add_approx_vertical(datasets, k=10, factor_k=2):
@@ -359,8 +402,7 @@ def run_randomized_2(data_list, k, I,maxit, factor_k=2, filename=None, u=None, c
 
 
 if __name__ == '__main__':
-    print('test')
-    local=False
+    local=True
     if local:
         start = time.monotonic()
         import pnumpy as pn
@@ -378,6 +420,14 @@ if __name__ == '__main__':
         benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k, splits, outdir, epsilon=1e-9,
                                            unequal=False, precomputed_pca=None)
         print(time.monotonic() - start)
+        outd = ['matrix', 'vector']
+        for od in outd:
+            basepath = op.join(outdir,od)
+            create_dataframe(basepath=basepath, suffix='.angles.u')
+            create_dataframe(basepath=basepath, suffix='.angles.v')
+            create_dataframe(basepath=basepath, suffix='.mev.u')
+            create_dataframe(basepath=basepath, suffix='.mev.v')
+
     else:
         parser = ap.ArgumentParser(description='Split datasets and run "federated PCA"')
         parser.add_argument('-f', metavar='file', type=str, help='filename of data file; default tab separated')

@@ -6,7 +6,7 @@ import os
 import re
 
 
-basepath = "/home/anne/Documents/featurecloud/pca/approximative-vertical/results/matrix"
+
 
 def create_dataframe(basepath, suffix):
     data_list = []
@@ -28,10 +28,11 @@ def create_dataframe(basepath, suffix):
 
     data_list = pd.concat(data_list, axis=0)
     print(op.join(basepath, 'summary'+suffix+'.tsv'))
-    data_list.to_csv(op.join(basepath,'..' ,'summary'+suffix+'.tsv'), sep='\t', header=False, index=False)
+    data_list.to_csv(op.join(basepath ,'summary'+suffix+'.tsv'), sep='\t', header=False, index=False)
     return data_list
-if __name__ == '__main__':
 
+if __name__ == '__main__':
+    basepath = "/home/anne/Documents/featurecloud/pca/approximative-vertical/results/vector"
     create_dataframe(basepath=basepath, suffix='.angles.u')
     create_dataframe(basepath=basepath, suffix='.angles.v')
     df = create_dataframe(basepath=basepath, suffix='.mev.u')

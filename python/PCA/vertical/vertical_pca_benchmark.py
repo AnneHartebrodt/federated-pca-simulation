@@ -41,6 +41,28 @@ import python.PCA.horizontal.power_iteration as powerit
 import json
 from python.PCA.horizontal.horizontal_pca_power_iteration import simulate_distributed_horizontal
 from python.PCA.logging import *
+import codetiming as ct
+
+
+# Extending Timer to keep track of the total time
+class TimerCounter(ct.Timer):
+    def __init__(self):
+        self._total_timer = 0
+
+    def total(self) -> float:
+        return self._total_timer
+
+    def stop(self):
+        """Stop the timer, and report the elapsed time"""
+        if self._start_time is None:
+            raise ct.TimerError(f"Timer is not running. Use .start() to start it")
+
+        elapsed_time = time.perf_counter() - self._start_time
+        self.last = elapsed_time
+        self._start_time = None
+        self._total_timer = self._total_timer + self.last
+        return elapsed_time
+
 
 
 
@@ -59,6 +81,7 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
     Returns: A column vector array containing the global eigenvectors
 
     """
+
     print('Orthonormalisation frequency'+ str(g_ortho_freq))
     G_list = []
 
@@ -97,15 +120,19 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
     eigenvals_prev = None
     # Convergence can be reached when eigenvectors have converged, the maximal number of
     # iterations is reached or a predetermined number of eignevectors have converged.
+
+    mot = TimerCounter()
+
     while not convergedH and iterations < maxit and len(converged_eigenvals) < k * fractev:
         iterations = iterations + 1
-        print(iterations)
-        t = time.monotonic()
+        #print(iterations)
         # add up the H matrices
         H_i = np.zeros((local_data[0].shape[0], k))
         for i in range(len(local_data)):
             # send local H matrices to server
+            mot.start()
             H_local = np.dot(local_data[i], G_list[i])
+            mot.stop()
             if log:
                 log_transmission(filename, "H_local=CS", iterations, i, H_local)
             # add up H matrices at server and send them back to the clients
@@ -115,17 +142,21 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
             log_transmission(filename, "H_global=SC", iterations, 1, H_i)
 
         # free orthonormalisation in terms of transmission cost
+        mot.start()
         H_i, R = la.qr(H_i, mode='economic')
-        tt = time.monotonic()
-        print(t-tt)
+        mot.stop()
+
         # Eigenvector update
         for i in range(len(G_list)):
             # Use gradient based update of the Eigenvectors
+
             if gradient:
                 G_list[i] = np.dot(local_data[i].T, H_i) + G_list[i]
             else:
                 # Use power iterations based update of the eigenvalue scheme
+                mot.start()
                 G_list[i] = np.dot(local_data[i].T, H_i)
+                mot.stop()
                 if log and not federated_qr:
                     log_transmission(filename, "Gi_local=CS", iterations, i, G_list[i])
 
@@ -136,32 +167,11 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
         eigenvals = []
         for col in range(G_i.shape[1]):
             eigenvals.append(np.linalg.norm(G_i[:, col]))
-        # Save eigenvalues
-        eigenvals_prev = eigenvals
 
-        # sporadic orthonormalisation
-        # if iterations % g_ortho_freq == 0:
-        #     print('Current iteration='+str(iterations))
-        #     if not federated_qr:
-        #         # Centralised QR, just send the eigenvectors to the aggregator and orthonormalise
-        #         # Concatenation happend
-        #         G_i, R = la.qr(G_i, mode='economic')
-        #         start = 0
-        #         # redistribute
-        #         for i in range(len(G_list)):
-        #             G_list[i] = G_i[start:start + local_data[i].shape[1], :]
-        #             if log:
-        #                 log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
-        #             start = start + local_data[i].shape[1]
-        #     else:
-        #         # This logs into the same file
-        t = time.monotonic()
-        print(tt-t)
-        #G_i, G_list = qr.simulate_federated_qr(G_list, encrypt=False, filename=filename, repeat=iterations, log=log)
+        # this is not timed because it is done for logging purpose and not algorithmic reasons
+        G_i, R = la.qr(G_i, mode='economic')
 
-        tt = time.monotonic()
-        print(t - tt)
-        # G_i, R = la.qr(G_i, mode='economic')
+
         convergedH, deltaH = sh.eigenvector_convergence_checker(H_i, H_i_prev, tolerance=epsilon)
         # use guos convergence criterion for comparison
         #convergedH, deltaH = sh.convergence_checker_rayleigh(H_i, H_i_prev, eigenvals, eigenvals_prev, epsilon=1e-11)
@@ -175,6 +185,9 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
             log_current_accuracy(u=u, G_i=G_i, eigenvals=eigenvals, conv=deltaH, current_iteration=iterations,
                                  filename=filename, choices=choices, precomputed_pca=precomputed_pca,
                                  gi_delta_obj=deltaG, v=v, H_i=H_i)
+    # log the time for matrix operations
+    log_time_keywords(filename, 'matrix_operations', mot.total())
+    ortho, G_list = qr.simulate_federated_qr(G_list, encrypt=False)
     return G_i, eigenvals, converged_eigenvals, H_i, H_stack, iterations, G_list
 
 
@@ -198,7 +211,7 @@ def residuals(V, a=None, sums=None):
 
 def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=None, u=None, choices=None,
                  precomputed_pca=None, federated_qr=False, v=None, gradient=False, epsilon=1e-9, guo_epsilon=1e-11,
-                 log=True):
+                 log=True, previous_iterations=None):
     """
     Retrieve the first eigenvector
     Args:
@@ -209,8 +222,11 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
     Returns: A column vector array containing the global eigenvectors
 
     """
+    if previous_iterations is None:
+        iterations = 0  # iteration counter
+    else:
+        iterations = previous_iterations
 
-    iterations = 0  # iteration counter
     # allow maxit for very eigenvector
     convergedH = False
     total_len = 0  # total number of samples/individuals in data
@@ -350,17 +366,18 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
     #print(gi_norm)
     print(iterations)
 
-    return G_i
+    return G_i, iterations
 
 
 def compute_k_eigenvectors(data_list, k, maxit, filename=None, u=None, choices=None, precomputed_pca=None,
                            federated_qr=False, v=None, gradient=True, epsilon=1e-9, guo_epsilon=1e-11):
-    ug = simulate_guo(data_list, maxit=maxit, filename=filename, u=u, choices=choices, federated_qr=federated_qr, v=v,
+    ug, it = simulate_guo(data_list, maxit=maxit, filename=filename, u=u, choices=choices, federated_qr=federated_qr, v=v,
                       gradient=gradient, epsilon=epsilon, guo_epsilon=guo_epsilon)
     u_all = ug
     for i in range(1, k):
-        ug2= simulate_guo(data_list, maxit=maxit, V_k=u_all, filename=filename, u=u, choices=choices,
-                           federated_qr=federated_qr, v=v, gradient=gradient, epsilon=epsilon, guo_epsilon=guo_epsilon)
+        ug2, it= simulate_guo(data_list, maxit=maxit+it, V_k=u_all, filename=filename, u=u, choices=choices,
+                           federated_qr=federated_qr, v=v, gradient=gradient, epsilon=epsilon, guo_epsilon=guo_epsilon,
+                              previous_iterations=it)
         u_all = np.concatenate([u_all, ug2], axis=1)
     return u_all
 

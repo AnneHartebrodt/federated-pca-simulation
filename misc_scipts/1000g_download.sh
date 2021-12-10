@@ -40,7 +40,7 @@ $plink2path --bfile chr${e}.rmdup --exclude chr${e}.ld.indep.out --thin-count 50
 $plink1path --bfile chr${e}.2.thin --recode A-transpose --out chr${e}.1.thin
 
 #all
-$plink1path --bfile chr${e}.rmdup --recode A-transpose --out chr${e}.3
+$plink1path --bfile chr${e}.rmdup --recode A-transpose --out chr${e}.3.thin
 # cut the phenotypic information out.
 #cut -d$'\t' -f1-6 --complement chr${e}.thin.traw > chr${e}.thin.traw.values
 

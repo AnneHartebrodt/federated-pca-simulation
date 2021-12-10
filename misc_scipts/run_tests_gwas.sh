@@ -9,23 +9,14 @@ mkdir -p $resultpath
 # take 2 chromosomes, we don't want to spam
 for e in {1..2} ;
 do
+for i in {1..3}:
+do
 mkdir -p $resultpath/chr${e}
 python3 $gwaspath/federated_dp_pca/python/PCA/vertical/approximate_vertical_pca_benchmark.py -f \
-$datapath/chr${e}/chr${e}.thin \
---filetype 'gwas' --center -o $resultpath/chr${e}.1 -r 1 -k 10 \
- -i 200 --sep '\t' --header 0 --rownames 0 --names chr${e}.1 --scale \
+$datapath/chr${e}/chr${e}.$i.thin \
+--filetype 'gwas' --center -o $resultpath/chr${e}.$i -r 1 -k 10 \
+ -i 200 --sep '\t' --header 0 --rownames 0 --names chr${e}.$i --scale \
  --vert -s 5 --ortho_freq 1000
 done
-echo "summaries"
-for e in {1..2} :
-do
-cd $resultpath/chr${e}
-echo $(pwd)
-bash $gwaspath/federated_dp_pca/misc_scipts/make_summaries.sh $gwaspath/federated_dp_pca
-outfile1='angles_precomp.tsv'
-outfile2='angles_precomp.summary.tsv'
-colname='angle'
-Rscript $gwaspath/federated_dp_pca/R/vertical-pca-benchmark/data_cleanup/read_data.R -b . -s 'angles_precomp' -c $colname -o $outfile1 -d $gwaspath/federated_dp_pca
-Rscript $gwaspath/federated_dp_pca/R/vertical-pca-benchmark/data_cleanup/aggregate_data.R -f $outfile1 -o $outfile2  -c $colname
-Rscript $gwaspath/federated_dp_pca/R/vertical-pca-benchmark/data_cleanup/aggregate_data_with_dummy.R -f $outfile1 -o $outfile2  -c $colname
 done
+

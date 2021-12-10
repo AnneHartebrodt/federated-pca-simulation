@@ -154,3 +154,17 @@ def log_time(logfile, algorithm, time, split, repeat):
     """
     with open(logfile, 'a+') as handle:
         handle.write(algorithm + '\t' + str(split) + '\t' + str(repeat) + '\t' + str(time) + '\n')
+
+def log_time_keywords(logfile, keyword, time ):
+    """
+    Log the permutation of the data sets.
+    Args:
+        logfile: Name of the log file
+        filename: Filename of the result file, this permutation belongs to
+        choices: the actual choice array
+
+    Returns: None
+
+    """
+    with open(logfile + '.eo', 'a+') as handle:
+        handle.write(keyword + '\t' + str(time) + '\n')
