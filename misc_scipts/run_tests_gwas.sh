@@ -15,7 +15,7 @@ mkdir -p $resultpath/chr${e}
 python3 $gwaspath/federated_dp_pca/python/PCA/vertical/approximate_vertical_pca_benchmark.py -f \
 $datapath/chr${e}/chr${e}.$i.thin \
 --filetype 'gwas' --center -o $resultpath/chr${e}.$i -r 1 -k 10 \
- -i 200 --sep '\t' --header 0 --rownames 0 --names chr${e}.$i --scale \
+ -i 200 --sep '\t' --header 0 --rownames 0 --names chr${e}.$i \
  --vert -s 5 --ortho_freq 1000
 done
 done
