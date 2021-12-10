@@ -9,7 +9,7 @@ mkdir -p $resultpath
 # take 2 chromosomes, we don't want to spam
 for e in {1..2} ;
 do
-for i in {1..3}:
+for i in {1..3} ;
 do
 mkdir -p $resultpath/chr${e}
 python3 $gwaspath/federated_dp_pca/python/PCA/vertical/approximate_vertical_pca_benchmark.py -f \

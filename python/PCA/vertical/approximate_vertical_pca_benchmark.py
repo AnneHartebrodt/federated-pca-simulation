@@ -402,7 +402,7 @@ def run_randomized_2(data_list, k, I,maxit, factor_k=2, filename=None, u=None, c
 
 
 if __name__ == '__main__':
-    local=True
+    local=False
     if local:
         start = time.monotonic()
         import pnumpy as pn
