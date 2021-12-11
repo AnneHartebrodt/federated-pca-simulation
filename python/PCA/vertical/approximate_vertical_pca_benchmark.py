@@ -528,7 +528,7 @@ if __name__ == '__main__':
             if not args.scaled:
                 traw_nosex = gi.remove_non_autosomes(bim, traw)
 
-                data = gi.read_scale_write(infile=traw_nosex, outfile=path + '.traw.scaled', maf=0.01)
+                data = gi.read_scale_write_pandas(infile=traw_nosex, outfile=path + '.traw.scaled', maf=0.01, major_2=False)
 
             else:
                 data = pd.read_table(path + '.traw.scaled', header=None, sep='\t')
