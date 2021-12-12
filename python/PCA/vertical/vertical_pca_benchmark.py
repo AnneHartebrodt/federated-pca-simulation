@@ -484,7 +484,7 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, epsi
             # Run Guo version
             # Sequention
             grad = True
-            fedqr = False
+            fedqr = Falseargs[0], args[1]
             grad_name = 'gradient'
             mode = 'central_qr'
             print('gradient - sequential - '+ mode)
