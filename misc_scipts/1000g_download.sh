@@ -12,7 +12,7 @@ mkdir -p $resultpath
 
 echo $resultpath
 cd $datapath
-for e in {1..22} ; do
+for e in {1..2} ; do
 # make chromosome result folder
 #mkdir -p $resultpath/chr${e}/plink
 #wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
@@ -33,14 +33,9 @@ cd chr${e}
 #    touch "chr${e}.ld.indep.out"
 #fi
 
-$plink2path --bfile chr${e}.rmdup --exclude chr${e}.ld.indep.out --thin-count 100000 --make-bed --out chr${e}.1.thin;
-$plink1path --bfile chr${e}.1.thin --recode A-transpose --out chr${e}.1.thin
-
-$plink2path --bfile chr${e}.rmdup --exclude chr${e}.ld.indep.out --thin-count 500000 --make-bed --out chr${e}.2.thin;
-$plink1path --bfile chr${e}.2.thin --recode A-transpose --out chr${e}.2.thin
-
 #all
 $plink1path --bfile chr${e}.rmdup --recode A-transpose --out chr${e}.3.thin
+java -jar gwaspath/federated_dp_pca/import_export/scaling.jar $datapath/chr${e}/chr${e}.traw $datapath/chr${e}/chr${e}.traw.scaled 0
 # cut the phenotypic information out.
 #cut -d$'\t' -f1-6 --complement chr${e}.thin.traw > chr${e}.thin.traw.values
 
