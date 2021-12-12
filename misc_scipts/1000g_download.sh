@@ -37,7 +37,7 @@ $plink2path --bfile chr${e}.rmdup --exclude chr${e}.ld.indep.out --thin-count 10
 $plink1path --bfile chr${e}.1.thin --recode A-transpose --out chr${e}.1.thin
 
 $plink2path --bfile chr${e}.rmdup --exclude chr${e}.ld.indep.out --thin-count 500000 --make-bed --out chr${e}.2.thin;
-$plink1path --bfile chr${e}.2.thin --recode A-transpose --out chr${e}.1.thin
+$plink1path --bfile chr${e}.2.thin --recode A-transpose --out chr${e}.2.thin
 
 #all
 $plink1path --bfile chr${e}.rmdup --recode A-transpose --out chr${e}.3.thin
