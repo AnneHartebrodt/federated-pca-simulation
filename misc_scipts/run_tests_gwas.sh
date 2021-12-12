@@ -14,6 +14,7 @@ do
 
 mkdir -p $resultpath/chr${e}
 echo 'Running tests'
+java -jar scaling.jar $datapath/chr${e}/chr${e}.$i.thin.traw $datapath/chr${e}/chr${e}.$i.thin.traw.scaled 0
 python3 $gwaspath/federated_dp_pca/python/PCA/vertical/approximate_vertical_pca_benchmark.py -f \
 $datapath/chr${e}/chr${e}.$i.thin \
 --filetype 'gwas' --center -o $resultpath/chr${e}.$i -r 1 -k 10 \
