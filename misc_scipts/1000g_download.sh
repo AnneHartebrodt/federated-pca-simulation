@@ -34,8 +34,12 @@ cd chr${e}
 #fi
 
 #all
-$plink1path --bfile chr${e}.rmdup --recode A-transpose --out chr${e}.3.thin
-java -jar gwaspath/federated_dp_pca/import_export/scaling.jar $datapath/chr${e}/chr${e}.traw $datapath/chr${e}/chr${e}.traw.scaled 0
+$plink1path --bfile chr${e}.rmdup --recode A-transpose --out chr${e}.thin
+java -jar gwaspath/federated_dp_pca/import_export/scaling.jar $datapath/chr${e}/chr${e}.thin.traw $datapath/chr${e}/chr${e}.traw.scaled.all 0
+
+tail -n 500000 $datapath/chr${e}/chr${e}.traw.scaled.all > $datapath/chr${e}/chr${e}.traw.scaled.500000
+head -n 100000 $datapath/chr${e}/chr${e}.traw.scaled.all > $datapath/chr${e}/chr${e}.traw.scaled.100000
+
 # cut the phenotypic information out.
 #cut -d$'\t' -f1-6 --complement chr${e}.thin.traw > chr${e}.thin.traw.values
 
