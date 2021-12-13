@@ -35,7 +35,7 @@ cd chr${e}
 
 #all
 $plink1path --bfile chr${e}.rmdup --recode A-transpose --out chr${e}.thin
-java -jar gwaspath/federated_dp_pca/import_export/scaling.jar $datapath/chr${e}/chr${e}.thin.traw $datapath/chr${e}/chr${e}.traw.scaled.all 0
+java -jar gwaspath/federated_dp_pca/import_export/scaling.jar $datapath/chr${e}/chr${e}.thin.traw $datapath/chr${e}/chr${e}.traw.scaled.all 6 0
 
 tail -n 500000 $datapath/chr${e}/chr${e}.traw.scaled.all > $datapath/chr${e}/chr${e}.traw.scaled.500000
 head -n 100000 $datapath/chr${e}/chr${e}.traw.scaled.all > $datapath/chr${e}/chr${e}.traw.scaled.100000
