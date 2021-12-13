@@ -12,7 +12,7 @@ mkdir -p $resultpath
 
 echo $resultpath
 cd $datapath
-for e in {1..2} ; do
+for e in {3..4} ; do
 # make chromosome result folder
 #mkdir -p $resultpath/chr${e}/plink
 #wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
@@ -22,11 +22,11 @@ for e in {1..2} ; do
 #mv ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz.tbi chr${e}
 # you are in data chromosome now
 cd chr${e}
-#$plink1path --vcf ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz --make-bed --out chr${e};
+$plink1path --vcf ALL.chr${e}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz --make-bed --out chr${e};
 ## LD pruning with plink default values
 ## change maf filtering to here.
-#$plink2path --bfile chr${e} --maf 0.01 --rm-dup exclude-all --make-bed --out chr${e}.rmdup
-#$plink2path --bfile chr${e}.rmdup --indep-pairwise 50 5 0.5 --out chr${e}.ld.indep;
+$plink2path --bfile chr${e} --maf 0.01 --rm-dup exclude-all --make-bed --out chr${e}.rmdup
+$plink2path --bfile chr${e}.rmdup --indep-pairwise 50 5 0.5 --out chr${e}.ld.indep;
 ## downsampling to 100,000 SNPs for reasonable runtime.
 #
 #if [ ! -e "chr${e}.ld.indep.out" ] ; then
@@ -35,7 +35,7 @@ cd chr${e}
 
 #all
 $plink1path --bfile chr${e}.rmdup --recode A-transpose --out chr${e}.thin
-java -jar gwaspath/federated_dp_pca/import_export/scaling.jar $datapath/chr${e}/chr${e}.thin.traw $datapath/chr${e}/chr${e}.traw.scaled.all 0
+java -jar $gwaspath/federated_dp_pca/python/import_export/scaling.jar $datapath/chr${e}/chr${e}.thin.traw $datapath/chr${e}/chr${e}.traw.scaled.all 0
 
 tail -n 500000 $datapath/chr${e}/chr${e}.traw.scaled.all > $datapath/chr${e}/chr${e}.traw.scaled.500000
 head -n 100000 $datapath/chr${e}/chr${e}.traw.scaled.all > $datapath/chr${e}/chr${e}.traw.scaled.100000
