@@ -27,6 +27,7 @@ opt = parse_args(OptionParser(option_list=option_list))
 
 infiles<-opt$infiles
 infiles<-'/home/anne/Documents/featurecloud/pca/vertical-pca/results-new-tests/1000g/chr2.tsv,/home/anne/Documents/featurecloud/pca/vertical-pca/results-new-tests/mnist/long.dummy.angles.u.summary.tsv'
+#infiles<-'/home/anne/Documents/featurecloud/pca/approximative-vertical/results-new-tests/mnist/long.dummy.angles.u.summary.tsv'
 outfile<-opt$outfile
 outfile <- '/home/anne/Documents/manuscripts/approximative-vertical-pca/angles_all.pdf'
 names<-opt$names

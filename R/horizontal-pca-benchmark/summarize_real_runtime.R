@@ -14,16 +14,16 @@ summarize_file<-function(path, nsites){
   return(s10)
   }
   else{
-    return NA
+    return (NA)
   }
 
 }
 
-s10<-summarize_file('/home/anne/Documents/featurecloud/pca/horizontal-pca/results/app-tests/test-output/11/10/', 10)
+#s10<-summarize_file('/home/anne/Documents/featurecloud/pca/horizontal-pca/results/app-tests/test-output/11/10/', 10)
 s5<-summarize_file('/home/anne/Documents/featurecloud/pca/horizontal-pca/results/app-tests/test-output/11/5/', 5)
 s3<-summarize_file('/home/anne/Documents/featurecloud/pca/horizontal-pca/results/app-tests/test-output/11/3/', 3)
 
-all<-rbind(s10,s5,s3)
+all<-rbind(s5,s3)
 all<- all[order(algorithm)]
 fwrite(all,'/home/anne/Documents/featurecloud/pca/horizontal-pca/results/app-tests/test-output/11/stats.tsv', sep='\t')
 

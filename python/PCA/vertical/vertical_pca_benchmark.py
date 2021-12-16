@@ -41,30 +41,7 @@ import python.PCA.horizontal.power_iteration as powerit
 import json
 from python.PCA.horizontal.horizontal_pca_power_iteration import simulate_distributed_horizontal
 from python.PCA.logging import *
-import codetiming as ct
-
-
-# Extending Timer to keep track of the total time
-class TimerCounter(ct.Timer):
-    def __init__(self):
-        self._total_timer = 0
-
-    def total(self) -> float:
-        return self._total_timer
-
-    def stop(self):
-        """Stop the timer, and report the elapsed time"""
-        if self._start_time is None:
-            raise ct.TimerError(f"Timer is not running. Use .start() to start it")
-
-        elapsed_time = time.perf_counter() - self._start_time
-        self.last = elapsed_time
-        self._start_time = None
-        self._total_timer = self._total_timer + self.last
-        return elapsed_time
-
-
-
+from python.PCA.logging import TimerCounter
 
 ####### MATRIX POWER ITERATION SCHEME #######
 def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, choices=None, precomputed_pca=None, fractev=1.0,
@@ -105,11 +82,15 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
     if previous_iterations is not None:
         iterations = previous_iterations
 
+    tol = TransmissionLogger()
+    tol.open(filename)
+
+    aol = AccuracyLogger()
+    aol.open(filename)
     # send parts to local sites
     for i in range(len(local_data)):
         G_list.append(G_i[start:start + local_data[i].shape[1], :])
-        if log:
-            log_transmission(filename, "G_i=SC", iterations, i, G_list[i])
+        tol.log_transmission( "G_i=SC", iterations, i, G_list[i])
         start = start + local_data[i].shape[1]
 
     # Initial guess
@@ -133,13 +114,12 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
             mot.start()
             H_local = np.dot(local_data[i], G_list[i])
             mot.stop()
-            if log:
-                log_transmission(filename, "H_local=CS", iterations, i, H_local)
+            tol.log_transmission("H_local=CS", iterations, i, H_local)
             # add up H matrices at server and send them back to the clients
             H_i = H_i + H_local
-        if log:
-            # Log only once for one site
-            log_transmission(filename, "H_global=SC", iterations, 1, H_i)
+
+        # Log only once for one site
+        tol.log_transmission( "H_global=SC", iterations, 1, H_i)
 
         # free orthonormalisation in terms of transmission cost
         mot.start()
@@ -157,8 +137,8 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
                 mot.start()
                 G_list[i] = np.dot(local_data[i].T, H_i)
                 mot.stop()
-                if log and not federated_qr:
-                    log_transmission(filename, "Gi_local=CS", iterations, i, G_list[i])
+                if not federated_qr:
+                    tol.log_transmission("Gi_local=CS", iterations, i, G_list[i])
 
         # This is just for logging purposes
         G_i = np.concatenate(G_list, axis=0)
@@ -176,17 +156,18 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
         # use guos convergence criterion for comparison
         #convergedH, deltaH = sh.convergence_checker_rayleigh(H_i, H_i_prev, eigenvals, eigenvals_prev, epsilon=1e-11)
         # just out of curiousity, log the
-        convergedG, deltaG = sh.eigenvector_convergence_checker(G_i, G_i_prev, tolerance=epsilon)
+        #convergedG, deltaG = sh.eigenvector_convergence_checker(G_i, G_i_prev, tolerance=epsilon)
         H_i_prev = H_i
         G_i_prev = G_i
         if iterations < 10:
             H_stack.append(H_i)
-        if log:
-            log_current_accuracy(u=u, G_i=G_i, eigenvals=eigenvals, conv=deltaH, current_iteration=iterations,
-                                 filename=filename, choices=choices, precomputed_pca=precomputed_pca,
-                                 gi_delta_obj=deltaG, v=v, H_i=H_i)
+
+        aol.log_current_accuracy(u=u, G_i=G_i, eigenvals=eigenvals, conv=deltaH, current_iteration=iterations,
+                                 choices=choices, precomputed_pca=precomputed_pca, v=v, H_i=H_i)
     # log the time for matrix operations
-    log_time_keywords(filename, 'matrix_operations', mot.total())
+    log_time_keywords(filename, 'matrix_operations-subspace_iteration', mot.total())
+    tol.close()
+    aol.close()
     ortho, G_list = qr.simulate_federated_qr(G_list, encrypt=False)
     return G_i, eigenvals, converged_eigenvals, H_i, H_stack, iterations, G_list
 
@@ -222,6 +203,10 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
     Returns: A column vector array containing the global eigenvectors
 
     """
+    tol = TransmissionLogger()
+    tol.open(filename)
+    aol = AccuracyLogger()
+    aol.open(filename)
     if previous_iterations is None:
         iterations = 0  # iteration counter
     else:
@@ -258,40 +243,37 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
     Vk_list = []  # these are the partial eigenvectors already iterated
     for i in range(len(local_data)):
         G_list.append(G_i[start:start + local_data[i].shape[1], :])
-        if log:
-            # Assume first matrix is generated at th server
-            log_transmission(filename, "G_i=SC", iterations, i, G_list[i], id+1)
+        tol.log_transmission("G_i=SC", iterations, i, G_list[i], id+1)
         if V_k is not None:
             Vk_list.append(V_k[start:start + local_data[i].shape[1], :])
         start = start + local_data[i].shape[1]
     H_i_prev = sh.generate_random_gaussian(local_data[0].shape[0], 1)
     G_i_prev = G_i
     gi_norm_prev = la.norm(H_i_prev)
+    mot = TimerCounter()
     while not convergedH and iterations < maxit:
         iterations = iterations + 1
         H_i = np.zeros((local_data[0].shape[0], 1))  # dummy initialise the H_i matrix
+        mot.start()
         for i in range(len(local_data)):
             H_local = np.dot(local_data[i], G_list[i])
-            if log:
-                log_transmission(filename, "H_local=CS", iterations, i, H_local ,id+1)
+            tol.log_transmission( "H_local=CS", iterations, i, H_local ,id+1)
             H_i = H_i + H_local
-        if log:
-            log_transmission(filename, "H_global=SC", iterations, 1, H_i ,id+1)
+        tol.log_transmission( "H_global=SC", iterations, 1, H_i ,id+1)
 
         for i in range(len(local_data)):
             if gradient:
                 G_list[i] = np.dot(local_data[i].T, H_i) + G_list[i]
             else:
                 G_list[i] = np.dot(local_data[i].T, H_i)
-
+        mot.stop()
         gi_norm = 0
         if V_k is None:
             # compute the norm of the eigenvector and done.
             for i in range(len(G_list)):
                 local_norm = np.sum(np.square(G_list[i]))
                 gi_norm = gi_norm + np.sum(np.square(G_list[i]))
-                if log:
-                    log_transmission(filename, "local_norm=CS", iterations, i, local_norm ,id+1)
+                tol.log_transmission( "local_norm=CS", iterations, i, local_norm ,id+1)
 
         elif federated_qr:
             temp = []
@@ -312,13 +294,11 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
                     dp = np.dot(G_list[i].T, Vk_list[i][:, vi:vi + 1]).flatten()
                     sum.append(dp)
                 # cast to numpy array to determine size
-                if log:
-                    log_transmission(filename, "local_dot_prod=CS", iterations, i, np.asarray(sum), id+1)
+                tol.log_transmission( "local_dot_prod=CS", iterations, i, np.asarray(sum), id+1)
                 local_sums.append(sum)
             local_sums = np.asarray(local_sums)
             local_sums = np.sum(local_sums, axis=0).flatten()  # flatten to remove nesting
-            if log:
-                log_transmission(filename, "global_dot_prod=SC", iterations, 1, local_sums, id+1)
+            tol.log_transmission( "global_dot_prod=SC", iterations, 1, local_sums, id+1)
 
             for i in range(len(G_list)):
                 ap = G_list[i]
@@ -330,8 +310,7 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
 
             for i in range(len(G_list)):
                 c_n = np.sum(np.square(G_list[i]))
-                if log:
-                    log_transmission(filename, "local_norm=CS", iterations, i, c_n, id+1)
+                tol.log_transmission("local_norm=CS", iterations, i, c_n, id+1)
                 gi_norm = gi_norm + c_n
 
         gi_norm = np.sqrt(gi_norm)
@@ -341,8 +320,8 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
                 if log:
                     # subsequent orthonormalisation at agrgegator
                     # (only current G_i because rest is assumed to be stored at agrgegator)
-                    log_transmission(filename, "ALT_G_i_local=CS", iterations, i, G_list[i], id+1)
-                    log_transmission(filename, "ALT_G_i=SC", iterations, i, G_list[i], id+1)
+                    tol.log_transmission( "ALT_G_i_local=CS", iterations, i, G_list[i], id+1)
+                    tol.log_transmission( "ALT_G_i=SC", iterations, i, G_list[i], id+1)
 
 
         #if gradient:
@@ -353,19 +332,20 @@ def simulate_guo(local_data, maxit, V_k=None, starting_vector=None, filename=Non
         #    print(deltaH)
         H_i_prev = H_i
         gi_norm_prev = gi_norm
-        if log:
-            log_transmission(filename, "global_norm=SC", iterations, 1, gi_norm, id+1)
+        tol.log_transmission( "global_norm=SC", iterations, 1, gi_norm, id+1)
 
         G_i = np.concatenate(G_list, axis=0)
         convergedG, deltaG = sh.eigenvector_convergence_checker(G_i, G_i_prev, tolerance=epsilon)
         G_i_prev = G_i
-        log_current_accuracy(u[:, id:id + 1], G_i, eigenvals=[gi_norm], conv=deltaH, current_iteration=iterations,
-                             filename=filename, choices=choices, precomputed_pca=precomputed_pca, current_ev=id + 1,
-                             gi_delta_obj=deltaG, v=v[:, id:id + 1], H_i=H_i)
+        aol.log_current_accuracy(u[:, id:id + 1], G_i, eigenvals=[gi_norm], conv=deltaH, current_iteration=iterations,
+                             choices=choices, precomputed_pca=precomputed_pca, current_ev=id + 1,
+                                v=v[:, id:id + 1], H_i=H_i)
     # return a complete eigenvector
     #print(gi_norm)
     print(iterations)
-
+    log_time_keywords(filename, 'matrix_operations-subspace_iteration', mot.total())
+    tol.close()
+    aol.close()
     return G_i, iterations
 
 
@@ -484,7 +464,7 @@ def the_epic_loop(data, dataset_name, maxit, nr_repeats, k, splits, outdir, epsi
             # Run Guo version
             # Sequention
             grad = True
-            fedqr = Falseargs[0], args[1]
+            fedqr = False
             grad_name = 'gradient'
             mode = 'central_qr'
             print('gradient - sequential - '+ mode)
