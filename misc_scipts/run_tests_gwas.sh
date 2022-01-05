@@ -9,16 +9,16 @@ mkdir -p $resultpath
 # take 2 chromosomes, we don't want to spam
 for e in {1..2} ;
 do
-for i in 100000 500000 all ;
+for i in 1000000 500000 all ;
 do
 
 mkdir -p $resultpath/chr${e}
 
 python3 $gwaspath/federated_dp_pca/python/PCA/vertical/approximate_vertical_pca_benchmark.py -f \
-$datapath/chr${e}/chr${e}.$i \
---filetype 'gwas' --center -o $resultpath/chr${e}.$i -r 1 -k 10 \
+$datapath/chr${e}/chr${e} \
+--filetype 'gwas' --center -o $resultpath/chr${e}.$i -r 10 -k 10 \
  -i 1000 --sep '\t' --header 0 --rownames 0 --names chr${e}.$i \
- --vert -s 5 --ortho_freq 1000
+ --vert -s 5 --ortho_freq 1000 --scaled --sf 'traw.scaled.'$i
 done
 done
 

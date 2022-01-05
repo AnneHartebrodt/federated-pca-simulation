@@ -14,7 +14,7 @@ import sys
 import python.PCA.comparison  as co
 import python.PCA.convenience as cv
 import python.PCA.shared_functions as sh
-import python.import_export.gwas_import as gi
+#import python.import_export.gwas_import as gi
 import python.import_export.mnist_import as mi
 import python.import_export.spreadsheet_import as si
 import python.PCA.vertical.federated_qr as qr
@@ -425,7 +425,7 @@ def run_randomized_2(data_list, k, I,maxit, factor_k=2, filename=None, u=None, c
 
 
 if __name__ == '__main__':
-    local=True
+    local=False
     if local:
         start = time.monotonic()
         import pnumpy as pn
@@ -476,6 +476,7 @@ if __name__ == '__main__':
         parser.add_argument('--orthovector', metavar='compare', default=None, type=str,
                             help='filename of orthogonal file')
         parser.add_argument('--scaled', action='store_true', help='data is prescaled')
+        parser.add_argument('--sf', default=None, type=str, help='suffix scaled file')
         parser.add_argument('--unequal', default=None, type=str, help='split unequal, load split file')
         parser.add_argument('--vert', action='store_true', help='run vertical split test')
         parser.add_argument('--hor', action='store_true', help='run horizontal split test')
@@ -555,7 +556,11 @@ if __name__ == '__main__':
                 data = gi.read_scale_write_pandas(infile=traw_nosex, outfile=path + '.traw.scaled', maf=0.01, major_2=False)
 
             else:
-                data = pd.read_table(path + '.traw.scaled', header=None, sep='\t')
+                print('Loading scaled data')
+                if args.sf is None:
+                    data = pd.read_table(path + '.traw.scaled', header=None, sep='\t')
+                else:
+                    data = pd.read_table(path+ '.' +args.sf, header=None, sep='\t')
                 data = data.values
             nr_samples = data.shape[0]
             nr_features = data.shape[1]
@@ -577,11 +582,11 @@ if __name__ == '__main__':
 
             outd = ['matrix', 'vector']
             for od in outd:
-                basepath = op.join(outdir,od)
-                create_dataframe(basepath=vertical, suffix='.angles.u')
-                create_dataframe(basepath=vertical, suffix='.angles.v')
-                create_dataframe(basepath=vertical, suffix='.mev.u')
-                create_dataframe(basepath=vertical, suffix='.mev.v')
+                basepath = op.join(vertical,od)
+                create_dataframe(basepath=basepath, suffix='.angles.u')
+                create_dataframe(basepath=basepath, suffix='.angles.v')
+                create_dataframe(basepath=basepath, suffix='.mev.u')
+                create_dataframe(basepath=basepath, suffix='.mev.v')
                 create_dataframe(basepath=basepath, suffix='.transmission')
                 create_dataframe(basepath=basepath, suffix='.eo')
 
