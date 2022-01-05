@@ -183,7 +183,7 @@ pl.iter<-ggplot(iterations, aes(algorithm, iterations, fill=interaction(algorith
   geom_boxplot()+
   xlab('')+
   theme_classic()+
-  ylab('Iterations to nconvergence')+
+  ylab('Iterations to convergence')+
   extra_theme +
   guides(fill=FALSE, color=F)+scale_color_viridis_d(option = 'A', end=0.7)+
   scale_fill_manual(values=c(viridisLite::magma(5, end=0.7, alpha = 0.6), viridisLite::magma(5, end=0.7, alpha = 0.8)))
