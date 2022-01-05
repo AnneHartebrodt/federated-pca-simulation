@@ -278,4 +278,32 @@ def convergence_checker_rayleigh(current, previous, alpha_current, alpha_prev, e
 
     return converged, deltas
 
+def scale_datasets(data_list):
+    sums = []
+    sample_count = 0
+
+    # mean
+    sums = [np.sum(d, axis = 0) for d in data_list]
+    sums = np.sum(sums, axis=0)
+    sample_count = [d.shape[0] for d in data_list]
+    total_count = sum(sample_count)
+    means = [s/total_count for s in sums]
+    for i in range(len(data_list)):
+        data_list[i] = data_list[i] - means
+
+    #variance
+
+    vars = [np.sum(np.square(d), axis=0) for d in data_list]
+    vars = np.sum(vars, axis = 0)
+    vars = vars/(total_count-1)
+    # variance  = 0
+    delete = np.where(vars==0)
+    vars = np.delete(vars, delete)
+    for i in range(len(data_list)):
+        data_list[i] = np.delete(data_list[i], delete, axis=1)
+
+    for i in range(len(data_list)):
+        data_list[i] = data_list[i]/np.sqrt(vars)
+    return data_list
+
 
