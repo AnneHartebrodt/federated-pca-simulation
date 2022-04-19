@@ -148,21 +148,30 @@ def computeR(data_list, q_list):
 if __name__ == '__main__':
 
     import scipy.sparse.linalg as lsa
+    # data = sh.generate_random_gaussian(500, 10)
+    # q, r = la.qr(data, mode='economic')
+    # data_list, choice = sh.partition_data_horizontally(data, 3)
+    # ortho, G_list, r2, rl = simulate_federated_qr(data_list)
+    # angles = co.compute_angles(q, ortho)
+    # angles2 = co.compute_angles(r, r2)
+    # print(angles)
+    # np.sum(np.abs(r2)-np.abs(r))
+    #
+    # uu, ss, vv = lsa.svds(data, k=9)
+    # vv = np.flip(vv.T, axis=1)
+    # uu = np.flip(uu, axis=1)
+    # np.sum(np.abs(r) - np.abs(r2))
+    #
+    # u,s,v = lsa.svds(rl[0])
+    # uu, ss, vv = lsa.svds(data_list[0])
+    #
+    # co.compute_angles(vv,v)
+    #
+    ###Solve for linear system
     data = sh.generate_random_gaussian(500, 10)
     q, r = la.qr(data, mode='economic')
     data_list, choice = sh.partition_data_horizontally(data, 3)
     ortho, G_list, r2, rl = simulate_federated_qr(data_list)
-    angles = co.compute_angles(q, ortho)
-    angles2 = co.compute_angles(r, r2)
-    print(angles)
-    np.sum(np.abs(r2)-np.abs(r))
 
-    uu, ss, vv = lsa.svds(data, k=9)
-    vv = np.flip(vv.T, axis=1)
-    uu = np.flip(uu, axis=1)
-    np.sum(np.abs(r) - np.abs(r2))
-
-    u,s,v = lsa.svds(rl[0])
-    uu, ss, vv = lsa.svds(data_list[0])
-
-    co.compute_angles(vv,v)
+    print(np.linalg.norm(np.abs(q)-np.abs(ortho)))
+    print(np.linalg.norm(np.abs(r)-np.abs(r2)))

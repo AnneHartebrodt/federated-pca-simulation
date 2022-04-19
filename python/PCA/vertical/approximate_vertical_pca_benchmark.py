@@ -1,5 +1,6 @@
 from python.PCA.vertical.vertical_pca_benchmark import simulate_subspace_iteration, simulate_guo, compute_k_eigenvectors
 from python.evaluation.data_aggregation import create_dataframe
+import python.PCA.logging as l
 import argparse as ap
 import os
 import os.path as op
@@ -11,15 +12,11 @@ import scipy.sparse.linalg as lsa
 from scipy.sparse import coo_matrix
 import sys
 
-import python.PCA.comparison  as co
-import python.PCA.convenience as cv
+
 import python.PCA.shared_functions as sh
-#import python.import_export.gwas_import as gi
 import python.import_export.mnist_import as mi
 import python.import_export.spreadsheet_import as si
-import python.PCA.vertical.federated_qr as qr
-import python.PCA.horizontal.power_iteration as powerit
-import json
+#import python.import_export.gwas_import as gi
 
 from python.PCA.horizontal.horizontal_pca_power_iteration import simulate_distributed_horizontal
 from python.PCA.logging import *
@@ -65,32 +62,32 @@ def benchmark_vertical_approximate_pca(data, dataset_name, maxit, nr_repeats, k,
             ortho_freq = maxit+1 # will not be reached
             fedqr = False
 
-            # # simulate the run
-            # start = time.monotonic()
-            # mode = 'randomized-no-approx'
-            # outdir_approx = op.join(outdir, 'matrix', str(s), mode, str(ortho_freq))
-            # os.makedirs(outdir_approx, exist_ok=True)
-            # filename = create_filename(outdir_approx, dataset_name + '_' + mode, s, c, k, maxit, start)
-            #
-            # run_randomized(data_list, k, I=10, maxit=maxit, u=u, filename=filename, choices=choice,
-            #                precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
-            #                epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=None, use_approximate=False)
-            # end = time.monotonic()
-            # log_time(logftime, mode, end - start, s, c)
-            # print(mode + ' ' + str(end - start))
-
+            # simulate the run
             start = time.monotonic()
-            mode = 'randomized-approx-projected'
+            mode = 'randomized-no-approx'
             outdir_approx = op.join(outdir, 'matrix', str(s), mode, str(ortho_freq))
             os.makedirs(outdir_approx, exist_ok=True)
             filename = create_filename(outdir_approx, dataset_name + '_' + mode, s, c, k, maxit, start)
 
-            run_randomized_2(data_list, k, I=10, maxit=maxit, u=u, filename=filename, choices=choice,
+            run_randomized(data_list, k, I=10, maxit=maxit, u=u, filename=filename, choices=choice,
                            precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
-                           epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=None)
+                           epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=None, use_approximate=False)
             end = time.monotonic()
             log_time(logftime, mode, end - start, s, c)
             print(mode + ' ' + str(end - start))
+
+            # start = time.monotonic()
+            # mode = 'randomized-approx-projected'
+            # outdir_approx = op.join(outdir, 'matrix', str(s), mode, str(ortho_freq))
+            # os.makedirs(outdir_approx, exist_ok=True)
+            # filename = create_filename(outdir_approx, dataset_name + '_' + mode, s, c, k, maxit, start)
+            #
+            # run_randomized_2(data_list, k, I=10, maxit=maxit, u=u, filename=filename, choices=choice,
+            #                precomputed_pca=precomputed_pca, federated_qr=fedqr, v=v, gradient=grad,
+            #                epsilon=epsilon, g_ortho_freq=ortho_freq, g_init=None)
+            # end = time.monotonic()
+            # log_time(logftime, mode, end - start, s, c)
+            # print(mode + ' ' + str(end - start))
 
 
             #
@@ -331,30 +328,41 @@ def run_randomized(data_list, k, I,maxit, use_approximate=True, factor_k=2,filen
             tol.log_transmission( "H_local=CS", iterations+1, i, dl)
             H_stack.append(dl)
             i = i+1
-    H_stack = np.concatenate(H_stack, axis=1)
+    H_stack = np.asarray(np.concatenate(H_stack, axis=1))
     H, S, G = lsa.svds(H_stack, k=H_stack.shape[1]-1)
     tol.log_transmission( "H_global=SC", iterations+1, 1, H)
     mot.stop()
     tol.close()
     H = np.flip(H, axis=1)
     p = [np.dot(H.T,d) for d in data_list]
-    G_i, eigenvals, converged_eigenvals, H_i, H_stack, iterations, G_list  = simulate_subspace_iteration(p,
-                                                          k=k,
-                                                            maxit= maxit,
-                                                           filename=filename,
-                                                           u=u,
-                                                           choices=choices,
-                                                           precomputed_pca=precomputed_pca,
-                                                           fractev=fractev,
-                                                           federated_qr=federated_qr,
-                                                           v=None, # wrong vector
-                                                            gradient=gradient,
-                                                           epsilon=epsilon, log=log,
-                                                           g_ortho_freq=g_ortho_freq,
-                                                           g_init = G_i[:,0:k],
-                                                           previous_iterations=iterations)
+    covs = [np.dot(p1, p1.T) for p1 in p]
+    u1,s1, v1 = lsa.svds(np.sum(covs, axis=0), k=k)
+    u1 = np.flip(u1, axis=1)
+    g1 = [np.dot(p1.T, u1) for p1 in p]
+    G_i = np.concatenate(g1, axis=0)
+    # G_i, eigenvals, converged_eigenvals, H_i, H_stack, iterations, G_list  = simulate_subspace_iteration(p,
+    #                                                       k=k,
+    #                                                         maxit= maxit,
+    #                                                        filename=filename,
+    #                                                        u=u,
+    #                                                        choices=choices,
+    #                                                        precomputed_pca=precomputed_pca,
+    #                                                        fractev=fractev,
+    #                                                        federated_qr=federated_qr,
+    #                                                        v=None, # wrong vector
+    #                                                         gradient=gradient,
+    #                                                        epsilon=epsilon, log=log,
+    #                                                        g_ortho_freq=g_ortho_freq,
+    #                                                        g_init = G_i[:,0:k],
+    #                                                        previous_iterations=iterations)
+
     G_i, R = la.qr(G_i, mode='economic')
-    log_time_keywords(filename, 'matrix_operations-randomized', mot.total())
+    aol = AccuracyLogger()
+    aol.open(filename)
+    aol.log_current_accuracy(u=u, G_i=G_i, eigenvals=eigenvals, conv=None, current_iteration=iterations,
+                             choices=choices, precomputed_pca=precomputed_pca, v=v, H_i=H_i)
+    aol.close()
+    #log_time_keywords(filename, 'matrix_operations-randomized', mot.total())
     return G_i
 
 def run_randomized_2(data_list, k, I,maxit, factor_k=2, filename=None, u=None, choices=None, precomputed_pca=None, fractev=1.0,
@@ -425,10 +433,9 @@ def run_randomized_2(data_list, k, I,maxit, factor_k=2, filename=None, u=None, c
 
 
 if __name__ == '__main__':
-    local=False
+    local=True
     if local:
         start = time.monotonic()
-        import pnumpy as pn
 
         data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
         # data, test_labels = mi.load_mnist(input_dir, 'train')
@@ -436,7 +443,7 @@ if __name__ == '__main__':
 
         dataset_name = 'mnist'
         maxit = 1000
-        nr_repeats = 10
+        nr_repeats = 1
         k = 10
         splits = [5, 10]
         outdir = '/home/anne/Documents/featurecloud/pca/approximative-vertical/results1'

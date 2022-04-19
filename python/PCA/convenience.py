@@ -11,7 +11,7 @@ import numpy as np
 
 def collapse_array_to_string(a, study_id):
     res = study_id + '\t'
-    for i in range(len(a)):
+    for i in range(len(a)-1):
         e = a[i]
         res = res + str(e) + '\t'
     res = res + str(a[len(a)-1]) +'\n'

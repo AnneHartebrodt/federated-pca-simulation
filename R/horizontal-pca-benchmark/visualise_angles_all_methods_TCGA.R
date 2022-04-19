@@ -63,10 +63,13 @@ data2$experiment <- '5'
 
 outdir3 <- '/home/anne/Documents/featurecloud/pca/horizontal-pca/results/accuracy/merged/2'
 data3<- read_sre(outdir3)
+
 data3$experiment <- '2'
 
 data3 <- rbind(data1,data2, data3)
 
+data3<-data3[!is.na(name)]
+data3<-data3[!is.na(value)]
 data3<-data3[algorithm!='vertical_pca']
 data3$algorithm<-as.factor(data3$algorithm)
 levels(data3$algorithm)<- algorithms
@@ -75,13 +78,29 @@ data3$experiment<-ordered(data3$experiment, levels = c('TCGA', '5', '2'))
 #data3<-data3[algorithm != 'Vertical power iteration' & dataset == 'Liver_and_intrahepatic_bile_ducts']
 baseline <- unique(data3[algorithm=='SIT', .(dataset, value, name)])
 colnames(baseline)<- c('dataset', 'baseline', 'name')
+baseline<- baseline[!is.na(name)]
+
 data3 <- data3 %>% left_join(baseline)
+data3<-data3[!is.na(baseline)]
 data3<-as.data.table(data3)
 data3$value <- data3$value/data3$baseline
 data3$score<-'SRE (normalised)'
 data3 <- data3[, .(algorithm, dataset, name, value, experiment, score)]
 
 data_all<-rbind(data_all, data3)
+
+
+#Compute the angles
+data_all[score=='Angle w.r.t reference' & name %in% c('1', '5', '10') & algorithm %in% c('APSTACK', 'SIT')] %>% select(algorithm, experiment, value, score, name) %>% 
+  group_by(experiment, algorithm, score, name) %>% 
+  summarise(avg = mean(value)) 
+
+fd<-data_all[score=='SRE (normalised)' & name %in% c('1', '5', '10') & algorithm %in% c('APSTACK', 'SIT')] %>% select(algorithm, experiment, value, score, name) %>% 
+  group_by(experiment, algorithm, score, name) %>% 
+  summarise(avg = mean(value)) 
+
+
+
 
 my_theme <-
   theme_classic() + theme(
@@ -109,8 +128,66 @@ comparison<- ggplot(data_all[name %in% paste0('', 1:10) &algorithm!='Vertical po
 
 comparison
 
-ggsave(comparison, file='/home/anne/Documents/manuscripts/horizontal-pca/figures/comparison_angles_all_methods.pdf', width = 20, height = 10, units = 'cm')
 
+
+suma<-data_all %>% select(algorithm, experiment, value, score, name) %>% group_by(experiment, algorithm, score, name)%>% summarise(mean_score = max(value, na.omit=T))
+suma<-as.data.table(suma)
+suma[score=='Angle w.r.t reference']$score = 'Angle'
+suma[score=='SRE (normalised)']$score = 'Error'
+heat1<- ggplot(suma[name %in% paste0('', 1:10) &algorithm %in% c('APSTACK', 'SIT') & score == 'Angle'],
+               aes(name, algorithm, fill=mean_score))+
+  geom_tile()+
+  xlab('Eigenvalue rank')+
+  scale_shape_manual(values=c(1, 8))+
+  #scale_color_manual(values = c('#000000','#FF0000'))+
+  guides(color='none')+
+  scale_fill_viridis_c('Median\nAngle')+
+  scale_y_discrete(labels=c("APSTACK" = "APSTACK\nAPCOV", 'SIT'="SIT\nPCOV\nQR-PCA" ))+
+  #scale_fill_manual('Algorithm', values =palette_div[c(2,9,4,8,6,7,5,3)])+
+  facet_grid(c('score','experiment'), scales = 'free_y', labeller = labeller(score = label_wrap_gen(width = 25)))+
+  theme(axis.title.y = element_blank(), legend.box = 'horizontal', 
+        strip.background.x = element_blank(),
+        axis.line = element_blank(), axis.ticks = element_blank(), 
+        legend.position = 'right',
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title = element_blank(),
+        legend.title = element_text(size=10),
+        plot.margin = margin(0,0,0,0, 'line'),
+        legend.key.height = unit(0.5, 'line'),
+        legend.margin =margin(0,1,0,0, 'line') )+
+        #legend.key.width = unit(0.5, 'line'),)+
+  guides(fill = guide_colorbar( title.position = 'top',legend.key.width = unit(0, 'line') ))
+heat1
+heat2<- ggplot(suma[name %in% paste0('', 1:10) &algorithm %in% c('APSTACK', 'SIT')  & score == 'Error'], aes(name, algorithm, fill=mean_score))+
+  geom_tile()+
+  xlab('Eigenvalue rank')+
+  scale_shape_manual(values=c(1, 8))+
+  #scale_color_manual(values = c('#000000','#FF0000'))+
+  scale_fill_viridis_c('Median\nError ')+
+  scale_y_discrete(labels=c("APSTACK" = "APSTACK\nAPCOV", 'SIT'="SIT\nPCOV\nQR-PCA" ))+
+  #scale_fill_manual('Algorithm', values =palette_div[c(2,9,4,8,6,7,5,3)])+
+  facet_grid(c('score','experiment'), scales = 'free_y', labeller = labeller(score = label_wrap_gen(width = 25)))+
+  theme(axis.title.y = element_blank(), legend.box = 'horizontal', 
+        strip.background.x = element_blank(), strip.text.x = element_blank(),
+        axis.line = element_blank(), axis.ticks = element_blank(),        
+        legend.position = 'right',
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        axis.text.x = element_text(vjust = unit(0.5, 'line')),
+        legend.title = element_text(size=10),
+        plot.margin = margin(0,0,0,0, 'line'),
+        legend.key.height = unit(0.5, 'line'))+
+  guides(fill = guide_colorbar( title.position = 'top',legend.key.width = unit(0, 'line'), 
+                                label.theme = element_text(size=6, hjust = 1)))
+#heat
+heat<- plot_grid(heat1, heat2, ncol=1, rel_heights  = c(0.5, 0.5))
+heat
+ggsave(heat, file='/home/anne/Documents/manuscripts/horizontal-pca-bioinv-adv-clean/figures/comparison_angles_all_methods_heat.pdf', width = 15, height = 7.5, units = 'cm')
+
+
+suma
 
 mn<-data1[dataset=='mnist' & name %in% paste0('', 1:10)]
 av <- mn %>% select(algorithm, name, value) %>% group_by(algorithm) %>% summarise(avg_angle=mean(value))

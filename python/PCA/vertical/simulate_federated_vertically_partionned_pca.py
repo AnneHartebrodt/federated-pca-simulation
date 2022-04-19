@@ -30,14 +30,13 @@ import numpy as np
 import pandas as pd
 import scipy.sparse.linalg as lsa
 import scipy.linalg as la
-from scipy.sparse import coo_matrix
 import python.PCA.shared_functions as sh
 import python.import_export.mnist_import as mi
 
 import python.PCA.vertical.simulate_federated_qr_orthonormalisation as qr
 import python.PCA.comparison as co
 import python.import_export.spreadsheet_import as si
-
+import python.PCA.vertical.approximate_vertical_pca_benchmark as approx
 
 def simulate_subspace_iteration(local_data, k, maxit, federated_qr=False,epsilon=10e-9):
     """
@@ -131,11 +130,12 @@ def simulate_subspace_iteration(local_data, k, maxit, federated_qr=False,epsilon
 
 if __name__ == '__main__':
 
-    path = '~/Documents/featurecloud/test-environment/controller/data/app_test/data/11/data.tsv'
+    path = '~/Documents/featurecloud/test-environment/controller/data/app_test/data/data.tsv'
     #data, test_lables = mi.load_mnist(path, 'train')
     #data = coo_matrix.asfptype(data)
 
-    data = pd.read_csv(path, sep='\t').values
+    #data = pd.read_csv(path, sep='\t', header=0, index_col=0).values
+    data, test_lables = mi.load_mnist('/home/anne/Documents/featurecloud/pca/vertical-pca/data/mnist/raw', 'train')
     # Transpose data such, that
     data = si.scale_center_data_columnwise(data)
     data = data.T
@@ -146,10 +146,13 @@ if __name__ == '__main__':
 
     local_data, choice = sh.partition_data_vertically(data=data, splits=3, randomize=True)
 
-    G, ev, H, it = simulate_subspace_iteration(local_data, k=10, maxit=500, federated_qr=False)
-    co.compute_angles(G, v[choice, :])
-    co.compute_angles(H, np.flip(u, axis=1))
+    # G, ev, H, it = simulate_subspace_iteration(local_data, k=10, maxit=500, federated_qr=False)
+    # co.compute_angles(G, v[choice, :])
+    # co.compute_angles(H, np.flip(u, axis=1))
+    #
+    # G, ev, H, it = simulate_subspace_iteration(local_data, k=10, maxit=500, federated_qr=True)
+    # co.compute_angles(G, v[choice, :])
+    # co.compute_angles(H, np.flip(u, axis=1))
 
-    G, ev, H, it = simulate_subspace_iteration(local_data, k=10, maxit=500, federated_qr=True)
-    co.compute_angles(G, v[choice, :])
-    co.compute_angles(H, np.flip(u, axis=1))
+    gi = approx.run_randomized(local_data, 10,10,500, use_approximate=False, factor_k=2)
+    co.compute_angles(gi, v[choice, :])

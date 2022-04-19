@@ -33,7 +33,7 @@ import sys
 import python.PCA.comparison  as co
 import python.PCA.convenience as cv
 import python.PCA.shared_functions as sh
-import python.import_export.gwas_import as gi
+#import python.import_export.gwas_import as gi
 import python.import_export.mnist_import as mi
 import python.import_export.spreadsheet_import as si
 import python.PCA.vertical.federated_qr as qr
@@ -165,7 +165,7 @@ def simulate_subspace_iteration(local_data, k, maxit, filename=None, u=None, cho
         aol.log_current_accuracy(u=u, G_i=G_i, eigenvals=eigenvals, conv=deltaH, current_iteration=iterations,
                                  choices=choices, precomputed_pca=precomputed_pca, v=v, H_i=H_i)
     # log the time for matrix operations
-    log_time_keywords(filename, 'matrix_operations-subspace_iteration', mot.total())
+#    log_time_keywords(filename, 'matrix_operations-subspace_iteration', mot.total())
     tol.close()
     aol.close()
     ortho, G_list = qr.simulate_federated_qr(G_list, encrypt=False)

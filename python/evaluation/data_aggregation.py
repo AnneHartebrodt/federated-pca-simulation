@@ -33,10 +33,11 @@ def create_dataframe(basepath, suffix):
 
 if __name__ == '__main__':
     basepath = "/home/anne/Documents/featurecloud/pca/approximative-vertical/results/matrix"
-    create_dataframe(basepath=basepath, suffix='.angles.u')
-    create_dataframe(basepath=basepath, suffix='.angles.v')
-    df = create_dataframe(basepath=basepath, suffix='.mev.u')
-    df = create_dataframe(basepath=basepath, suffix='.mev.v')
-    #
-    df = create_dataframe(basepath=basepath, suffix='.eo')
+    # create_dataframe(basepath=basepath, suffix='.angles.u')
+    # create_dataframe(basepath=basepath, suffix='.angles.v')
+    # df = create_dataframe(basepath=basepath, suffix='.mev.u')
+    # df = create_dataframe(basepath=basepath, suffix='.mev.v')
+    # #
+    # df = create_dataframe(basepath=basepath, suffix='.eo')
+    # df = create_dataframe(basepath=basepath, suffix='.transmission')
     df = create_dataframe(basepath=basepath, suffix='.transmission')
