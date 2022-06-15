@@ -22,6 +22,7 @@ PCA can be applied to high dimensional data in a low number of communication rou
 
 ## Citation
 If you use this repository in your work please use one of the following references:
+
 <a id="1">[1]</a>
 <div class="csl-entry">Hartebrodt, A., Nasirigerdeh, R., Blumenthal, D. B., &#38; Richard, R. (2021). <i>Federated Principal Component Analysis for Genome-Wide Association Studies</i>. <i>Icdm</i>, 1090–1095. https://doi.org/10.1109/ICDM51629.2021.00127</div>
 
