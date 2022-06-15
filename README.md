@@ -24,7 +24,7 @@ PCA can be applied to high dimensional data in a low number of communication rou
 If you use this repository in your work please use one of the following references:
 
 <a id="1">[1]</a>
-Hartebrodt, A., Nasirigerdeh, R., Blumenthal, D. B., & Richard, R. (2021). Federated Principal Component Analysis for Genome-Wide Association Studies. Icdm<, 1090–1095. https://doi.org/10.1109/ICDM51629.2021.00127
+Hartebrodt, A., Nasirigerdeh, R., Blumenthal, D. B., & Richard, R. (2021). Federated Principal Component Analysis for Genome-Wide Association Studies. Icdm, 1090–1095. https://doi.org/10.1109/ICDM51629.2021.00127
 
 <a id="1">[2]</a>
 Anne Hartebrodt, Richard Röttger, Federated horizontally partitioned principal component analysis for biomedical applications, Bioinformatics Advances, Volume 2, Issue 1, 2022, vbac026, https://doi.org/10.1093/bioadv/vbac026
