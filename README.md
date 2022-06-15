@@ -17,11 +17,6 @@ PCA that deals with classicial feature reduction PCA has been evaluated. There a
 Simulation code for horizontal PCA is available in [horizontal](/python/PCA/horizontal). Notebooks and figures for an illustration of federated horizontal using single-cell-transcriptome data is available in [notebooks](/python/PCA/notebooks). 
 
 
-## Demonstration code can be found here
-If you want to read code for the simulation of federated vertically partitioned PCA, here is a nice simulation script: [Federated PCA](../python/PCA/vertical/simulate_federated_vertically_partionned_pca.py)
-
-There is also one for federated Gram Schmidt orthonormalisation: [Gram-Schmidt](../python/PCA/vertical/simulate_federated_qr_orthonormalisation.py)
-
 ## Citation
 If you use this repository in your work please cite as: 
 
